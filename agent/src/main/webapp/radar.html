@@ -1,0 +1,36 @@
+<%
+// Allow the domain to be provided via a query parameter
+String domain = request.getParameter("domain");
+if (domain == null || domain.equals("")) {
+domain = "diffa";
+}
+%>
+
+<html>
+<head>
+  <title>Diffa Radar</title>
+  <script type="text/paperscript" canvas="radar-canvas" src="assets/paperscript.js"></script>
+</head>
+
+<body>
+
+<div class="container">
+
+  <div class="main-logo">
+    <h1>Diffa Radar</h1>
+  </div>
+
+  <div class="top-navigation-link">
+    <a class="domain-page" href="index.html">Diffa</a>
+  </div>
+
+  <div class="radar-panel">
+
+    <div id="radar" class="diffa-radar" data-domain="<%= domain %>"></div>
+
+  </div>
+</div>
+
+</body>
+
+</html>

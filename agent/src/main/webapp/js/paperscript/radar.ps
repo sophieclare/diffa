@@ -1,0 +1,75 @@
+var centerRef = paper.view.center;
+
+var center = new Point(centerRef.x, centerRef.y);
+var outer = new Point(centerRef.x, centerRef.y + diameter);
+
+var root2 = Math.sqrt(2) / 2;
+
+var period = 5;
+var omega = 2 * Math.PI / period;
+var diameter = 150;
+
+var lineStyle = {
+  strokeColor: 'green',
+  strokeWidth: 1
+};
+
+drawCrossHairs();
+drawCircles();
+
+var path = new Path();
+path.style = lineStyle;
+path.add(center);
+path.add(outer);
+
+
+var size = new Size(10, 10);
+var pos = new Point(centerRef.x - diameter/5, centerRef.y - diameter/5);
+var blip = new Path.Rectangle(pos, size);
+blip.strokeColor = 'yellow';
+
+
+var blip2 = new Path.Rectangle(pos + 100, size);
+blip2.strokeColor = 'blue';
+
+
+
+function onFrame(event) {
+
+    var theta = event.time % period * omega;
+
+    if (theta >= root2 && theta <= root2 + 0.1) {
+    blip2.fillColor = 'blue';
+    }
+    else {
+    blip2.fillColor = 'black';
+    }
+
+    var cx = Math.cos(theta) * diameter;
+    var cy = Math.sin(theta) * diameter;
+
+    path.segments[1].point.x = cx + centerRef.x;
+    path.segments[1].point.y = cy + centerRef.y;
+
+}
+
+function drawCircles() {
+  var outerCircle = new Path.Circle(center, diameter);
+  outerCircle.style = lineStyle;
+  var middleCircle = new Path.Circle(center, diameter * 2/3);
+  middleCircle.style = lineStyle;
+  var innerCircle = new Path.Circle(center, diameter * 1/3);
+  innerCircle.style = lineStyle;
+}
+
+function drawCrossHairs() {
+  var vertical = new Path();
+  vertical.style = lineStyle;
+  vertical.add(new Point(centerRef.x, centerRef.y - diameter));
+  vertical.add(new Point(centerRef.x, centerRef.y + diameter));
+
+  var horizontal = new Path();
+  horizontal.style = lineStyle;
+  horizontal.add(new Point(centerRef.x - diameter, centerRef.y ));
+  horizontal.add(new Point(centerRef.x + diameter, centerRef.y ));
+}
