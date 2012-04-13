@@ -316,9 +316,9 @@ class LocalDiagnosticsManagerTest {
     expect(domainConfigStore.getPairDef(pair.domain.name, pair.key)).
       andStubReturn(FrontendConversions.toPairDef(pair))
 
-    expect(systemConfigStore.maybeSystemConfigOption(ConfigOption.eventExplanationLimitKey)).
+    expect(systemConfigStore.maybeSystemConfigOption(ConfigOption.DIAGNOSTIC_LOG_BUFFER_SIZE)).
       andStubReturn(Some(String.valueOf(systemEventsToLog)))
-    expect(systemConfigStore.maybeSystemConfigOption(ConfigOption.explainFilesLimitKey)).
+    expect(systemConfigStore.maybeSystemConfigOption(ConfigOption.EXPLAIN_FILES_LIMIT)).
       andStubReturn(Some(String.valueOf(systemMaxExplainFiles)))
 
     replay(domainConfigStore, systemConfigStore)

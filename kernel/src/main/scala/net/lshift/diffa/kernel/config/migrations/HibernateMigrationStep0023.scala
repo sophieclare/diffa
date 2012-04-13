@@ -38,6 +38,15 @@ object HibernateMigrationStep0023 extends HibernateMigrationStep {
              .updateColumn("events_to_log")
              .withSelect("system_config_options", "opt_val", "opt_key", ConfigOption.eventExplanationLimitKey)
 
+    migration.updateTable("system_config_options")
+             .updateColumn("opt_key")
+             .withValue(ConfigOption.DIAGNOSTIC_LOG_BUFFER_SIZE)
+             .predicate("opt_key", ConfigOption.eventExplanationLimitKey)
+
+    migration.updateTable("system_config_options")
+             .updateColumn("opt_key")
+             .withValue(ConfigOption.EXPLAIN_FILES_LIMIT)
+             .predicate("opt_key", ConfigOption.explainFilesLimitKey)
 
     migration
   }

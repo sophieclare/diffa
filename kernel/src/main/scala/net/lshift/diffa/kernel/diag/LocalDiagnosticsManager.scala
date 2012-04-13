@@ -108,9 +108,9 @@ class LocalDiagnosticsManager(systemConfigStore: SystemConfigStore, domainConfig
     var scanState:PairScanState = PairScanState.UNKNOWN
     private val pairDef = getPairFromRef(pair)
     private val domainEventsPerPair = getConfigOrElse(pair.domain,
-      ConfigOption.eventExplanationLimitKey, defaultMaxEventsPerPair)
+      ConfigOption.DIAGNOSTIC_LOG_BUFFER_SIZE, defaultMaxEventsPerPair)
     private val domainExplainFilesPerPair = getConfigOrElse(pair.domain,
-      ConfigOption.explainFilesLimitKey, defaultMaxExplainFilesPerPair)
+      ConfigOption.EXPLAIN_FILES_LIMIT, defaultMaxExplainFilesPerPair)
 
     private def getConfigOrElse(domain: String, configKey: String, defaultVal: Int) = try {
       systemConfigStore.maybeSystemConfigOption(configKey).get.toInt
