@@ -416,4 +416,6 @@ case class PairScopedName(@BeanProperty var name:String = null,
 object ConfigOption {
   val eventExplanationLimitKey = "maxEventsToExplainPerPair"
   val explainFilesLimitKey = "maxExplainFilesPerPair"
+
+  val DIAGNOSTIC_LOG_BUFFER_SIZE = "diagnostic_log_buffer_size"
 }
