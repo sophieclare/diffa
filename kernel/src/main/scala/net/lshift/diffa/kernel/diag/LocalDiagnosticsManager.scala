@@ -118,6 +118,9 @@ class LocalDiagnosticsManager(systemConfigStore: SystemConfigStore, domainConfig
       case _ => defaultVal
     }
 
+    // TODO PairDiagnostics should be made aware of the pair lifecyle such that {maxEvents,maxExplainFiles}
+    // are updated when the underlying pair is updated
+
     private val maxEvents = math.min(domainEventsPerPair, pairDef.eventsToLog)
     private val maxExplainFiles = math.min(domainExplainFilesPerPair, pairDef.maxExplainFiles)
     private val isLoggingEnabled = maxExplainFiles > 0 && maxEvents > 0
@@ -127,13 +130,17 @@ class LocalDiagnosticsManager(systemConfigStore: SystemConfigStore, domainConfig
     private var explanationWriter:PrintWriter = null
 
     def logPairEvent(evt:PairEvent) {
-      log.synchronized {
-        log += evt
 
-        val drop = log.length - maxEvents
-        if (drop > 0)
-          log.remove(0, drop)
+      if (maxEvents > 0) {
+        log.synchronized {
+          log += evt
+
+          val drop = log.length - maxEvents
+          if (drop > 0)
+            log.remove(0, drop)
+        }
       }
+
     }
 
     def queryEvents(maxEvents:Int):Seq[PairEvent] = {
