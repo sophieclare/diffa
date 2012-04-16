@@ -22,6 +22,7 @@
 * [100] - Reduced the verbosity of connection refused errors in the logs
 * [103] - Notify the commencement of a scan to the pair activity log
 * [104] - Fixed a bug in the diagnostics manager whereby turning off explain logging would also deactivate all diagnostics
+* [106] - Squashed a UI bug that resulted in scan requests being sent twice to the backend
 
 ## Library Upgrades
 
