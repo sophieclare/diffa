@@ -421,3 +421,9 @@ object ConfigOption {
   val DIAGNOSTIC_LOG_BUFFER_SIZE = "diagnostic.log.buffer.size"
   val EXPLAIN_FILES_LIMIT = "max.explain.files.per.pair"
 }
+
+object DefaultConfigOption {
+
+  val DIAGNOSTIC_LOG_BUFFER_SIZE = 100
+  val EXPLAIN_FILES_LIMIT = 0
+}

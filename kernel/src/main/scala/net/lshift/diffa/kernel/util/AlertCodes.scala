@@ -53,6 +53,8 @@ object AlertCodes {
 
   // 4xx Errors that occur that as result of an invalid inbound request from a client
 
+  // 44x System limits
+  val SYSTEM_WIDE_LIMIT_BREACHED = 440
 
   // 5xx Errors
   
