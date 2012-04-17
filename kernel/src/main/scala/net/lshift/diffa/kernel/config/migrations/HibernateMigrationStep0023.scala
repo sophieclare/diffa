@@ -16,8 +16,8 @@
 package net.lshift.diffa.kernel.config.migrations
 
 import org.hibernate.cfg.Configuration
-import net.lshift.hibernate.migrations.MigrationBuilder
 import net.lshift.diffa.kernel.config.{ConfigOption, HibernateMigrationStep}
+import net.lshift.hibernate.migrations.{SelectBuilder, MigrationBuilder}
 
 /**
  * The introduction of the system wide limit for the event log buffer set the value to zero,
@@ -36,7 +36,9 @@ object HibernateMigrationStep0023 extends HibernateMigrationStep {
 
     migration.updateTable("pair")
              .updateColumn("events_to_log")
-             .withSelect("system_config_options", "opt_val", "opt_key", ConfigOption.eventExplanationLimitKey)
+             .withNullValue()
+             .predicate("opt_key", ConfigOption.eventExplanationLimitKey)
+             .predicate("opt_val", "0")
 
     migration.updateTable("system_config_options")
              .updateColumn("opt_key")

@@ -34,6 +34,9 @@ object AlertCodes {
   val SCAN_QUERY_EVENT = 121
   val SCAN_REQUEST_IGNORED = 122
 
+  // 13x Informational diagnostic events
+  val DIAGNOSTIC_EVENT = 130
+
   // 2xx Successful
 
   // 22x Successful manual scan events

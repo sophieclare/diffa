@@ -28,13 +28,11 @@ public class UpdateBuilder extends SingleStatementMigrationElement {
   private final String table;
   private final SortedMap<String, String> updatePredicate;
   private boolean updateFromSelect = false;
+  private boolean updateValueToNull = false;
   private String updateValue;
   private String updateColumn;
 
-  private String selectTableName;
-  private String selectValueColumn;
-  private String selectPredicateColumn;
-  private String selectPredicateValue;
+  private SelectBuilder selectBuilder;
 
   public UpdateBuilder(String table) {
     this.table = table;
@@ -55,8 +53,16 @@ public class UpdateBuilder extends SingleStatementMigrationElement {
    * Currently this only supports strings - if you need something, else you'll have to add it yourself
    */
   public UpdateBuilder withValue(String newValue) {
+    if (newValue == null) {
+      throw new IllegalArgumentException("To update to a null value, use withNullValue() instead.");
+    }
     updateFromSelect = false;
     updateValue = newValue;
+    return this;
+  }
+
+  public UpdateBuilder withNullValue() {
+    updateValueToNull = true;
     return this;
   }
 
@@ -65,13 +71,19 @@ public class UpdateBuilder extends SingleStatementMigrationElement {
     return this;
   }
 
-  public UpdateBuilder withSelect(String tableName, String valueColumn, String predicateColumn, String predicateValue) {
+  public UpdateBuilder withSelect(SelectBuilder builder) {
     updateFromSelect = true;
-    selectTableName = tableName;
-    selectValueColumn = valueColumn;
-    selectPredicateColumn = predicateColumn;
-    selectPredicateValue = predicateValue;
+    this.selectBuilder = builder;
     return this;
+  }
+
+  private boolean hasValueToUpdate() {
+
+    if (updateValue != null && updateValueToNull) {
+      throw new IllegalArgumentException("This builder has been configured with a column to update and the instruction to supply a null value");
+    }
+
+    return updateValue != null || updateValueToNull || updateFromSelect;
   }
 
   @Override
@@ -81,17 +93,17 @@ public class UpdateBuilder extends SingleStatementMigrationElement {
       throw new IllegalArgumentException("This builder has not been configured with a column to update");
     }
 
-    if (!updateFromSelect && updateValue == null) {
+    if (!hasValueToUpdate()) {
       throw new IllegalArgumentException("This builder has not been configured with a value to update the target column with");
     }
 
-    String updateValueFragment = null;
+    String updateValueFragment;
 
     if (updateFromSelect) {
-      updateValueFragment = String.format("( select %s from %s where %s = '%s' )", selectValueColumn,
-                                                                                   selectTableName,
-                                                                                   selectPredicateColumn,
-                                                                                   selectPredicateValue);
+      updateValueFragment = String.format("( %s )", selectBuilder.getSQL());
+    }
+    else if (updateValueToNull) {
+      updateValueFragment = "null";
     }
     else {
       updateValueFragment = "'" + updateValue + "'";

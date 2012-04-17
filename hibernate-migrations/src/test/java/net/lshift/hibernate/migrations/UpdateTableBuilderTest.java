@@ -26,6 +26,19 @@ import static org.easymock.EasyMock.*;
 public class UpdateTableBuilderTest {
 
   @Test
+  public void shouldUpdateTableWithoutPredicateWithNullValue() throws Exception {
+    MigrationBuilder mb = new MigrationBuilder(HibernateHelper.configuration());
+    mb.updateTable("some_table").updateColumn("foo").withNullValue();
+
+    Connection conn = createStrictMock(Connection.class);
+    expect(conn.prepareStatement("update some_table set foo = null")).andReturn(mockExecutablePreparedStatement());
+    replay(conn);
+
+    mb.apply(conn);
+    verify(conn);
+  }
+
+  @Test
   public void shouldUpdateTableWithoutPredicate() throws Exception {
     MigrationBuilder mb = new MigrationBuilder(HibernateHelper.configuration());
     mb.updateTable("some_table").updateColumn("foo").withValue("bar");
@@ -57,13 +70,35 @@ public class UpdateTableBuilderTest {
   }
 
   @Test
-  public void shouldUpdateTableWithSelectValue() throws Exception {
+  public void shouldUpdateTableWithPredicateWithNullValue() throws Exception {
     MigrationBuilder mb = new MigrationBuilder(HibernateHelper.configuration());
     mb.updateTable("some_table")
         .updateColumn("foo")
-        .withSelect("another_table", "third_column", "fourth_column", "fourth_value")
+        .withNullValue()
         .predicate("first_column", "first_value")
         .predicate("second_column", "second_value");
+
+    Connection conn = createStrictMock(Connection.class);
+    String sql = "update some_table set foo = null where first_column = 'first_value' and second_column = 'second_value'";
+    expect(conn.prepareStatement(sql)).andReturn(mockExecutablePreparedStatement());
+    replay(conn);
+
+    mb.apply(conn);
+    verify(conn);
+  }
+
+  @Test
+  public void shouldUpdateTableWithSelectValue() throws Exception {
+    SelectBuilder sb = new SelectBuilder().select("third_column")
+                                          .from("another_table")
+                                          .where("fourth_column")
+                                          .is("fourth_value");
+    MigrationBuilder mb = new MigrationBuilder(HibernateHelper.configuration());
+    mb.updateTable("some_table")
+      .updateColumn("foo")
+      .withSelect(sb)
+      .predicate("first_column", "first_value")
+      .predicate("second_column", "second_value");
 
     Connection conn = createStrictMock(Connection.class);
     String sql = "update some_table set foo = ( select third_column from another_table where fourth_column = 'fourth_value' ) where first_column = 'first_value' and second_column = 'second_value'";
@@ -78,6 +113,15 @@ public class UpdateTableBuilderTest {
   public void shouldGenerateExceptionWhenYouForgetToSetColumnToUpdate() throws Exception {
     MigrationBuilder mb = new MigrationBuilder(HibernateHelper.configuration());
     mb.updateTable("some_table");
+
+    Connection conn = createStrictMock(Connection.class);
+    mb.apply(conn);
+  }
+
+  @Test(expected = IllegalArgumentException.class)
+  public void shouldGenerateExceptionWhenYouSupplyNullValueToUpdate() throws Exception {
+    MigrationBuilder mb = new MigrationBuilder(HibernateHelper.configuration());
+    mb.updateTable("some_table").withValue(null);
 
     Connection conn = createStrictMock(Connection.class);
     mb.apply(conn);

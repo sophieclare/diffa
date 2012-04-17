@@ -111,9 +111,9 @@ class LocalDiagnosticsManager(systemConfigStore: SystemConfigStore, domainConfig
     private val log = ListBuffer[PairEvent]()
     var scanState:PairScanState = PairScanState.UNKNOWN
     private val pairDef = getPairFromRef(pair)
-    private val domainEventsPerPair = getConfigOrElse(pair.domain,
+    private val systemWideEventBufferLimit = getConfigOrElse(pair.domain,
       ConfigOption.DIAGNOSTIC_LOG_BUFFER_SIZE, DefaultConfigOption.DIAGNOSTIC_LOG_BUFFER_SIZE)
-    private val domainExplainFilesPerPair = getConfigOrElse(pair.domain,
+    private val systemWideExplainFilesPerPairLimit = getConfigOrElse(pair.domain,
       ConfigOption.EXPLAIN_FILES_LIMIT, DefaultConfigOption.EXPLAIN_FILES_LIMIT)
 
     private def getConfigOrElse(domain: String, configKey: String, defaultVal: Int) = try {
@@ -125,18 +125,35 @@ class LocalDiagnosticsManager(systemConfigStore: SystemConfigStore, domainConfig
     // TODO PairDiagnostics should be made aware of the pair lifecyle such that {maxEvents,maxExplainFiles}
     // are updated when the underlying pair is updated
 
-    private val maxEventBufferSize = math.min(domainEventsPerPair, pairDef.eventsToLog)
-    private val maxExplainFiles = math.min(domainExplainFilesPerPair, pairDef.maxExplainFiles)
+    private val maxEventBufferSize =
+      if (pairDef.eventsToLog == null) {
+        logger.info("%s no no per-pair maximum event buffer specified, using default %s".format(formatAlertCode(pair, DIAGNOSTIC_EVENT), systemWideEventBufferLimit))
+        systemWideEventBufferLimit
+      }
+      else {
 
-    if (pairDef.eventsToLog > maxEventBufferSize) {
-      logger.warn("%s Pair event buffer size was %s, overriding wth system limit %s".format(
-                  formatAlertCode(pair, SYSTEM_WIDE_LIMIT_BREACHED), pairDef.eventsToLog, maxEventBufferSize))
-    }
+        if (pairDef.eventsToLog > systemWideEventBufferLimit) {
+          logger.warn("%s per-pair maximum event buffer size was %s, overriding wth system limit %s".format(
+            formatAlertCode(pair, SYSTEM_WIDE_LIMIT_BREACHED), pairDef.eventsToLog, systemWideEventBufferLimit))
+        }
 
-    if (pairDef.maxExplainFiles > maxExplainFiles) {
-      logger.warn("%s Pair explain file max was %s, overriding wth system limit %s".format(
-        formatAlertCode(pair, SYSTEM_WIDE_LIMIT_BREACHED), pairDef.maxExplainFiles, maxExplainFiles))
-    }
+        math.min(systemWideEventBufferLimit, pairDef.eventsToLog)
+      }
+
+    private val maxExplainFiles =
+      if (pairDef.maxExplainFiles == null) {
+        logger.info("%s no per-pair explain file limit specified, using default %s".format(formatAlertCode(pair, DIAGNOSTIC_EVENT), systemWideExplainFilesPerPairLimit))
+        systemWideExplainFilesPerPairLimit
+      }
+      else {
+
+        if (pairDef.maxExplainFiles > systemWideExplainFilesPerPairLimit) {
+          logger.warn("%s per-pair explain file limit was %s, overriding wth system limit %s".format(
+            formatAlertCode(pair, SYSTEM_WIDE_LIMIT_BREACHED), pairDef.maxExplainFiles, systemWideExplainFilesPerPairLimit))
+        }
+
+        math.min(systemWideExplainFilesPerPairLimit, pairDef.maxExplainFiles)
+      }
 
     private val areExplanationsEnabled = maxExplainFiles > 0
 
