@@ -18,6 +18,7 @@ package net.lshift.diffa.kernel.config.migrations
 import org.hibernate.cfg.Configuration
 import net.lshift.diffa.kernel.config.{ConfigOption, HibernateMigrationStep}
 import net.lshift.hibernate.migrations.{SelectBuilder, MigrationBuilder}
+import java.sql.Types
 
 /**
  * The introduction of the system wide limit for the event log buffer set the value to zero,
@@ -33,6 +34,10 @@ object HibernateMigrationStep0023 extends HibernateMigrationStep {
   def createMigration(config: Configuration) = {
 
     val migration = new MigrationBuilder(config)
+
+    migration.alterTable("pair")
+             .setColumnNullable("events_to_log", Types.INTEGER, 11, true)
+             .setColumnNullable("max_explain_files", Types.INTEGER, 11, true);
 
     migration.updateTable("pair")
              .updateColumn("events_to_log")
