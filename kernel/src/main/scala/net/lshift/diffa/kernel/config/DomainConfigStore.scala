@@ -181,8 +181,8 @@ case class DiffaPair(
   @BeanProperty var scanCronSpec: String = null,
   @BeanProperty var allowManualScans: java.lang.Boolean = null,
   @BeanProperty var views:java.util.Set[PairView] = new java.util.HashSet[PairView],
-  @BeanProperty var eventsToLog: Int = 0,
-  @BeanProperty var maxExplainFiles: Int = 0) {
+  @BeanProperty var eventsToLog: java.lang.Integer = null,
+  @BeanProperty var maxExplainFiles: java.lang.Integer = null) {
 
   def this() = this(key = null)
 
