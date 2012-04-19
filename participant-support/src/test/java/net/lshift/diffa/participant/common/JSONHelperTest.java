@@ -236,6 +236,21 @@ public class JSONHelperTest {
     assertEquals("Should log exactly one event", 1, logAppender.getEventCount());
   }
 
+  @Test(expected = ScanPolicyException.class)
+  public void shouldThrowExceptionWhenAPolicyIsBreached() throws Exception {
+    // Given
+    String scanResult = "[" + makeJsonAggregateString("\"attributes\":{\"a1\":\"v1\"}", "v1") + "]";
+    InputStream in = new ByteArrayInputStream(scanResult.getBytes());
+
+    // When
+    JSONHelper.readQueryResult(in, new ScanResultPolicy() {
+      @Override
+      public void onScanResultEntry(ScanResultEntry entry) {
+        throw new ScanPolicyException();
+      }
+    });
+  }
+
   private static String makeJsonAggregateString(String attributes, String version) {
     return makeJsonEntityString(null, attributes, version, null);
   }

@@ -19,7 +19,6 @@ package net.lshift.diffa.client
 import com.sun.jersey.core.util.MultivaluedMapImpl
 import net.lshift.diffa.kernel.participants._
 import javax.ws.rs.core.MediaType
-import net.lshift.diffa.participant.common.JSONHelper
 import org.apache.commons.io.IOUtils
 import scala.collection.JavaConversions._
 import net.lshift.diffa.participant.scanning._
@@ -28,6 +27,7 @@ import net.lshift.diffa.kernel.util.AlertCodes._
 import java.net.ConnectException
 import net.lshift.diffa.kernel.differencing.ScanFailedException
 import com.sun.jersey.api.client.{ClientHandlerException, ClientResponse}
+import net.lshift.diffa.participant.common.{ScanPolicyException, JSONHelper}
 
 /**
  * JSON/REST scanning participant client.
@@ -74,7 +74,14 @@ class ScanningParticipantRestClient(scanUrl:String, params: RestClientParams = R
     }
 
     response.getStatus match {
-      case 200 => JSONHelper.readQueryResult(response.getEntityInputStream)
+      case 200 => {
+        try {
+          JSONHelper.readQueryResult(response.getEntityInputStream)
+        }
+        catch {
+          case x:ScanPolicyException => //
+        }
+      }
       case _   =>
         logger.error("%s External scan error, response code: %s".format(EXTERNAL_SCAN_ERROR, response.getStatus))
         throw new Exception("Participant scan failed: " + response.getStatus + "\n" + IOUtils.toString(response.getEntityInputStream, "UTF-8"))

@@ -73,6 +73,11 @@ public class JSONHelper {
 
   public static ScanResultEntry[] readQueryResult(InputStream stream)
       throws IOException {
+    return readQueryResult(stream, null);
+  }
+
+  public static ScanResultEntry[] readQueryResult(InputStream stream, ScanResultPolicy policy)
+      throws IOException {
     try {
       List<ScanResultEntry> scanResultEntries = new ArrayList<ScanResultEntry>();
       JsonParser parser = jsonFactory.createJsonParser(stream);
@@ -81,10 +86,21 @@ public class JSONHelper {
       }
 
       while (parser.nextToken() != JsonToken.END_ARRAY) {
-        scanResultEntries.add(mapper.readValue(parser, ScanResultEntry.class));
+        ScanResultEntry entry = mapper.readValue(parser, ScanResultEntry.class);
+
+        if (policy != null) {
+          policy.onScanResultEntry(entry);
+        }
+
+        scanResultEntries.add(entry);
       }
       log.info("ScanResultEntry readQueryResult [count = " + scanResultEntries.size() + "]");
       return scanResultEntries.toArray(new ScanResultEntry[scanResultEntries.size()]);
+
+    } catch (ScanPolicyException x) {
+      // Just throw the policy violation back to the caller
+      throw x;
+
     } catch (IOException ex) {
       throw ex;
     } catch (Exception ex) {
