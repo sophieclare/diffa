@@ -79,7 +79,7 @@ class ScanningParticipantRestClient(scanUrl:String, params: RestClientParams = R
           JSONHelper.readQueryResult(response.getEntityInputStream)
         }
         catch {
-          case x:ScanPolicyException => //
+          case x:ScanPolicyException => throw x
         }
       }
       case _   =>
