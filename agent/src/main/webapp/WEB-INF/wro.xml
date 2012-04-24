@@ -37,8 +37,4 @@
     <css>/less/widgets.less</css>
   </group>
 
-  <group name="paperscript">
-    <js>/js/paperscript/radar.ps</js>
-  </group>
-
 </groups>
