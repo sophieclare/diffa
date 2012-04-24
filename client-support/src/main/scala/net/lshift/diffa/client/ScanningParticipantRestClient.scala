@@ -19,11 +19,15 @@ package net.lshift.diffa.client
 import com.sun.jersey.core.util.MultivaluedMapImpl
 import net.lshift.diffa.kernel.participants._
 import javax.ws.rs.core.MediaType
-import com.sun.jersey.api.client.ClientResponse
 import net.lshift.diffa.participant.common.JSONHelper
 import org.apache.commons.io.IOUtils
 import scala.collection.JavaConversions._
 import net.lshift.diffa.participant.scanning._
+import org.slf4j.LoggerFactory
+import net.lshift.diffa.kernel.util.AlertCodes._
+import java.net.ConnectException
+import net.lshift.diffa.kernel.differencing.ScanFailedException
+import com.sun.jersey.api.client.{ClientHandlerException, ClientResponse}
 
 /**
  * JSON/REST scanning participant client.
@@ -33,18 +37,46 @@ class ScanningParticipantRestClient(scanUrl:String, params: RestClientParams = R
     extends AbstractRestClient(scanUrl, "", params)
     with ScanningParticipantRef {
 
+  val logger = LoggerFactory.getLogger(getClass)
+
   def scan(constraints: Seq[ScanConstraint], aggregations: Seq[CategoryFunction]) = {
-  	log.debug("Querying constraints %s, aggregated by %s".format(constraints, aggregations))
+
     val params = new MultivaluedMapImpl()
     RequestBuildingHelper.constraintsToQueryArguments(params, constraints)
     RequestBuildingHelper.aggregationsToQueryArguments(params, aggregations)
 
-    val jsonEndpoint = resource.queryParams(params).`type`(MediaType.APPLICATION_JSON_TYPE)
-    val response = jsonEndpoint.get(classOf[ClientResponse])
+    val query = resource.queryParams(params)
+    logger.debug("%s Querying participant: %s".format(SCAN_QUERY_EVENT, query))
+
+    val jsonEndpoint = query.`type`(MediaType.APPLICATION_JSON_TYPE)
+
+
+    val response = try {
+
+      jsonEndpoint.get(classOf[ClientResponse])
+
+    } catch {
+      case e:Exception =>
+
+        // If Jersey encounters a ConnectException, it wraps it in a ClientHandlerException, which
+        // doesn't seem to add much value. So if we can detected this scenario, we'll apply the
+        // appropriate logging and signalling, otherwise it will just be up to higher level code
+        // to sort this out.
+
+        if (e.getCause.isInstanceOf[ConnectException]) {
+          logger.error("%s Connection to %s refused".format(SCAN_CONNECTION_REFUSED, scanUrl))
+          throw new ScanFailedException("Could not connect to " + scanUrl)
+        }
+        else {
+          throw e
+        }
+
+    }
+
     response.getStatus match {
       case 200 => JSONHelper.readQueryResult(response.getEntityInputStream)
       case _   =>
-        log.error(response.getStatus + "")
+        logger.error("%s External scan error, response code: %s".format(EXTERNAL_SCAN_ERROR, response.getStatus))
         throw new Exception("Participant scan failed: " + response.getStatus + "\n" + IOUtils.toString(response.getEntityInputStream, "UTF-8"))
     }
   }

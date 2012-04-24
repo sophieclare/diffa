@@ -19,7 +19,7 @@ package net.lshift.diffa.participant.scanning;
  * An aggregation by the name of the attribute value. Generally used when aggregating based on elements
  * out of a set.
  */
-public class ByNameAggregation extends AbstractScanAggregation {
+public class ByNameAggregation extends AbstractScanAggregation implements GranularityAggregation {
   public ByNameAggregation(String name) {
     super(name);
   }
@@ -27,5 +27,10 @@ public class ByNameAggregation extends AbstractScanAggregation {
   @Override
   public String bucket(String attributeVal) {
     return attributeVal;
+  }
+
+  @Override
+  public String getGranularityString() {
+    return "by-name";
   }
 }

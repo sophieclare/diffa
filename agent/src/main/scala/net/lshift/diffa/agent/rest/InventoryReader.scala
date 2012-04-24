@@ -49,16 +49,16 @@ class InventoryReader extends MessageBodyReader[ScanResultList] {
       throw new InvalidInventoryException("CSV file appears to be empty. No header line was found")
     }
 
-    val idPosition = requireField("id", header)
-    val vsnPosition = requireField("vsn", header)
+    val idPosition = maybeField("id", header)
+    val vsnPosition = requireField("version", header)
     val updatedPosition = maybeField("updated", header)
 
     // Index of positions to field names
     val headerIndex = header.zipWithIndex.
       filter {
         case ("id", _)       => false
-        case ("vsn", _)      => false
-        case ("updated", _) => false
+        case ("version", _)  => false
+        case ("updated", _)  => false
         case _               => true
       }
 
@@ -75,7 +75,7 @@ class InventoryReader extends MessageBodyReader[ScanResultList] {
         }
 
         val entry = new ScanResultEntry
-        entry.setId(line(idPosition))
+        idPosition.foreach(p => entry.setId(line(p)))
         entry.setVersion(line(vsnPosition))
         updatedPosition.foreach(p => {
           try {

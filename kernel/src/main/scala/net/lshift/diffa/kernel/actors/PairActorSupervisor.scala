@@ -25,9 +25,9 @@ import net.lshift.diffa.kernel.diag.DiagnosticsManager
 import net.lshift.diffa.kernel.differencing._
 import net.lshift.diffa.kernel.events.{VersionID, PairChangeEvent}
 import net.lshift.diffa.kernel.config.{DiffaPairRef, DomainConfigStore, DiffaPair}
-import net.lshift.diffa.participant.scanning.{ScanResultEntry, ScanConstraint}
-import net.lshift.diffa.kernel.util.MissingObjectException
 import net.lshift.diffa.kernel.util.AlertCodes._
+import net.lshift.diffa.kernel.util.{EndpointSide, MissingObjectException}
+import net.lshift.diffa.participant.scanning.{ScanAggregation, ScanRequest, ScanResultEntry, ScanConstraint}
 
 case class PairActorSupervisor(policyManager:VersionPolicyManager,
                                systemConfig:SystemConfigStore,
@@ -65,7 +65,7 @@ case class PairActorSupervisor(policyManager:VersionPolicyManager,
             val pairActor = Actor.actorOf(
               new PairActor(pair, us, ds, usp, dsp, pol, stores(pair.asRef),
                             differencesManager, pairScanListener,
-                            diagnostics, changeEventBusyTimeoutMillis, changeEventQuietTimeoutMillis)
+                            diagnostics, domainConfig, changeEventBusyTimeoutMillis, changeEventQuietTimeoutMillis)
             )
             pairActor.start
             log.info(formatAlertCode(pair.asRef, ACTOR_STARTED) +  " actor started")
@@ -97,14 +97,19 @@ case class PairActorSupervisor(policyManager:VersionPolicyManager,
 
   def propagateChangeEvent(event:PairChangeEvent) = findActor(event.id) ! ChangeMessage(event)
 
-  def submitInventory(pair:DiffaPairRef, side:EndpointSide, constraints:Seq[ScanConstraint], entries:Seq[ScanResultEntry]) {
-    findActor(pair) ! InventoryMessage(side, constraints, entries)
+  def startInventory(pair: DiffaPairRef, side: EndpointSide, view:Option[String]): Seq[ScanRequest] = {
+    (findActor(pair) ? StartInventoryMessage(side, view)).as[Seq[ScanRequest]].get
+  }
+
+  def submitInventory(pair:DiffaPairRef, side:EndpointSide, constraints:Seq[ScanConstraint], aggregations:Seq[ScanAggregation], entries:Seq[ScanResultEntry]) = {
+    (findActor(pair) ? InventoryMessage(side, constraints, aggregations, entries)).as[Seq[ScanRequest]].get
   }
 
   def difference(pairRef:DiffaPairRef) =
     findActor(pairRef) ! DifferenceMessage
 
   def scanPair(pair:DiffaPairRef, scanView:Option[String]) = {
+    log.debug("Initiating scan %s with view %s".format(pair.identifier, scanView))
     // Update the scan state ourselves. The policy itself will send an update shortly, but since that happens
     // asynchronously, we might have returned before then, and this may potentially result in clients seeing
     // a "Up To Date" view, even though we're just about to transition out of that state.
@@ -123,18 +128,14 @@ case class PairActorSupervisor(policyManager:VersionPolicyManager,
   def findActor(id:VersionID) : ActorRef = findActor(id.pair)
 
   def findActor(pair:DiffaPairRef) = {
-    val actors = Actor.registry.actorsFor(pair.identifier)
-    actors.length match {
-      case 1 => actors(0)
-      case 0 => {
-        log.error("Could not resolve actor for key: " + pair.identifier)
-        log.error("Found %s actors: %s".format(Actor.registry.size, Actor.registry.actors))
-        throw new MissingObjectException(pair.identifier)
-      }
-      case x => {
-        log.error("Too many actors for key: " + pair.identifier + "; actors = " + x)
-        throw new RuntimeException("Too many actors: " + pair.identifier)
-      }
+    val key = ActorUtils.ActorKey(pair, (p: DiffaPairRef) => p.identifier)
+
+    ActorUtils.findActor(key).getOrElse {
+      log.error("{} Could not resolve actor for key: {}; registry contains {} actors: {}",
+        Array[Object](formatAlertCode(pair, MISSING_ACTOR_FOR_KEY), key,
+                      Integer.valueOf(Actor.registry.size), Actor.registry.actors))
+      throw new MissingObjectException(key.toString)
     }
   }
+
 }

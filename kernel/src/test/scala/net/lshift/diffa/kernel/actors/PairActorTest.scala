@@ -33,12 +33,12 @@ import java.lang.RuntimeException
 import akka.actor._
 import concurrent.{SyncVar}
 import net.lshift.diffa.kernel.diag.{DiagnosticLevel, DiagnosticsManager}
-import net.lshift.diffa.kernel.util.{EasyMockScalaUtils, AlertCodes}
 import net.lshift.diffa.kernel.config.{DomainConfigStore, DiffaPairRef, Domain, Endpoint, DiffaPair}
 import net.lshift.diffa.kernel.frontend.FrontendConversions
 import java.util.concurrent.{TimeUnit, LinkedBlockingQueue}
 import scala.collection.JavaConversions._
-import net.lshift.diffa.participant.scanning.{ScanResultEntry, SetConstraint, ScanConstraint}
+import net.lshift.diffa.kernel.util._
+import net.lshift.diffa.participant.scanning._
 
 class PairActorTest {
   import PairActorTest._
@@ -60,9 +60,9 @@ class PairActorTest {
 
   val us = createStrictMock("upstreamParticipant", classOf[UpstreamParticipant])
   val ds = createStrictMock("downstreamParticipant", classOf[DownstreamParticipant])
-  val diagnostics = createStrictMock("diagnosticsManager", classOf[DiagnosticsManager])
+  val diagnostics = createMock("diagnosticsManager", classOf[DiagnosticsManager])
   diagnostics.checkpointExplanations(pairRef); expectLastCall().asStub()
-  
+
   val participantFactory = org.easymock.classextension.EasyMock.createStrictMock("participantFactory", classOf[ParticipantFactory])
   expect(participantFactory.createUpstreamParticipant(upstream)).andReturn(us)
   expect(participantFactory.createDownstreamParticipant(downstream)).andReturn(ds)
@@ -88,6 +88,12 @@ class PairActorTest {
   expect(domainConfigStore.listPairs(domainName)).andStubReturn(Seq(FrontendConversions.toPairDef(pair)))
   expect(domainConfigStore.getEndpoint(domainName, upstream.name)).andStubReturn(upstream)
   expect(domainConfigStore.getEndpoint(domainName, downstream.name)).andStubReturn(downstream)
+
+  expect(domainConfigStore.configOptionOrDefault(domainName,
+                                                 CorrelationWriterProxy.TIMEOUT_KEY,
+                                                 CorrelationWriterProxy.TIMEOUT_DEFAULT_VALUE)).
+    andStubReturn(CorrelationWriterProxy.TIMEOUT_DEFAULT_VALUE)
+
   replay(domainConfigStore)
 
   val writer = createMock("writer", classOf[ExtendedVersionCorrelationWriter])
@@ -142,6 +148,12 @@ class PairActorTest {
     expect(versionPolicy.scanDownstream(EasyMock.eq(pairRef), EasyMock.eq(downstream), EasyMock.eq(None), EasyMock.isA(classOf[LimitedVersionCorrelationWriter]),
                                         EasyMock.eq(us), EasyMock.eq(ds), EasyMock.isA(classOf[DifferencingListener]),
                                         EasyMock.isA(classOf[FeedbackHandle])))
+  }
+
+  def expectScanCommencement(times:Int) = {
+    expect(diagnostics.logPairEvent(EasyMock.eq(DiagnosticLevel.INFO),
+                                    EasyMock.eq(pairRef),
+                                    EasyMock.contains("Commencing"))).times(times)
   }
 
   def expectScans() = {
@@ -214,6 +226,10 @@ class PairActorTest {
       def answer = { monitor.synchronized { monitor.notifyAll } }
     })
     diagnostics.logPairEvent(DiagnosticLevel.INFO, pairRef, "Scan completed"); expectLastCall
+
+    val numberOfScans = 1
+    expectScanCommencement(numberOfScans)
+
     replay(writer, store, versionPolicy, scanListener, diagnostics)
 
     supervisor.startActor(pair)
@@ -222,6 +238,69 @@ class PairActorTest {
       monitor.wait(1000)
     }
     verify(writer, versionPolicy, scanListener, diagnostics)
+  }
+
+  @Test
+  def scanRequestsReceivedInScanningStateShouldBeIgnored = {
+
+    val timeToWait = 1000
+    val scanMonitor = new Object
+    val diagnosticsMonitor = new Object
+
+    expect(versionPolicy.scanUpstream(EasyMock.eq(pairRef),
+               EasyMock.eq(upstream),
+               EasyMock.eq(None),
+               EasyMock.isA(classOf[LimitedVersionCorrelationWriter]),
+               EasyMock.eq(us),
+               EasyMock.isA(classOf[DifferencingListener]),
+               EasyMock.isA(classOf[FeedbackHandle]))
+        ).andAnswer(new IAnswer[Unit] {
+          def answer = {
+            scanMonitor.synchronized { scanMonitor.notifyAll }
+            // Make sure that this scan blocks long enough to allow a second scan to get ignored
+            Thread.sleep(timeToWait * 5)
+          }
+        })
+
+    writer.flush(); expectLastCall.asStub()
+
+    expect(diagnostics.logPairEvent(DiagnosticLevel.INFO,
+                                    pairRef,
+                                    "Ignoring scan request received during current scan")
+          ).andAnswer(new IAnswer[Unit] {
+            def answer = {
+              diagnosticsMonitor.synchronized {
+                diagnosticsMonitor.notifyAll
+              }
+            }
+          })
+
+    val numberOfScans = 1
+    expectScanCommencement(numberOfScans)
+
+    replay(writer, store, versionPolicy, diagnostics)
+
+    supervisor.startActor(pair)
+    supervisor.scanPair(pairRef, None)
+
+    scanMonitor.synchronized {
+      scanMonitor.wait(timeToWait)
+    }
+
+    // Request a second scan that should get ignored by the actor that should be busy handling the first scan
+
+    supervisor.scanPair(pairRef, None)
+
+    verify(writer, store, versionPolicy)
+
+    // Since the notification via the diagnostics facility will be invoked asynchronously,
+    // we need a way to deterministically wait for the notification to come through
+
+    diagnosticsMonitor.synchronized {
+      diagnosticsMonitor.wait(timeToWait)
+    }
+
+    verify(diagnostics)
   }
 
   @Test
@@ -338,6 +417,10 @@ class PairActorTest {
 
     writer.flush(); expectLastCall.asStub()
     expect(writer.rollback); expectLastCall
+
+    val numberOfScans = 1
+    expectScanCommencement(numberOfScans)
+
     replay(store, writer, diffWriter, versionPolicy, scanListener, diagnostics)
 
     supervisor.startActor(pair)
@@ -363,6 +446,10 @@ class PairActorTest {
       failStateHandler = new IAnswer[Unit] {
           def answer { monitor.synchronized { monitor.notifyAll } }
         })
+
+    val numberOfScans = 1
+    expectScanCommencement(numberOfScans)
+
     replay(store, writer, diffWriter, versionPolicy, scanListener, diagnostics)
 
     supervisor.startActor(pair)
@@ -384,6 +471,10 @@ class PairActorTest {
         wasMarkedAsCancelled.set(feedbackHandle.isCancelled)
       }
     })
+
+    val numberOfScans = 1
+    expectScanCommencement(numberOfScans)
+
     replay(writer, store, diffWriter, versionPolicy, scanListener, diagnostics)
 
     supervisor.startActor(pair)
@@ -410,6 +501,10 @@ class PairActorTest {
         }
       }
     })
+
+    val numberOfScans = 1
+    expectScanCommencement(numberOfScans)
+
     replay(store, diffWriter, writer, versionPolicy, scanListener, diagnostics)
 
     supervisor.startActor(pair)
@@ -479,6 +574,9 @@ class PairActorTest {
       }
     }).once()
 
+    val numberOfScans = 2
+    expectScanCommencement(numberOfScans)
+
     replay(store, diffWriter, writer, versionPolicy, scanListener, diagnostics)
 
     supervisor.startActor(pair)
@@ -525,16 +623,17 @@ class PairActorTest {
 
   def propagateInventory(endpoint:Endpoint, side:EndpointSide) = {
     val monitor = new Object
+    val aggregations = Seq[ScanAggregation](new IntegerAggregation("foo2", 5))
     val constraints = Seq(new SetConstraint("foo", Set("a", "b")))
     val entries = Seq(ScanResultEntry.forEntity("id1", "v1", new DateTime, Map("foo" -> "a")))
 
-    expect(versionPolicy.processInventory(pairRef, endpoint, writer, side, constraints, entries))
+    expect(versionPolicy.processInventory(pairRef, endpoint, writer, side, constraints, aggregations, entries)).andReturn(Seq())
     expectDifferencesReplay(assertFlush = true, writerCloseMonitor = monitor)
 
     replay(store, diffWriter, versionPolicy, writer)
 
     supervisor.startActor(pair)
-    supervisor.submitInventory(pairRef, side, constraints, entries)
+    supervisor.submitInventory(pairRef, side, constraints, aggregations, entries)
 
     // submitInventory is an aysnc call, so yield the test thread to allow the actor to invoke the policy
     monitor.synchronized {

@@ -20,8 +20,8 @@ import net.lshift.diffa.kernel.events.PairChangeEvent
 import net.jcip.annotations.NotThreadSafe
 import net.lshift.diffa.kernel.participants.{UpstreamParticipant, DownstreamParticipant}
 import net.lshift.diffa.kernel.config.{Endpoint, DiffaPairRef}
-import net.lshift.diffa.kernel.actors.EndpointSide
-import net.lshift.diffa.participant.scanning.{ScanResultEntry, ScanConstraint}
+import net.lshift.diffa.kernel.util.EndpointSide
+import net.lshift.diffa.participant.scanning.{ScanAggregation, ScanRequest, ScanResultEntry, ScanConstraint}
 
 /**
  * Policy implementations of this trait provide different mechanism for handling the matching of upstream
@@ -41,10 +41,15 @@ trait VersionPolicy {
   def onChange(writer: LimitedVersionCorrelationWriter, evt:PairChangeEvent) : Unit
 
   /**
+   * Requests that the policy return details of how to start an inventory.
+   */
+  def startInventory(pairRef:DiffaPairRef, endpoint:Endpoint, view:Option[String], writer: LimitedVersionCorrelationWriter, side:EndpointSide):Seq[ScanRequest]
+
+  /**
    * Requests that the policy process an inventory of changes.
    */
   def processInventory(pairRef:DiffaPairRef, endpoint:Endpoint, writer: LimitedVersionCorrelationWriter, side:EndpointSide,
-                       constraints:Seq[ScanConstraint], entries:Seq[ScanResultEntry])
+                       constraints:Seq[ScanConstraint], aggregations:Seq[ScanAggregation], entries:Seq[ScanResultEntry]):Seq[ScanRequest]
 
   /**
    * Requests that the policy scan the upstream participants for the given pairing. Differences that are
@@ -86,3 +91,9 @@ trait FeedbackHandle {
  * Thrown when a scan has been cancelled.
  */
 class ScanCancelledException(pair:DiffaPairRef) extends Exception(pair.identifier)
+
+/**
+ * Thrown when a participant driver encounters an issue that it can't solve, but is well known, so it uses this
+ * exception to keep the logging less noisy.
+ */
+class ScanFailedException(reason:String) extends Exception(reason)

@@ -31,6 +31,8 @@ object AlertCodes {
 
   // 12x Informational scan events
   val CANCELLATION_REQUEST_RECEIVED = 120
+  val SCAN_QUERY_EVENT = 121
+  val SCAN_REQUEST_IGNORED = 122
 
   // 2xx Successful
 
@@ -83,7 +85,13 @@ object AlertCodes {
   
   // Occurs when the agent fails to establish communication with a repair action endpoint
   val ACTION_ENDPOINT_FAILURE = 600
-  
+  // The agent failed while attempting to clean up after an HTTP request
+  val ACTION_HTTP_CLEANUP_FAILURE = 601
+
+  // 61x External scan errors
+  val SCAN_CONNECTION_REFUSED = 610
+  val EXTERNAL_SCAN_ERROR = 611
+
   // 65x Problems with messaging systems
   
   // Indicates that an error has occurred in the message processing infrastructure  
@@ -99,6 +107,10 @@ object AlertCodes {
   val SPURIOUS_ACTOR_MESSAGE = 711
   //Occurs when an actor receives an out of order message. This can occur as a result of a downstream error.
   val OUT_OF_ORDER_MESSAGE = 712
+  // Occurs when no actor is found for a given key.
+  val MISSING_ACTOR_FOR_KEY = 713
+  // Occurs when multiple actors are registered with the same key. This indicates a bug in Diffa.
+  val MULTIPLE_ACTORS_FOR_KEY = 714
 
   // 72x Potential auth bugs
   val SPURIOUS_AUTH_TOKEN = 720

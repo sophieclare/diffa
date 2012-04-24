@@ -18,9 +18,10 @@ package net.lshift.diffa.kernel.util
 import net.lshift.diffa.kernel.participants.StringPrefixCategoryFunction._
 import scala.Option._
 import net.lshift.diffa.kernel.config._
-import net.lshift.diffa.kernel.participants.{StringPrefixCategoryFunction, CategoryFunction}
 import scala.collection.JavaConversions._
-import net.lshift.diffa.participant.scanning.{ConstraintsBuilder, SetConstraint, ScanConstraint}
+import collection.immutable.Map
+import net.lshift.diffa.participant.scanning._
+import net.lshift.diffa.kernel.participants.{IntegerCategoryFunction, ByNameCategoryFunction, StringPrefixCategoryFunction, CategoryFunction}
 
 /**
  * Utility for transforming categories into
@@ -60,6 +61,26 @@ object CategoryUtil {
         }
       }
     }.toSeq
+  }
+
+  /**
+   * Creates Category Functions for the given aggregations.
+   */
+  def categoryFunctionsFor(aggregations:Seq[ScanAggregation], categories: Iterable[(String,CategoryDescriptor)]): Seq[CategoryFunction] = {
+    val mappedCategories = categories.toMap
+
+    aggregations.map {
+      case bn:ByNameAggregation       =>
+        ByNameCategoryFunction(bn.getAttributeName)
+      case sp:StringPrefixAggregation =>
+        val cat = mappedCategories(sp.getAttributeName).asInstanceOf[PrefixCategoryDescriptor]
+        StringPrefixCategoryFunction(sp.getAttributeName, sp.getLength, cat.maxLength, cat.step)
+      case i:IntegerAggregation =>
+        IntegerCategoryFunction(i.getAttributeName, i.getGranularity, 10)   // TODO: Allow the factor to be configured via the descriptor
+      case d:DateAggregation =>
+        val cat = mappedCategories(d.getAttributeName).asInstanceOf[RangeCategoryDescriptor]
+        RangeTypeRegistry.categoryFunctionFor(d.getAttributeName, d.getGranularity, cat.getDataType)
+    }
   }
 
   /**
@@ -119,6 +140,17 @@ object CategoryUtil {
   }
 
   /**
+   * Configures an AggregationBuilder based on the given category descriptors.
+   */
+  def buildAggregations(builder: AggregationBuilder, descriptors: Map[String, CategoryDescriptor]) {
+    descriptors.foreach {
+      case (name, _:SetCategoryDescriptor)    => // Nothing to do
+      case (name, _:PrefixCategoryDescriptor) => builder.maybeAddStringPrefixAggregation(name)
+      case (name, r:RangeCategoryDescriptor)  => RangeTypeRegistry.buildAggregation(builder, name, r)
+    }
+  }
+
+  /**
    * Merges a provided set of constraints with the initial constraints for the given category. Also ensures that the
    * provided constraints are valid based upon the category definitions.
    */
@@ -140,4 +172,32 @@ object CategoryUtil {
 
     constraints ++ defaultConstraints
   }
+
+  /**
+   * Differences a set of existing categories against a set of updated categories, returning a list of category changes.
+   * A category change is a mapping from category name to (before, after). before and after are both optional - a missing
+   * before implies a new category, a missing after implies a removed category, both present indicates a category change.
+   */
+  def differenceCategories(existing: Map[String, CategoryDescriptor], updated: Map[String, CategoryDescriptor]):
+      Seq[CategoryChange] = {
+    val existingKeys = existing.keySet.toSet
+    val updatedKeys = updated.keySet.toSet
+
+    val removed:Seq[CategoryChange] = (existingKeys -- updatedKeys).
+      map(k => CategoryChange(k, Some(existing(k)), None)).toSeq
+    val added:Seq[CategoryChange] = (updatedKeys -- existingKeys).
+      map(k => CategoryChange(k, None, Some(updated(k)))).toSeq
+    val changed:Seq[CategoryChange] = (existingKeys intersect updatedKeys).
+      filter(k => !existing(k).equals(updated(k))).
+      map(k => CategoryChange(k, Some(existing(k)), Some(updated(k)))).toSeq
+
+    removed ++ added ++ changed
+  }
 }
+
+case class CategoryChange(name:String, before:Option[CategoryDescriptor], after:Option[CategoryDescriptor]) {
+  def isRemoval = after.isEmpty
+  def isAddition = before.isEmpty
+  def isChange = before.isDefined && after.isDefined
+}
+

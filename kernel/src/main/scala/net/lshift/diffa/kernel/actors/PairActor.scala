@@ -30,9 +30,10 @@ import collection.mutable.{SynchronizedQueue, Queue}
 import concurrent.SyncVar
 import net.lshift.diffa.kernel.diag.{DiagnosticLevel, DiagnosticsManager}
 import net.lshift.diffa.kernel.util.StoreSynchronizationUtils._
-import net.lshift.diffa.kernel.config.{Endpoint, DiffaPair}
-import net.lshift.diffa.participant.scanning.{ScanResultEntry, ScanConstraint}
 import org.slf4j.{LoggerFactory, Logger}
+import net.lshift.diffa.kernel.config.{DomainConfigStore, Endpoint, DiffaPair}
+import net.lshift.diffa.kernel.util.{EndpointSide, DownstreamEndpoint, UpstreamEndpoint}
+import net.lshift.diffa.participant.scanning.{ScanAggregation, ScanRequest, ScanResultEntry, ScanConstraint}
 
 /**
  * This actor serializes access to the underlying version policy from concurrent processes.
@@ -47,6 +48,7 @@ case class PairActor(pair:DiffaPair,
                      differencesManager:DifferencesManager,
                      pairScanListener:PairScanListener,
                      diagnostics:DiagnosticsManager,
+                     domainConfigStore:DomainConfigStore,
                      changeEventBusyTimeoutMillis: Long,
                      changeEventQuietTimeoutMillis: Long) extends Actor {
 
@@ -138,8 +140,9 @@ case class PairActor(pair:DiffaPair,
    * thus allowing parallel access to the writer.
    */
   private def createWriterProxy(scanUuid:UUID) = new LimitedVersionCorrelationWriter() {
+
     // The receive timeout in seconds
-    val timeout = 60
+    val timeout = domainConfigStore.configOptionOrDefault(pairRef.domain, CorrelationWriterProxy.TIMEOUT_KEY, CorrelationWriterProxy.TIMEOUT_DEFAULT_VALUE)
 
     def clearUpstreamVersion(id: VersionID) = call( _.clearUpstreamVersion(id) )
     def clearDownstreamVersion(id: VersionID) = call( _.clearDownstreamVersion(id) )
@@ -149,7 +152,7 @@ case class PairActor(pair:DiffaPair,
       = call( _.storeUpstreamVersion(id, attributes, lastUpdated, vsn) )
     def call(command:(LimitedVersionCorrelationWriter => Correlation)) = {
       val message = VersionCorrelationWriterCommand(scanUuid, command)
-      (self !!(message, 1000L * timeout)) match {
+      (self !!(message, 1000L * timeout.toInt)) match {
         case Some(CancelMessage)  => throw new ScanCancelledException(pairRef)
         case Some(result)         => result.asInstanceOf[Correlation]
         case None                 =>
@@ -207,7 +210,8 @@ case class PairActor(pair:DiffaPair,
       }
     }
     case c:ChangeMessage                   => handleChangeMessage(c)
-    case i:InventoryMessage                => handleInventoryMessage(i)
+    case i:InventoryMessage                => self.reply(handleInventoryMessage(i))
+    case i:StartInventoryMessage           => self.reply(handleStartInventoryMessage(i))
     case DifferenceMessage                 => handleDifferenceMessage()
     case FlushWriterMessage                => writer.flush()
     case c:VersionCorrelationWriterCommand => {
@@ -245,7 +249,10 @@ case class PairActor(pair:DiffaPair,
         logger.trace("Received writer command (%s) for different scan worker - sending cancellation".format(c), c.exception)
         self.reply(CancelMessage)
       }
-    case ScanMessage                        => // ignore any scan requests whilst scanning
+    case ScanMessage(scanView)              =>
+      // ignore any scan requests whilst scanning
+      diagnostics.logPairEvent(DiagnosticLevel.INFO, pairRef, "Ignoring scan request received during current scan")
+      logger.warn("%s Ignoring scan request; view = %s".format(formatAlertCode(pairRef, SCAN_REQUEST_IGNORED), scanView))
     case d: Deferrable                      => deferred.enqueue(d)
     case a: ChildActorCompletionMessage     if isOwnedByActiveScan(a) => {
       a.logMessage(logger, Scanning, CHILD_SCAN_COMPLETED)
@@ -355,13 +362,23 @@ case class PairActor(pair:DiffaPair,
     lastEventTime = System.currentTimeMillis()
   }
 
+  def handleStartInventoryMessage(message:StartInventoryMessage):Seq[ScanRequest] = {
+    val ep = message.side match {
+      case UpstreamEndpoint   => us
+      case DownstreamEndpoint => ds
+    }
+
+    policy.startInventory(pair.asRef, ep, message.view, writer, message.side)
+  }
+
   def handleInventoryMessage(message:InventoryMessage) = {
     val ep = message.side match {
       case UpstreamEndpoint   => us
       case DownstreamEndpoint => ds
     }
 
-    policy.processInventory(pair.asRef, ep, writer, message.side, message.constraints, message.entries)
+    val nextRequests = policy.processInventory(pair.asRef, ep, writer, message.side,
+      message.constraints, message.aggregations, message.entries)
 
     // always flush after an inventory
     writer.flush()
@@ -369,6 +386,8 @@ case class PairActor(pair:DiffaPair,
 
     // Play events from the correlation store into the differences manager
     replayCorrelationStore(differencesManager, writer, store, pairRef, us, ds, TriggeredByScan)
+
+    nextRequests
   }
 
   /**
@@ -406,6 +425,13 @@ case class PairActor(pair:DiffaPair,
       feedbackHandle = new ScanningFeedbackHandle
       val currentFeedbackHandle = feedbackHandle
 
+      val infoMsg = scanView match {
+        case Some(name) => "Commencing scan on %s view for pair %s".format(name, pairRef.key)
+        case None =>       "Commencing non-filtered scan for pair %s".format(pairRef.key)
+      }
+
+      diagnostics.logPairEvent(DiagnosticLevel.INFO, pairRef, infoMsg)
+
       Actor.spawn {
         try {
           policy.scanUpstream(pairRef, us, scanView, writerProxy, usp, bufferingListener, currentFeedbackHandle)
@@ -416,12 +442,7 @@ case class PairActor(pair:DiffaPair,
             logger.warn("Upstream scan on pair %s was cancelled".format(pair.identifier))
             self ! ChildActorCompletionMessage(createdScan.uuid, Up, Cancellation)
           }
-          case e:Exception => {
-            logger.error("%s upstream scan failed; scan id = %s".format(
-                          formatAlertCode(pairRef, UPSTREAM_SCAN_FAILURE), createdScan.uuid), e)
-            diagnostics.logPairEvent(DiagnosticLevel.ERROR, pairRef, "Upstream scan failed: " + e.getMessage)
-            self ! ChildActorCompletionMessage(createdScan.uuid, Up, Failure)
-          }
+          case x:Exception              => handleScanError(self, createdScan.uuid, Up, x)
         }
       }
 
@@ -435,12 +456,7 @@ case class PairActor(pair:DiffaPair,
             logger.warn("Downstream scan on pair %s was cancelled".format(pair.identifier))
             self ! ChildActorCompletionMessage(createdScan.uuid, Down, Cancellation)
           }
-          case e:Exception => {
-            logger.error("%s downstream scan failed; scan id = %s".format(
-                         formatAlertCode(pairRef, DOWNSTREAM_SCAN_FAILURE), createdScan.uuid), e)
-            diagnostics.logPairEvent(DiagnosticLevel.ERROR, pairRef, "Downstream scan failed: " + e.getMessage)
-            self ! ChildActorCompletionMessage(createdScan.uuid, Down, Failure)
-          }
+          case x:Exception              => handleScanError(self, createdScan.uuid, Down, x)
         }
       }
 
@@ -460,6 +476,26 @@ case class PairActor(pair:DiffaPair,
         false
       }
     }
+  }
+
+  private def handleScanError(actor:ActorRef, scanId:UUID, upOrDown:UpOrDown, x:Exception) = {
+
+    val (prefix, marker) = upOrDown match {
+      case Up   => (formatAlertCode(pairRef, UPSTREAM_SCAN_FAILURE), "Upstream")
+      case Down => (formatAlertCode(pairRef, DOWNSTREAM_SCAN_FAILURE), "Downstream")
+    }
+
+    val logTemplate = "%s " + marker + " scan failed; scan id = %s"
+
+    x match {
+      case f:ScanFailedException =>
+        logger.error(logTemplate.format(prefix, scanId) + "; reason was: " + f.getMessage)
+      case e:Exception =>
+        logger.error(logTemplate.format(prefix, scanId), e)
+    }
+
+    diagnostics.logPairEvent(DiagnosticLevel.ERROR, pairRef, "%s scan failed: %s".format(marker, x.getMessage))
+    actor ! ChildActorCompletionMessage(scanId, upOrDown, Failure)
   }
 
   private def isOwnedByActiveScan(msg:ChildActorScanMessage) = activeScan != null && activeScan.uuid == msg.scanUuid
@@ -485,6 +521,14 @@ case class PairActor(pair:DiffaPair,
 
   }
 
+}
+
+/**
+ * Configuration keys for the correlation writer proxy
+ */
+object CorrelationWriterProxy {
+  val TIMEOUT_KEY = "correlation.writer.proxy.timeout"
+  val TIMEOUT_DEFAULT_VALUE = "60" // 60 seconds
 }
 
 /**
@@ -517,7 +561,8 @@ abstract class Deferrable
 case class ChangeMessage(event: PairChangeEvent) extends Deferrable
 case object DifferenceMessage extends Deferrable
 case class ScanMessage(scanView:Option[String])
-case class InventoryMessage(side:EndpointSide, constraints:Seq[ScanConstraint], entries:Seq[ScanResultEntry])
+case class StartInventoryMessage(side:EndpointSide, view:Option[String])
+case class InventoryMessage(side:EndpointSide, constraints:Seq[ScanConstraint], aggregations:Seq[ScanAggregation], entries:Seq[ScanResultEntry])
 
 /**
  * This message indicates that this actor should cancel all current and pending scan operations.

@@ -22,9 +22,9 @@ import java.util.HashMap
 import net.lshift.diffa.kernel.differencing.AttributesUtil
 import net.lshift.diffa.kernel.participants._
 import scala.Option._
-import net.lshift.diffa.kernel.util.CategoryUtil
 import net.lshift.diffa.kernel.frontend._
-import net.lshift.diffa.participant.scanning.{ConstraintsBuilder, SetConstraint, ScanConstraint}
+import net.lshift.diffa.kernel.util.{EndpointSide, UpstreamEndpoint, DownstreamEndpoint, CategoryUtil}
+import net.lshift.diffa.participant.scanning.{AggregationBuilder, ConstraintsBuilder, SetConstraint, ScanConstraint}
 
 /**
  * Provides general configuration options within the scope of a particular domain.
@@ -153,6 +153,14 @@ case class Endpoint(
   def buildConstraints(builder:ConstraintsBuilder) {
     CategoryUtil.buildConstraints(builder, categories.toMap)
   }
+
+  /**
+   * Allows aggregations relevant to this endpoint to be built by instructing an aggregations builder of the category
+   * types supported by this endpoint.
+   */
+  def buildAggregations(builder:AggregationBuilder) {
+    CategoryUtil.buildAggregations(builder, categories.toMap)
+  }
 }
 
 case class EndpointView(
@@ -197,6 +205,16 @@ case class DiffaPair(
 
   // TODO This looks a bit strange
   override def hashCode = 31 * (31 + key.hashCode) + domain.hashCode
+
+  def whichSide(endpoint:EndpointDef):EndpointSide = {
+    if (upstream == endpoint.name) {
+      UpstreamEndpoint
+    } else if (downstream == endpoint.name) {
+      DownstreamEndpoint
+    } else {
+      throw new IllegalArgumentException(endpoint.name + " is not a member of pair " + this.asRef)
+    }
+  }
 }
 
 case class PairView(
