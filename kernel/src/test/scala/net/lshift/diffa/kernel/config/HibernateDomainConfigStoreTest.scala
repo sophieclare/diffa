@@ -25,6 +25,7 @@ import net.lshift.diffa.kernel.util.{MissingObjectException}
 import net.lshift.diffa.kernel.StoreReferenceContainer
 import org.slf4j.LoggerFactory
 import org.junit.{AfterClass, Test, Before}
+import com.eaio.uuid.UUID
 
 class HibernateDomainConfigStoreTest {
   private val log = LoggerFactory.getLogger(getClass)
@@ -204,6 +205,14 @@ class HibernateDomainConfigStoreTest {
     val retrActions = domainConfigStore.listRepairActionsForPair(domainName, retrPair.key)
     assertEquals(1, retrActions.length)
     assertEquals(Some(pairKey), retrActions.headOption.map(_.pair))
+  }
+
+  @Test(expected = classOf[ConfigValidationException])
+  def internalEndpointsShouldNotBeAppliedToNonInternalDomains {
+    val domain = new Domain(new UUID().toString) // internal be implicitly false
+    systemConfigStore.createOrUpdateDomain(domain)
+    val endpoint = EndpointDef(scanUrl = "diffa://foo")
+    domainConfigStore.createOrUpdateEndpoint(domain.name, endpoint)
   }
 
   @Test
