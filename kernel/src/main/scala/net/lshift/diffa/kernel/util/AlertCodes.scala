@@ -53,6 +53,8 @@ object AlertCodes {
 
   // 4xx Errors that occur that as result of an invalid inbound request from a client
 
+  // Indicates that an attempt to configure an internal endpoint URL was made
+  val INTERNAL_ENDPOINT_URL_ERROR = 450
 
   // 5xx Errors
   

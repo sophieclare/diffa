@@ -23,6 +23,7 @@ import scala.collection.JavaConversions._
 import net.lshift.diffa.kernel.util.HibernateQueryUtils
 import net.lshift.diffa.kernel.frontend._
 import net.lshift.diffa.kernel.hooks.HookManager
+import net.lshift.diffa.kernel.util.AlertCodes._
 
 class HibernateDomainConfigStore(val sessionFactory: SessionFactory, pairCache:PairCache, hookManager:HookManager)
     extends DomainConfigStore
@@ -36,6 +37,12 @@ class HibernateDomainConfigStore(val sessionFactory: SessionFactory, pairCache:P
 
     val domain = getDomain(domainName)
     val endpoint = fromEndpointDef(domain, e)
+
+    Seq(("scanUrl", endpoint.scanUrl),
+        ("contentRetrievalUrl", endpoint.contentRetrievalUrl),
+        ("versionGenerationUrl", endpoint.versionGenerationUrl))
+        .foreach(x => validateURLIfInternal(x._1, x._2, domain))
+
     s.saveOrUpdate(endpoint)
 
     // Update the view definitions
@@ -239,4 +246,14 @@ class HibernateDomainConfigStore(val sessionFactory: SessionFactory, pairCache:P
     listQuery[EndpointView](s, "endpointViewsByEndpoint", Map("domain_name" -> domain, "endpoint_name" -> endpointName))
   def listPairViews(s:Session, domain:String, pairKey:String) =
     listQuery[PairView](s, "pairViewsByPair", Map("domain_name" -> domain, "pair_key" -> pairKey))
+
+  private def validateURLIfInternal(name:String, value:String,  domain:Domain) = {
+    if (value != null) {
+      if (value.startsWith("diffa://") && !domain.isInternal) {
+        log.error("%s Attempted to use %s for %s".format(formatAlertCode(domain.name, INTERNAL_ENDPOINT_URL_ERROR), value, name))
+        val path = ValidationUtil.buildPath(null, "endpoint", Map(name -> value))
+        throw new ConfigValidationException(path, "URL is only applicable for internal domains")
+      }
+    }
+  }
 }

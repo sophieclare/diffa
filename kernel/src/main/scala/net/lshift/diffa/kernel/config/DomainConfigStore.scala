@@ -272,7 +272,8 @@ object DiffaPair {
 }
 
 case class Domain (
-  @BeanProperty var name: String = null
+  @BeanProperty var name: String = null,
+  @BeanProperty var isInternal: java.lang.Boolean = false
 ) {
   def this() = this(name = null)
 

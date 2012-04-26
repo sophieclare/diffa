@@ -143,6 +143,7 @@
   <class name="Domain" table="domains" abstract="false">
     <cache usage="read-write"/>
     <id name="name" type="string" column="name"/>
+    <property name="isInternal" type="boolean" column="is_internal" not-null="true"/>
   </class>
 
   <class name="User" table="users" abstract="false">

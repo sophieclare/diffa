@@ -83,7 +83,7 @@ object ValidationUtil {
   def ensureSettingsURLFormat(path: String,  url: String): Boolean = {
     if (url == null) { return true } // nullable
 
-    if (!url.matches("(amqp|https?)://.*")) {
+    if (!url.matches("(amqp|diffa|https?)://.*")) {
       throw new ConfigValidationException(path, "incorrect settings URL format: %s".format(url))
     }
 
