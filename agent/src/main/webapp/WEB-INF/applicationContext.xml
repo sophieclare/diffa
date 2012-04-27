@@ -504,7 +504,7 @@
   </bean>
 
   <!-- register internal support for participants -->
-  <bean class="org.springframework.beans.factory.config.MethodInvokingFactoryBean">
+  <!--<bean class="org.springframework.beans.factory.config.MethodInvokingFactoryBean">
     <property name="targetObject" ref="participantFactory" />
     <property name="targetMethod" value="registerScanningFactory" />
     <property name="arguments">
@@ -533,7 +533,7 @@
         </bean>
       </list>
     </property>
-  </bean>
+  </bean>-->
 
   <!--
       ========
