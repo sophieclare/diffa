@@ -503,6 +503,38 @@
     </property>
   </bean>
 
+  <!-- register internal support for participants -->
+  <bean class="org.springframework.beans.factory.config.MethodInvokingFactoryBean">
+    <property name="targetObject" ref="participantFactory" />
+    <property name="targetMethod" value="registerScanningFactory" />
+    <property name="arguments">
+      <list>
+        <bean class="net.lshift.diffa.participants.internal.InternalScanningParticipantFactory">
+        </bean>
+      </list>
+    </property>
+  </bean>
+  <bean class="org.springframework.beans.factory.config.MethodInvokingFactoryBean">
+    <property name="targetObject" ref="participantFactory" />
+    <property name="targetMethod" value="registerContentFactory" />
+    <property name="arguments">
+      <list>
+        <bean class="net.lshift.diffa.participants.internal.InternalContentParticipantFactory">
+        </bean>
+      </list>
+    </property>
+  </bean>
+  <bean class="org.springframework.beans.factory.config.MethodInvokingFactoryBean">
+    <property name="targetObject" ref="participantFactory" />
+    <property name="targetMethod" value="registerVersioningFactory" />
+    <property name="arguments">
+      <list>
+        <bean class="net.lshift.diffa.participants.internal.VersioningParticipantRestClientFactory">
+        </bean>
+      </list>
+    </property>
+  </bean>
+
   <!--
       ========
         Boot the REST proxy

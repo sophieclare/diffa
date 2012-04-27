@@ -20,9 +20,11 @@ import net.lshift.diffa.kernel.participants._
 
 trait ParticipantRestClientFactory {
 
+  // TODO This should support https as well
   def supportsAddress(address: String) = address.startsWith("http://")
 }
 
+// TODO Why do we need the RestClientParams? Should the URI not be sufficient?
 class ScanningParticipantRestClientFactory(params: RestClientParams)
   extends ScanningParticipantFactory with ParticipantRestClientFactory {
 
