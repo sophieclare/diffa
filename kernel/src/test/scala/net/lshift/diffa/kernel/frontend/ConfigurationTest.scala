@@ -109,6 +109,32 @@ class ConfigurationTest {
   }
 
   @Test
+  def shouldEnrichConfigWithSensibleDefaultValues {
+
+    val minimalAcceptableConfig = DiffaConfig(
+      endpoints = Set(EndpointDef("up"), EndpointDef("down")),
+      pairs = Set(PairDef(key = "foo", upstreamName = "up", downstreamName = "down"))
+    )
+
+    val withDefaultValues = DiffaConfig(
+      endpoints = Set(EndpointDef("up"), EndpointDef("down")),
+      pairs = Set(
+        PairDef(
+          key = "foo",
+          upstreamName = "up",
+          downstreamName = "down",
+          versionPolicyName = "same",
+          matchingTimeout = 5,
+          allowManualScans = false
+        )
+      )
+    )
+
+    configuration.applyConfiguration("domain", minimalAcceptableConfig)
+    assertEquals(Some(withDefaultValues), configuration.retrieveConfiguration("domain"))
+  }
+
+  @Test
   def shouldGenerateExceptionWhenInvalidConfigurationIsApplied() {
     val e1 = EndpointDef(name = "upstream1", scanUrl = "http://localhost:1234/scan",
           inboundUrl = "http://inbound")
