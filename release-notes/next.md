@@ -50,7 +50,8 @@
 ## Library Upgrades
 
 * Upgraded to Lucene 3.6.0
-* Upgraded to Akka 2.0.1
+* Upgraded to Akka 2.0.2
+* Upgraded to Scala 2.9.2
 
 ## Upgrading
 
