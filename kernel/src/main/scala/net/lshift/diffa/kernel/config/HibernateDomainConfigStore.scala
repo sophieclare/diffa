@@ -211,7 +211,7 @@ class HibernateDomainConfigStore(val sessionFactory: SessionFactory,
 
     invalidateEndpointCachesOnly(domain, endpoint)
   }
-
+  /*
   def deleteEndpoint(domain:String, name: String): Unit = withVersionUpgrade(domain, s => {
 
     invalidateEndpointCachesOnly(domain, name)
@@ -226,6 +226,7 @@ class HibernateDomainConfigStore(val sessionFactory: SessionFactory,
 
     s.delete(endpoint)
   })
+  */
 
   def listEndpoints(domain:String): Seq[EndpointDef] = cachedEndpoints.readThrough(domain, () => {
     db.listQuery[Endpoint]("endpointsByDomain", Map("domain_name" -> domain)).map(toEndpointDef(_))
