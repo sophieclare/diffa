@@ -11,6 +11,7 @@
 * [233] - Scan summary information will be persisted.
 * [241] - Escalations are now phased rather than running as a batch action on completion of scan.
 * [248] - Escalations can trigger an ignore.
+* [251] - Escalations for a particular pair can be deleted via the API.
 
 ## General Maintenance
 
