@@ -36,7 +36,7 @@ class ConfigurationResource(val config:Configuration,
   @Path("/xml")
   @Produces(Array("application/xml"))
   def retrieveConfiguration() =
-    config.retrieveConfiguration(domain).get // existence will have been checked in DomainResource
+    config.retrieveConfiguration(domain).get // existence will have been checked in SpaceResource
 
   @POST
   @Path("/xml")
@@ -117,20 +117,6 @@ class ConfigurationResource(val config:Configuration,
   @Path("/pairs/{pairKey}/repair-actions/{name}")
   def deleteRepairAction(@PathParam("name") name: String, @PathParam("pairKey") pairKey: String) {
     config.deleteRepairAction(domain, name, pairKey)
-  }
-
-  @POST
-  @Path("/pairs/{id}/escalations")
-  @Consumes(Array("application/json"))
-  def createEscalation(@PathParam("id") id:String, e: EscalationDef) = {
-    config.createOrUpdateEscalation(domain, id, e)
-    resourceCreated(e.name, uri)
-  }
-
-  @DELETE
-  @Path("/pairs/{pairKey}/escalations/{name}")
-  def deleteEscalation(@PathParam("name") name: String, @PathParam("pairKey") pairKey: String) {
-    config.deleteEscalation(domain, name, pairKey)
   }
 
   @GET
