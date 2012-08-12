@@ -96,7 +96,6 @@ object Step0048 extends VerifiedMigrationStep {
       addForeignKey("fk_pair_upstream_edpt", Array("space", "upstream"), "endpoints", Array("space", "name")).
       addForeignKey("fk_pair_downstream_edpt", Array("space", "downstream"), "endpoints", Array("space", "name"))
 
-    /*
     migration.createTable("escalations").
       column("space", Types.BIGINT, false).
       column("pair", Types.VARCHAR, 50, false).
@@ -110,7 +109,6 @@ object Step0048 extends VerifiedMigrationStep {
     migration.alterTable("escalations").
       addForeignKey("fk_escl_pair", Array("space", "pair"), "pairs", Array("space", "pair"))
 
-    */
 
     /*
     migration.createTable("diffs").
@@ -190,8 +188,21 @@ object Step0048 extends VerifiedMigrationStep {
     val pair = randomString()
 
     createPair(migration, spaceId, pair, upstream, downstream)
+    createEscalation(migration, spaceId, pair)
 
     migration
+  }
+
+  def createEscalation(migration:MigrationBuilder, spaceId:String, pair:String) {
+    migration.insert("escalations").values(Map(
+      "space" -> spaceId,
+      "pair" -> pair,
+      "name" -> randomString(),
+      "action" -> randomString(),
+      "action_type" -> "ignore",
+      "delay" -> "10",
+      "rule" -> "mismatch"
+    ))
   }
 
   def createPair(migration:MigrationBuilder, spaceId:String, name:String, upstream:String, downstream:String) {
