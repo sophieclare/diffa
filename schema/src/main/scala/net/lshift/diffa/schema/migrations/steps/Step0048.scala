@@ -18,9 +18,10 @@ package net.lshift.diffa.schema.migrations.steps
 import org.hibernate.cfg.Configuration
 import net.lshift.hibernate.migrations.MigrationBuilder
 import java.sql.Types
-import net.lshift.diffa.schema.migrations.{DefinePartitionInformationTable, VerifiedMigrationStep}
+import net.lshift.diffa.schema.migrations.{MigrationUtil, DefinePartitionInformationTable, VerifiedMigrationStep}
 import scala.collection.JavaConversions._
 import net.lshift.diffa.schema.configs.InternalCollation
+import net.lshift.diffa.schema.servicelimits._
 
 object Step0048 extends VerifiedMigrationStep {
 
@@ -431,6 +432,13 @@ object Step0048 extends VerifiedMigrationStep {
     migration.insert("schema_version").values(Map(
       "version" -> new java.lang.Integer(versionId)
     ))
+
+    MigrationUtil.insertLimit(migration, ChangeEventRate)
+    MigrationUtil.insertLimit(migration, DiagnosticEventBufferSize)
+    MigrationUtil.insertLimit(migration, ExplainFiles)
+    MigrationUtil.insertLimit(migration, ScanConnectTimeout)
+    MigrationUtil.insertLimit(migration, ScanReadTimeout)
+    MigrationUtil.insertLimit(migration, ScanResponseSizeLimit)
 
     migration
   }
