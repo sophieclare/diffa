@@ -132,7 +132,7 @@ object Step0048 extends VerifiedMigrationStep {
     migration.alterTable("escalations").
       addForeignKey("fk_escl_pair", Array("space", "pair"), "pairs", Array("space", "pair"))
 
-    migration.createTable("diffs").
+    val diffsTable = migration.createTable("diffs").
       column("space", Types.BIGINT, false).
       column("pair", Types.VARCHAR, 50, false).
       column("seq_id", Types.BIGINT, false).
@@ -146,6 +146,16 @@ object Step0048 extends VerifiedMigrationStep {
       column("next_escalation", Types.VARCHAR, 50, true, null).
       column("next_escalation_time", Types.TIMESTAMP, true, null).
       pk("space", "pair", "seq_id")
+
+    if (migration.canUseListPartitioning) {
+      diffsTable.virtualColumn("partition_name", Types.VARCHAR, 512, "domain || '_' || pair").
+        listPartitioned("partition_name").
+        listPartition("part_dummy_default", "default")
+
+      DefinePartitionInformationTable.applyPartitionVersion(migration, "diffs", versionId)
+
+      migration.executeDatabaseScript("sync_pair_diff_partitions", "net.lshift.diffa.schema.procedures")
+    }
 
     migration.alterTable("diffs")
       .addForeignKey("fk_diff_pair", Array("space", "pair"), "pairs", Array("space", "name"))
@@ -439,6 +449,12 @@ object Step0048 extends VerifiedMigrationStep {
     MigrationUtil.insertLimit(migration, ScanConnectTimeout)
     MigrationUtil.insertLimit(migration, ScanReadTimeout)
     MigrationUtil.insertLimit(migration, ScanResponseSizeLimit)
+
+    // Kick off any partitioning, if required
+
+    if (migration.canAnalyze) {
+      migration.analyzeTable("diffs");
+    }
 
     migration
   }
