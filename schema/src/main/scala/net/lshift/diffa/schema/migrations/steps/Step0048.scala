@@ -109,8 +109,6 @@ object Step0048 extends VerifiedMigrationStep {
     migration.alterTable("escalations").
       addForeignKey("fk_escl_pair", Array("space", "pair"), "pairs", Array("space", "pair"))
 
-
-    /*
     migration.createTable("diffs").
       column("seq_id", Types.BIGINT, false).
       column("space", Types.BIGINT, false).
@@ -124,16 +122,24 @@ object Step0048 extends VerifiedMigrationStep {
       column("ignored", Types.BIT, false).
       column("next_escalation", Types.VARCHAR, 50, true, null).
       column("next_escalation_time", Types.TIMESTAMP, true, null).
-      pk("seq_id", "domain", "pair")
+      pk("space", "pair", "seq_id")
+
+    migration.alterTable("diffs")
+      .addForeignKey("fk_diff_pair", Array("space", "pair"), "pairs", Array("space", "name"))
 
     migration.alterTable("diffs").
-      addForeignKey("fk_next_esc", Array("space", "pair", "next_escalation"), "escalations", Array("space", "pair_key", "name"))
-    */
+      addForeignKey("fk_next_esc", Array("space", "pair", "next_escalation"), "escalations", Array("space", "pair", "name"))
+
+    migration.alterTable("diffs")
+      .addUniqueConstraint("uk_diffs", "entity_id", "space", "pair")
+
+    migration.createIndex("diff_last_seen", "diffs", "last_seen")
+    migration.createIndex("diff_detection", "diffs", "detected_at")
+    migration.createIndex("rdiff_is_matched", "diffs", "is_match")
+    migration.createIndex("rdiff_domain_idx", "diffs", "entity_id", "space", "pair")
+
 
     /*
-
-
-
     migration.createTable("external_http_credentials")
 
     migration.createTable("pair_limits")
@@ -188,16 +194,37 @@ object Step0048 extends VerifiedMigrationStep {
     val pair = randomString()
 
     createPair(migration, spaceId, pair, upstream, downstream)
-    createEscalation(migration, spaceId, pair)
+
+    val escalation = randomString()
+
+    createEscalation(migration, spaceId, pair, escalation)
+    createDiff(migration, spaceId, pair, escalation)
 
     migration
   }
 
-  def createEscalation(migration:MigrationBuilder, spaceId:String, pair:String) {
+  def createDiff(migration:MigrationBuilder, spaceId:String, pair:String, escalation:String) {
+    migration.insert("diffs").values(Map(
+      "space" -> spaceId,
+      "pair" -> pair,
+      "seq_id" -> randomInt(),
+      "entity_id" -> randomString(),
+      "upstream_vsn" -> randomString(),
+      "downstream_vsn" -> randomString(),
+      "detected_at" -> randomTimestamp(),
+      "last_seen" -> randomTimestamp(),
+      "is_match" -> "0",
+      "ignored" -> "0",
+      "next_escalation" -> escalation,
+      "next_escalation_time" -> randomTimestamp()
+    ))
+  }
+
+  def createEscalation(migration:MigrationBuilder, spaceId:String, pair:String, name:String) {
     migration.insert("escalations").values(Map(
       "space" -> spaceId,
       "pair" -> pair,
-      "name" -> randomString(),
+      "name" -> name,
       "action" -> randomString(),
       "action_type" -> "ignore",
       "delay" -> "10",
