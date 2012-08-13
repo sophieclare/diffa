@@ -305,10 +305,28 @@ object Step0048 extends VerifiedMigrationStep {
     migration.alterTable("repair_actions").
       addForeignKey("fk_rpac_pair", Array("space", "pair"), "pairs", Array("space", "name"))
 
+    // Note that scan statements deliberately have no FKs, so that records in this table can outlive deleted pairs/domains
+    migration.createTable("scan_statements").
+      column("space", Types.BIGINT, false).
+      column("pair", Types.VARCHAR, 50, false).
+      column("id", Types.BIGINT, false).
+      column("initiated_by", Types.VARCHAR, 50, true).
+      column("start_time", Types.TIMESTAMP, false).
+      column("end_time", Types.TIMESTAMP, 50, true).
+      column("state", Types.VARCHAR, 20, false, "STARTED").
+      pk("space", "pair", "id")
+
+    migration.createTable("store_checkpoints").
+      column("space", Types.BIGINT, false).
+      column("pair", Types.VARCHAR, 50, false).
+      column("latest_version", Types.BIGINT, false).
+      pk("space", "pair")
+
+    migration.alterTable("store_checkpoints").
+      addForeignKey("fk_stcp_pair", Array("space", "pair"), "pairs", Array("space", "name"))
+
     /*
 
-    migration.createTable("scan_statements")
-    migration.createTable("store_checkpoints")
     migration.createTable("user_item_visibility")
     */
 
@@ -427,7 +445,31 @@ object Step0048 extends VerifiedMigrationStep {
 
     createRepairAction(migration, spaceId, pair)
 
+    createScanStatement(migration, spaceId, pair)
+
+    createStoreCheckpoint(migration, spaceId, pair)
+
     migration
+  }
+
+  def createStoreCheckpoint(migration:MigrationBuilder, spaceId:String, pair:String) {
+    migration.insert("store_checkpoints").values(Map(
+      "space" -> spaceId,
+      "pair" -> pair,
+      "latest_version" -> randomInt()
+    ))
+  }
+
+  def createScanStatement(migration:MigrationBuilder, spaceId:String, pair:String) {
+    migration.insert("scan_statements").values(Map(
+      "space" -> spaceId,
+      "pair" -> pair,
+      "id" -> randomInt(),
+      "initiated_by" -> randomString(),
+      "start_time" -> randomTimestamp(),
+      "end_time" -> randomTimestamp(),
+      "state" -> "COMPLETED"
+    ))
   }
 
   def createRepairAction(migration:MigrationBuilder, spaceId:String, pair:String) {
