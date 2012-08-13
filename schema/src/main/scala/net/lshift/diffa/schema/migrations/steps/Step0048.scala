@@ -283,17 +283,22 @@ object Step0048 extends VerifiedMigrationStep {
     migration.alterTable("range_category_views").
       addForeignKey("fk_racv_ucns", Array("space", "endpoint", "name", "view_name"), "unique_category_view_names", Array("space", "endpoint", "name", "view_name"))
 
+    migration.createTable("external_http_credentials").
+      column("space", Types.BIGINT, false).
+      column("url", Types.VARCHAR, 255, false).
+      column("cred_key", Types.VARCHAR, 50, false).
+      column("cred_value", Types.VARCHAR, 255, false).
+      column("cred_type", Types.VARCHAR, 20, false).
+      pk("space", "url")
+
+    migration.alterTable("external_http_credentials").
+      addForeignKey("fk_domain_http_creds", "space", "spaces", "id")
+
     /*
-    migration.createTable("external_http_credentials")
-
-
     migration.createTable("repair_actions")
     migration.createTable("scan_statements")
-
     migration.createTable("space_limits")
     migration.createTable("store_checkpoints")
-
-    migration.createTable("unique_category_view_names")
     migration.createTable("user_item_visibility")
     */
 
@@ -408,7 +413,19 @@ object Step0048 extends VerifiedMigrationStep {
     createRangeCategory(migration, spaceId, downstream, rangeCategoryName)
     createRangeCategoryView(migration, spaceId, downstream, downstreamView, rangeCategoryName)
 
+    createExternalHttpCredentials(migration, spaceId)
+
     migration
+  }
+
+  def createExternalHttpCredentials(migration:MigrationBuilder, spaceId:String) {
+    migration.insert("external_http_credentials").values(Map(
+      "space" -> spaceId,
+      "url" -> "http://someurl.com/ajax",
+      "cred_key" -> randomString(),
+      "cred_value" -> randomString(),
+      "cred_type" -> "basic_auth"
+    ))
   }
 
   def createUniqueCategoryViewName(migration:MigrationBuilder, spaceId:String, endpoint:String, view:String, name:String) {
