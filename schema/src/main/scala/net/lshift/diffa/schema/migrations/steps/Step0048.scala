@@ -181,24 +181,118 @@ object Step0048 extends VerifiedMigrationStep {
     migration.alterTable("pair_reports").
       addForeignKey("fk_prep_pair", Array("space", "pair"), "pairs", Array("space", "name"))
 
+    migration.createTable("unique_category_names").
+      column("space", Types.BIGINT, false).
+      column("endpoint", Types.VARCHAR, 50, false).
+      column("name", Types.VARCHAR, 50, false).
+      pk("space", "endpoint", "name")
+
+    migration.alterTable("unique_category_names").
+      addForeignKey("fk_ucns_edpt", Array("space", "endpoint"), "endpoints", Array("space", "name"))
+
+    migration.createTable("prefix_categories").
+      column("space", Types.BIGINT, false).
+      column("endpoint", Types.VARCHAR, 50, false).
+      column("name", Types.VARCHAR, 50, false).
+      column("prefix_length", Types.INTEGER, true).
+      column("max_length", Types.INTEGER, true).
+      column("step", Types.INTEGER, true).
+      pk("space", "endpoint", "name")
+
+    migration.alterTable("prefix_categories").
+      addForeignKey("fk_pfcg_ucns", Array("space", "endpoint", "name"), "unique_category_names", Array("space", "endpoint", "name"))
+
+    migration.createTable("set_categories").
+      column("space", Types.BIGINT, false).
+      column("endpoint", Types.VARCHAR, 50, false).
+      column("name", Types.VARCHAR, 50, false).
+      column("value", Types.VARCHAR, 255, false).
+      pk("space", "endpoint", "name", "value")
+
+    migration.alterTable("set_categories").
+      addForeignKey("fk_stcg_ucns", Array("space", "endpoint", "name"), "unique_category_names", Array("space", "endpoint", "name"))
+
+    migration.createTable("range_categories").
+      column("space", Types.BIGINT, false).
+      column("endpoint", Types.VARCHAR, 50, false).
+      column("name", Types.VARCHAR, 50, false).
+      column("data_type", Types.VARCHAR, 20, false).
+      column("lower_bound", Types.VARCHAR, 255, true).
+      column("upper_bound", Types.VARCHAR, 255, true).
+      column("max_granularity", Types.VARCHAR, 20, true).
+      pk("space", "endpoint", "name")
+
+    migration.alterTable("range_categories").
+      addForeignKey("fk_racg_ucns", Array("space", "endpoint", "name"), "unique_category_names", Array("space", "endpoint", "name"))
+
+
+    migration.createTable("unique_category_view_names").
+      column("space", Types.BIGINT, false).
+      column("endpoint", Types.VARCHAR, 50, false).
+      column("name", Types.VARCHAR, 50, false).
+      column("view_name", Types.VARCHAR, 50, false).
+      pk("space", "endpoint", "name", "view_name")
+
+    migration.alterTable("unique_category_view_names").
+      addForeignKey("fk_ucvn_evws", Array("space", "endpoint", "view_name"), "endpoint_views", Array("space", "endpoint", "name"))
+
+    migration.createTable("prefix_category_views").
+      column("space", Types.BIGINT, false).
+      column("endpoint", Types.VARCHAR, 50, false).
+      column("name", Types.VARCHAR, 50, false).
+      column("view_name", Types.VARCHAR, 50, false).
+      column("prefix_length", Types.INTEGER, true).
+      column("max_length", Types.INTEGER, true).
+      column("step", Types.INTEGER, true).
+      pk("space", "endpoint", "view_name", "name")
+
+    migration.alterTable("prefix_category_views").
+      addForeignKey("fk_pfcv_evws", Array("space", "endpoint", "view_name"), "endpoint_views", Array("space", "endpoint", "name"))
+
+    migration.alterTable("prefix_category_views").
+      addForeignKey("fk_pfcv_ucns", Array("space", "endpoint", "name", "view_name"), "unique_category_view_names", Array("space", "endpoint", "name", "view_name"))
+
+    migration.createTable("set_category_views").
+      column("space", Types.BIGINT, false).
+      column("endpoint", Types.VARCHAR, 50, false).
+      column("name", Types.VARCHAR, 50, false).
+      column("view_name", Types.VARCHAR, 50, false).
+      column("value", Types.VARCHAR, 255, false).
+      pk("space", "endpoint",  "view_name", "name", "value")
+
+    migration.alterTable("set_category_views").
+      addForeignKey("fk_stcv_evws", Array("space", "endpoint", "view_name"), "endpoint_views", Array("space", "endpoint", "name"))
+
+    migration.alterTable("set_category_views").
+      addForeignKey("fk_stcv_ucns", Array("space", "endpoint", "name", "view_name"), "unique_category_view_names", Array("space", "endpoint", "name", "view_name"))
+
+    migration.createTable("range_category_views").
+      column("space", Types.BIGINT, false).
+      column("endpoint", Types.VARCHAR, 50, false).
+      column("name", Types.VARCHAR, 50, false).
+      column("view_name", Types.VARCHAR, 50, false).
+      column("data_type", Types.VARCHAR, 20, false).
+      column("lower_bound", Types.VARCHAR, 255, true).
+      column("upper_bound", Types.VARCHAR, 255, true).
+      column("max_granularity", Types.VARCHAR, 20, true).
+      pk("space", "endpoint", "name", "view_name")
+
+    migration.alterTable("range_category_views").
+      addForeignKey("fk_racv_evws", Array("space", "endpoint", "view_name"), "endpoint_views", Array("space", "endpoint", "name"))
+
+    migration.alterTable("range_category_views").
+      addForeignKey("fk_racv_ucns", Array("space", "endpoint", "name", "view_name"), "unique_category_view_names", Array("space", "endpoint", "name", "view_name"))
+
     /*
     migration.createTable("external_http_credentials")
 
-    migration.createTable("pair_limits")
 
-
-
-    migration.createTable("prefix_categories")
-    migration.createTable("prefix_categories_views")
-    migration.createTable("range_categories")
-    migration.createTable("range_categories_views")
     migration.createTable("repair_actions")
     migration.createTable("scan_statements")
-    migration.createTable("set_categories")
-    migration.createTable("set_categories_views")
+
     migration.createTable("space_limits")
     migration.createTable("store_checkpoints")
-    migration.createTable("unique_category_names")
+
     migration.createTable("unique_category_view_names")
     migration.createTable("user_item_visibility")
     */
@@ -265,10 +359,13 @@ object Step0048 extends VerifiedMigrationStep {
     val upstream = randomString()
     val downstream = randomString()
 
+    val upstreamView = randomString()
+    val downstreamView = randomString()
+
     createEndpoint(migration, spaceId, upstream)
-    createEndpointView(migration, spaceId, upstream)
+    createEndpointView(migration, spaceId, upstream,upstreamView)
     createEndpoint(migration, spaceId, downstream)
-    createEndpointView(migration, spaceId, downstream)
+    createEndpointView(migration, spaceId, downstream, downstreamView)
 
     val pair = randomString()
 
@@ -290,7 +387,112 @@ object Step0048 extends VerifiedMigrationStep {
     createSpaceLimit(migration, spaceId, limitName)
     createPairLimit(migration, spaceId, pair, limitName)
 
+    val prefixCategoryName = randomString()
+
+    createUniqueCategoryName(migration, spaceId, upstream, prefixCategoryName)
+    createUniqueCategoryViewName(migration, spaceId, upstream, upstreamView, prefixCategoryName)
+    createPrefixCategory(migration, spaceId, upstream, prefixCategoryName)
+    createPrefixCategoryView(migration, spaceId, upstream, upstreamView, prefixCategoryName)
+
+    val setCategoryName = randomString()
+
+    createUniqueCategoryName(migration, spaceId, upstream, setCategoryName)
+    createUniqueCategoryViewName(migration, spaceId, upstream, upstreamView, setCategoryName)
+    createSetCategory(migration, spaceId, upstream, setCategoryName)
+    createSetCategoryView(migration, spaceId, upstream, upstreamView, setCategoryName)
+
+    val rangeCategoryName = randomString()
+
+    createUniqueCategoryName(migration, spaceId, downstream, rangeCategoryName)
+    createUniqueCategoryViewName(migration, spaceId, downstream, downstreamView, rangeCategoryName)
+    createRangeCategory(migration, spaceId, downstream, rangeCategoryName)
+    createRangeCategoryView(migration, spaceId, downstream, downstreamView, rangeCategoryName)
+
     migration
+  }
+
+  def createUniqueCategoryViewName(migration:MigrationBuilder, spaceId:String, endpoint:String, view:String, name:String) {
+    migration.insert("unique_category_view_names").values(Map(
+      "space" -> spaceId,
+      "endpoint" -> endpoint,
+      "name" -> name,
+      "view_name" -> view
+    ))
+  }
+
+  def createUniqueCategoryName(migration:MigrationBuilder, spaceId:String, endpoint:String, name:String) {
+    migration.insert("unique_category_names").values(Map(
+      "space" -> spaceId,
+      "endpoint" -> endpoint,
+      "name" -> name
+    ))
+  }
+
+  def createRangeCategory(migration:MigrationBuilder, spaceId:String, endpoint:String, name:String) {
+    migration.insert("range_categories").values(Map(
+      "space" -> spaceId,
+      "endpoint" -> endpoint,
+      "name" -> name,
+      "data_type" -> "date",
+      "lower_bound" -> "2001-10-10",
+      "upper_bound" -> "2001-10-11",
+      "max_granularity" -> "yearly"
+    ))
+  }
+
+  def createRangeCategoryView(migration:MigrationBuilder, spaceId:String, endpoint:String, view:String, name:String) {
+    migration.insert("range_category_views").values(Map(
+      "space" -> spaceId,
+      "endpoint" -> endpoint,
+      "name" -> name,
+      "view_name" -> view,
+      "data_type" -> "date",
+      "lower_bound" -> "2001-10-10",
+      "upper_bound" -> "2001-10-11",
+      "max_granularity" -> "yearly"
+    ))
+  }
+
+  def createSetCategory(migration:MigrationBuilder, spaceId:String, endpoint:String, name:String) {
+    migration.insert("set_categories").values(Map(
+      "space" -> spaceId,
+      "endpoint" -> endpoint,
+      "name" -> name,
+      "value" -> randomString()
+    ))
+  }
+
+  def createSetCategoryView(migration:MigrationBuilder, spaceId:String, endpoint:String, view:String, name:String) {
+    migration.insert("set_category_views").values(Map(
+      "space" -> spaceId,
+      "endpoint" -> endpoint,
+      "name" -> name,
+      "view_name" -> view,
+      "value" -> randomString()
+    ))
+  }
+
+  def createPrefixCategoryView(migration:MigrationBuilder, spaceId:String, endpoint:String, view:String, name:String) {
+    migration.insert("prefix_category_views").values(Map(
+      "space" -> spaceId,
+      "endpoint" -> endpoint,
+      "name" -> name,
+      "view_name" -> view,
+      "prefix_length" -> "1",
+      "max_length" -> "2",
+      "step" -> "1"
+    ))
+  }
+
+  def createPrefixCategory(migration:MigrationBuilder, spaceId:String, endpoint:String, name:String) {
+    migration.insert("prefix_categories").values(Map(
+      "space" -> spaceId,
+      "endpoint" -> endpoint,
+      "name" -> name,
+      "prefix_length" -> "1",
+      "max_length" -> "2",
+      "step" -> "1"
+    ))
   }
 
   def createPairLimit(migration:MigrationBuilder, spaceId:String, pair:String, limit:String) {
@@ -402,11 +604,11 @@ object Step0048 extends VerifiedMigrationStep {
     ))
   }
 
-  def createEndpointView(migration:MigrationBuilder, spaceId:String, endpoint:String) {
+  def createEndpointView(migration:MigrationBuilder, spaceId:String, endpoint:String, name:String) {
     migration.insert("endpoint_views").values(Map(
       "space" -> spaceId,
       "endpoint" -> endpoint,
-      "name" -> randomString()
+      "name" -> name
     ))
   }
 
