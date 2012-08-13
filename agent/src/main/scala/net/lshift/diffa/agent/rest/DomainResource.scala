@@ -21,7 +21,6 @@ import org.springframework.beans.factory.annotation.Autowired
 import javax.ws.rs.core.{UriInfo, Context}
 import javax.ws.rs.{PathParam, Path}
 import net.lshift.diffa.kernel.client.ActionsClient
-import net.lshift.diffa.kernel.differencing.DifferencesManager
 import net.lshift.diffa.kernel.diag.DiagnosticsManager
 import net.lshift.diffa.kernel.actors.PairPolicyClient
 import net.lshift.diffa.kernel.frontend.{Changes, Configuration}
@@ -35,6 +34,7 @@ import net.lshift.diffa.kernel.util.AlertCodes._
 import net.lshift.diffa.kernel.config.{DomainCredentialsManager, User, DomainConfigStore}
 import net.lshift.diffa.kernel.config.system.CachedSystemConfigStore
 import net.lshift.diffa.kernel.limiting.DomainRateLimiterFactory
+import net.lshift.diffa.kernel.differencing.{DomainDifferenceStore, DifferencesManager}
 
 /**
  * The policy is that we will publish spaces as the replacement term for domains
@@ -61,6 +61,7 @@ class DomainResource {
   @Autowired var changes:Changes = null
   @Autowired var changeEventRateLimiterFactory: DomainRateLimiterFactory = null
   @Autowired var reports:ReportManager = null
+  @Autowired var diffStore:DomainDifferenceStore = null
 
   private def getCurrentUser(domain:String) : String = SecurityContextHolder.getContext.getAuthentication.getPrincipal match {
     case user:UserDetails => user.getUsername
@@ -98,7 +99,7 @@ class DomainResource {
 
   @Path("/escalations")
   def getEscalationsResource(@PathParam("domain") domain:String) =
-    withValidDomain(domain, new EscalationsResource(config, domain))
+    withValidDomain(domain, new EscalationsResource(config, diffStore, domain))
 
   @Path("/actions")
   def getActionsResource(@Context uri:UriInfo,
