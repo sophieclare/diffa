@@ -203,13 +203,50 @@ object Step0048 extends VerifiedMigrationStep {
     migration.createTable("user_item_visibility")
     */
 
+    // Limits
+
+    migration.createTable("limit_definitions").
+      column("name", Types.VARCHAR, 50, false).
+      column("description", Types.VARCHAR, 255, false).
+      pk("name")
+
+    migration.createTable("system_limits").
+      column("name", Types.VARCHAR, 50, false).
+      column("default_limit", Types.INTEGER, 11, false, 0).
+      column("hard_limit", Types.INTEGER, 11, false, 0).
+      pk("name")
+
+    migration.createTable("space_limits").
+      column("space", Types.BIGINT, false).
+      column("name", Types.VARCHAR, 50, false).
+      column("default_limit", Types.INTEGER, 11, false, 0).
+      column("hard_limit", Types.INTEGER, 11, false, 0).
+      pk("space", "name")
+
+    migration.createTable("pair_limits").
+      column("space", Types.BIGINT, false).
+      column("pair", Types.VARCHAR, 50, false).
+      column("name", Types.VARCHAR, 50, false).
+      column("limit_value", Types.INTEGER, 11, false, 0).
+      pk("space", "pair", "name")
+
+    migration.alterTable("system_limits").
+      addForeignKey("fk_system_limit_service_limit", "name", "limit_definitions", "name")
+
+    migration.alterTable("space_limits").
+      addForeignKey("fk_domain_limit_service_limit", "name", "limit_definitions", "name").
+      addForeignKey("fk_domain_limit_space", "space", "spaces", "id")
+
+    migration.alterTable("pair_limits").
+      addForeignKey("fk_pair_limit_service_limit", "name", "limit_definitions", "name").
+      addForeignKey("fk_pair_limit_pair", Array("space", "pair"), "pairs", Array("space", "name"))
+
     // Non-space-specific stuff
 
     /*
-    migration.createTable("limit_definitions")
+
     migration.createTable("members")
     migration.createTable("sysetm_config_options")
-    migration.createTable("sysetm_limits")
     migration.createTable("users")
     */
 
@@ -246,7 +283,47 @@ object Step0048 extends VerifiedMigrationStep {
 
     createPairReport(migration, spaceId, pair)
 
+    val limitName = randomString()
+
+    createLimitDefinition(migration, limitName)
+    createSystemLimit(migration, limitName)
+    createSpaceLimit(migration, spaceId, limitName)
+    createPairLimit(migration, spaceId, pair, limitName)
+
     migration
+  }
+
+  def createPairLimit(migration:MigrationBuilder, spaceId:String, pair:String, limit:String) {
+    migration.insert("pair_limits").values(Map(
+      "space" -> spaceId,
+      "pair" -> pair,
+      "name" -> limit,
+      "limit_value" -> "100"
+    ))
+  }
+
+  def createSpaceLimit(migration:MigrationBuilder, spaceId:String, limit:String) {
+    migration.insert("space_limits").values(Map(
+      "space" -> spaceId,
+      "name" -> limit,
+      "default_limit" -> "10",
+      "hard_limit" -> "100"
+    ))
+  }
+
+  def createSystemLimit(migration:MigrationBuilder, limit:String) {
+    migration.insert("system_limits").values(Map(
+      "name" -> limit,
+      "default_limit" -> "10",
+      "hard_limit" -> "100"
+    ))
+  }
+
+  def createLimitDefinition(migration:MigrationBuilder, limit:String) {
+    migration.insert("limit_definitions").values(Map(
+      "name" -> limit,
+      "description" -> randomString()
+    ))
   }
 
   def createPairReport(migration:MigrationBuilder, spaceId:String, pair:String) {
