@@ -169,12 +169,24 @@ object Step0048 extends VerifiedMigrationStep {
     migration.alterTable("pair_views").
       addForeignKey("fk_prvw_pair", Array("space", "pair"), "pairs", Array("space", "name"))
 
+
+    migration.createTable("pair_reports").
+      column("space", Types.BIGINT, false).
+      column("pair", Types.VARCHAR, 50, false).
+      column("name", Types.VARCHAR, 50, false).
+      column("report_type", Types.VARCHAR, 50, false).
+      column("target", Types.VARCHAR, 1024, false).
+      pk("space", "pair", "name")
+
+    migration.alterTable("pair_reports").
+      addForeignKey("fk_prep_pair", Array("space", "pair"), "pairs", Array("space", "name"))
+
     /*
     migration.createTable("external_http_credentials")
 
     migration.createTable("pair_limits")
-    migration.createTable("pair_reports")
-    migration.createTable("pair_views")
+
+
 
     migration.createTable("prefix_categories")
     migration.createTable("prefix_categories_views")
@@ -232,7 +244,19 @@ object Step0048 extends VerifiedMigrationStep {
     createDiff(migration, spaceId, pair, escalation)
     createPendingDiff(migration, spaceId, pair)
 
+    createPairReport(migration, spaceId, pair)
+
     migration
+  }
+
+  def createPairReport(migration:MigrationBuilder, spaceId:String, pair:String) {
+    migration.insert("pair_reports").values(Map(
+      "space" -> spaceId,
+      "pair" -> pair,
+      "name" -> randomString(),
+      "report_type" -> "differences",
+      "target" -> "http://example.com/bulk_diff_handler"
+    ))
   }
 
   def createPendingDiff(migration:MigrationBuilder, spaceId:String, pair:String) {
