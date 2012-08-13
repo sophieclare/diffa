@@ -20,6 +20,7 @@ import net.lshift.hibernate.migrations.MigrationBuilder
 import java.sql.Types
 import net.lshift.diffa.schema.migrations.{DefinePartitionInformationTable, VerifiedMigrationStep}
 import scala.collection.JavaConversions._
+import net.lshift.diffa.schema.configs.InternalCollation
 
 object Step0048 extends VerifiedMigrationStep {
 
@@ -403,6 +404,33 @@ object Step0048 extends VerifiedMigrationStep {
       pk("opt_key")
 
     // Prime with initial data
+
+    migration.insert("system_config_options").values(Map(
+      "opt_key" -> InternalCollation.key,
+      "opt_val" -> InternalCollation.defaultValue))
+
+    migration.insert("spaces").values(Map(
+      "id" -> "0",
+      "name" -> "diffa",
+      "config_version" -> "0"
+    ))
+
+    migration.insert("config_options").values(Map(
+      "space" -> "0",
+      "opt_key" -> "configStore.schemaVersion",
+      "opt_val" -> "0"
+    ))
+
+    migration.insert("users").values(Map(
+      "name" -> "guest",
+      "email" -> "guest@diffa.io",
+      "password_enc" -> "84983c60f7daadc1cb8698621f802c0d9f9a3c3c295c810748fb048115c186ec",
+      "superuser" -> Boolean.box(true)
+    ))
+
+    migration.insert("schema_version").values(Map(
+      "version" -> new java.lang.Integer(versionId)
+    ))
 
     migration
   }
