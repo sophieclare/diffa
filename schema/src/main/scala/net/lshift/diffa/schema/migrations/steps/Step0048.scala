@@ -110,9 +110,9 @@ object Step0048 extends VerifiedMigrationStep {
       addForeignKey("fk_escl_pair", Array("space", "pair"), "pairs", Array("space", "pair"))
 
     migration.createTable("diffs").
-      column("seq_id", Types.BIGINT, false).
       column("space", Types.BIGINT, false).
       column("pair", Types.VARCHAR, 50, false).
+      column("seq_id", Types.BIGINT, false).
       column("entity_id", Types.VARCHAR, 255, false).
       column("is_match", Types.BIT, false).
       column("detected_at", Types.TIMESTAMP, false).
@@ -139,13 +139,32 @@ object Step0048 extends VerifiedMigrationStep {
     migration.createIndex("rdiff_domain_idx", "diffs", "entity_id", "space", "pair")
 
 
+    migration.createTable("pending_diffs").
+      column("space", Types.BIGINT, false).
+      column("pair", Types.VARCHAR, 50, false).
+      column("seq_id", Types.BIGINT, false).
+      column("entity_id", Types.VARCHAR, 255, false).
+      column("detected_at", Types.TIMESTAMP, false).
+      column("last_seen", Types.TIMESTAMP, false).
+      column("upstream_vsn", Types.VARCHAR, 255, true).
+      column("downstream_vsn", Types.VARCHAR, 255, true).
+      pk("space", "pair", "seq_id")
+
+    migration.alterTable("pending_diffs")
+      .addForeignKey("fk_pddf_pair", Array("space", "pair"), "pairs", Array("space", "name"))
+
+    migration.alterTable("pending_diffs")
+      .addUniqueConstraint("uk_pending_diffs", "entity_id", "space", "pair")
+
+    migration.createIndex("pdiff_domain_idx", "pending_diffs", "entity_id", "space", "pair")
+
     /*
     migration.createTable("external_http_credentials")
 
     migration.createTable("pair_limits")
     migration.createTable("pair_reports")
     migration.createTable("pair_views")
-    migration.createTable("pending_diffs")
+
     migration.createTable("prefix_categories")
     migration.createTable("prefix_categories_views")
     migration.createTable("range_categories")
@@ -199,8 +218,22 @@ object Step0048 extends VerifiedMigrationStep {
 
     createEscalation(migration, spaceId, pair, escalation)
     createDiff(migration, spaceId, pair, escalation)
+    createPendingDiff(migration, spaceId, pair)
 
     migration
+  }
+
+  def createPendingDiff(migration:MigrationBuilder, spaceId:String, pair:String) {
+    migration.insert("pending_diffs").values(Map(
+      "space" -> spaceId,
+      "pair" -> pair,
+      "seq_id" -> randomInt(),
+      "entity_id" -> randomString(),
+      "upstream_vsn" -> randomString(),
+      "downstream_vsn" -> randomString(),
+      "detected_at" -> randomTimestamp(),
+      "last_seen" -> randomTimestamp()
+    ))
   }
 
   def createDiff(migration:MigrationBuilder, spaceId:String, pair:String, escalation:String) {
