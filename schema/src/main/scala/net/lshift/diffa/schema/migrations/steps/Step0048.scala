@@ -46,6 +46,27 @@ object Step0048 extends VerifiedMigrationStep {
       column("config_version", Types.INTEGER, 11, false).
       pk("id")
 
+    // Let's give ourselves some users and then make sure that they can become space cadets
+
+    migration.createTable("users").
+      column("name", Types.VARCHAR, 50, false).
+      column("email", Types.VARCHAR, 1024, true).
+      column("password_enc", Types.VARCHAR, 100, true).
+      column("superuser", Types.BIT, 1, false, 0).
+      column("token", Types.VARCHAR, 50, true).
+      pk("name")
+
+    migration.alterTable("users").addUniqueConstraint("token")
+
+    migration.createTable("members").
+      column("space", Types.BIGINT, false).
+      column("username", Types.VARCHAR, 50, false).
+      pk("space", "username")
+
+    migration.alterTable("members").
+      addForeignKey("fk_mmbs_dmns", "space", "spaces", "id").
+      addForeignKey("fk_mmbs_user", "username", "users", "name")
+
     // Now start to create things that are scoped on spaces
 
     migration.createTable("config_options").
@@ -325,10 +346,16 @@ object Step0048 extends VerifiedMigrationStep {
     migration.alterTable("store_checkpoints").
       addForeignKey("fk_stcp_pair", Array("space", "pair"), "pairs", Array("space", "name"))
 
-    /*
+    migration.createTable("user_item_visibility").
+      column("space", Types.BIGINT, false).
+      column("pair", Types.VARCHAR, 50, false).
+      column("username", Types.VARCHAR, 50, false).
+      column("item_type", Types.VARCHAR, 20, false).
+      pk("space", "pair", "username", "item_type")
 
-    migration.createTable("user_item_visibility")
-    */
+    migration.alterTable("user_item_visibility").
+      addForeignKey("fk_uiv_pair", Array("space", "pair"), "pairs", Array("space", "name")).
+      addForeignKey("fk_uiv_mmbs", Array("space", "username"), "members", Array("space", "username"))
 
     // Limits
 
@@ -370,12 +397,12 @@ object Step0048 extends VerifiedMigrationStep {
 
     // Non-space-specific stuff
 
-    /*
+    migration.createTable("system_config_options").
+      column("opt_key", Types.VARCHAR, 255, false).
+      column("opt_val", Types.VARCHAR, 255, false).
+      pk("opt_key")
 
-    migration.createTable("members")
-    migration.createTable("sysetm_config_options")
-    migration.createTable("users")
-    */
+    // Prime with initial data
 
     migration
   }
@@ -449,7 +476,39 @@ object Step0048 extends VerifiedMigrationStep {
 
     createStoreCheckpoint(migration, spaceId, pair)
 
+    val user = randomString()
+
+    createUser(migration, user)
+    createMember(migration, spaceId, user)
+    createUserItemVisibility(migration, spaceId, pair, user)
+
     migration
+  }
+
+  def createUserItemVisibility(migration:MigrationBuilder, spaceId:String, pair:String, user:String) {
+    migration.insert("user_item_visibility").values(Map(
+      "space" -> spaceId,
+      "pair" -> pair,
+      "username" -> user,
+      "item_type" -> "SWIM_LANE"
+    ))
+  }
+
+  def createMember(migration:MigrationBuilder, spaceId:String, user:String) {
+    migration.insert("members").values(Map(
+      "space" -> spaceId,
+      "username" -> user
+    ))
+  }
+
+  def createUser(migration:MigrationBuilder, user:String) {
+    migration.insert("users").values(Map(
+      "name" -> user,
+      "email" -> "foo@bar.com",
+      "password_enc" -> randomString(),
+      "token" -> randomString(),
+      "superuser" -> "1"
+    ))
   }
 
   def createStoreCheckpoint(migration:MigrationBuilder, spaceId:String, pair:String) {
