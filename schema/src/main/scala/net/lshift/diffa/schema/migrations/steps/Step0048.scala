@@ -294,10 +294,20 @@ object Step0048 extends VerifiedMigrationStep {
     migration.alterTable("external_http_credentials").
       addForeignKey("fk_domain_http_creds", "space", "spaces", "id")
 
+    migration.createTable("repair_actions").
+      column("space", Types.BIGINT, false).
+      column("pair", Types.VARCHAR, 50, false).
+      column("name", Types.VARCHAR, 50, false).
+      column("url", Types.VARCHAR, 1024, true).
+      column("scope", Types.VARCHAR, 20, true).
+      pk("space", "pair", "name")
+
+    migration.alterTable("repair_actions").
+      addForeignKey("fk_rpac_pair", Array("space", "pair"), "pairs", Array("space", "name"))
+
     /*
-    migration.createTable("repair_actions")
+
     migration.createTable("scan_statements")
-    migration.createTable("space_limits")
     migration.createTable("store_checkpoints")
     migration.createTable("user_item_visibility")
     */
@@ -415,7 +425,19 @@ object Step0048 extends VerifiedMigrationStep {
 
     createExternalHttpCredentials(migration, spaceId)
 
+    createRepairAction(migration, spaceId, pair)
+
     migration
+  }
+
+  def createRepairAction(migration:MigrationBuilder, spaceId:String, pair:String) {
+    migration.insert("repair_actions").values(Map(
+      "space" -> spaceId,
+      "pair" -> pair,
+      "name" -> randomString(),
+      "url" -> "http://someurl.com/repair",
+      "scope" -> "entity"
+    ))
   }
 
   def createExternalHttpCredentials(migration:MigrationBuilder, spaceId:String) {
