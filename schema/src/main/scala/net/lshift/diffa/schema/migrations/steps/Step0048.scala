@@ -158,6 +158,17 @@ object Step0048 extends VerifiedMigrationStep {
 
     migration.createIndex("pdiff_domain_idx", "pending_diffs", "entity_id", "space", "pair")
 
+    migration.createTable("pair_views").
+      column("space", Types.BIGINT, false).
+      column("pair", Types.VARCHAR, 50, false).
+      column("name", Types.VARCHAR, 50, false).
+      column("scan_cron_spec", Types.VARCHAR, 50, true).
+      column("scan_cron_enabled", Types.BIT, 1, true, 0).
+      pk("space", "pair", "name")
+
+    migration.alterTable("pair_views").
+      addForeignKey("fk_prvw_pair", Array("space", "pair"), "pairs", Array("space", "name"))
+
     /*
     migration.createTable("external_http_credentials")
 
@@ -213,6 +224,7 @@ object Step0048 extends VerifiedMigrationStep {
     val pair = randomString()
 
     createPair(migration, spaceId, pair, upstream, downstream)
+    createPairView(migration, spaceId, pair)
 
     val escalation = randomString()
 
@@ -262,6 +274,16 @@ object Step0048 extends VerifiedMigrationStep {
       "action_type" -> "ignore",
       "delay" -> "10",
       "rule" -> "mismatch"
+    ))
+  }
+
+  def createPairView(migration:MigrationBuilder, spaceId:String, parent:String) {
+    migration.insert("pair_views").values(Map(
+      "space" -> spaceId,
+      "pair" -> parent,
+      "name" -> randomString(),
+      "scan_cron_spec" -> "0 0 * * * ?",
+      "scan_cron_enabled" -> "1"
     ))
   }
 
