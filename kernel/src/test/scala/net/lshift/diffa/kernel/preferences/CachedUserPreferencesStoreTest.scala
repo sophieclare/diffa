@@ -24,13 +24,14 @@ import org.easymock.EasyMock._
 import org.easymock.classextension.{EasyMock => E4}
 import org.jooq.impl.Factory
 import scala.collection.JavaConversions._
-import net.lshift.diffa.kernel.config.DiffaPairRef
+import net.lshift.diffa.kernel.config.{SpacePathCache, DiffaPairRef}
 
 class CachedUserPreferencesStoreTest {
 
   val cacheProvider = new HazelcastCacheProvider
   val jooq = E4.createStrictMock(classOf[DatabaseFacade])
-  val preferencesStore = new JooqUserPreferencesStore(jooq, cacheProvider)
+  val sc = E4.createNiceMock(classOf[SpacePathCache])
+  val preferencesStore = new JooqUserPreferencesStore(jooq, cacheProvider, sc)
 
   @Before
   def clearCache = {

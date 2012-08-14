@@ -23,13 +23,16 @@ import org.easymock.EasyMock._
 import org.jooq.impl.Factory
 import org.junit.Assert._
 import net.lshift.diffa.kernel.config.system.JooqSystemConfigStore
+import net.lshift.diffa.kernel.util.sequence.HazelcastSequenceProvider
 
 class CachedSystemConfigStoreTest {
 
   val jooq = E4.createStrictMock(classOf[DatabaseFacade])
   val cp = new HazelcastCacheProvider
+  val sp = new HazelcastSequenceProvider
+  val sc = E4.createNiceMock(classOf[SpacePathCache])
 
-  val configStore = new JooqSystemConfigStore(jooq,cp)
+  val configStore = new JooqSystemConfigStore(jooq,cp, sp, sc)
 
   @Test
   def shouldCacheDomainExistenceAndInvalidateOnRemoval {

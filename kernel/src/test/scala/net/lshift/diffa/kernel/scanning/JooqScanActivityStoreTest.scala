@@ -41,6 +41,7 @@ class JooqScanActivityStoreTest {
     val ref = DiffaPairRef(key = pair, domain = domain)
 
     val originalStatement = ScanStatement(
+      space = 0L,
       id = id,
       domain =  domain,
       pair =  pair,

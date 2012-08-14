@@ -29,14 +29,15 @@ class DomainMembershipAwareTest {
   val sf = createStrictMock(classOf[SessionFactory])
   val jf = E4.createStrictMock(classOf[JooqDatabaseFacade])
   val hm = E4.createNiceMock(classOf[HookManager])
+  val sc = E4.createNiceMock(classOf[SpacePathCache])
 
   val cp = new HazelcastCacheProvider
 
   val membershipListener = createStrictMock(classOf[DomainMembershipAware])
 
-  val domainConfigStore = new JooqDomainConfigStore(jf, hm, cp, membershipListener)
+  val domainConfigStore = new JooqDomainConfigStore(jf, hm, cp, membershipListener, sc)
 
-  val member = Member("user","domain")
+  val member = Member("user",0L)
 
   @Test
   def shouldEmitDomainMembershipCreationEvent() = {
