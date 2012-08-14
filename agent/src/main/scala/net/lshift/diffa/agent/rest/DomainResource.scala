@@ -31,10 +31,13 @@ import org.springframework.security.core.context.SecurityContextHolder
 import org.springframework.security.core.userdetails.UserDetails
 import org.slf4j.LoggerFactory
 import net.lshift.diffa.kernel.util.AlertCodes._
-import net.lshift.diffa.kernel.config.{DomainCredentialsManager, User, DomainConfigStore}
 import net.lshift.diffa.kernel.config.system.CachedSystemConfigStore
 import net.lshift.diffa.kernel.limiting.DomainRateLimiterFactory
+<<<<<<< HEAD
 import net.lshift.diffa.kernel.differencing.{DomainDifferenceStore, DifferencesManager}
+=======
+import net.lshift.diffa.kernel.config.{BreakerHelper, DomainCredentialsManager, User, DomainConfigStore}
+>>>>>>> master
 
 /**
  * The policy is that we will publish spaces as the replacement term for domains
@@ -62,6 +65,7 @@ class DomainResource {
   @Autowired var changeEventRateLimiterFactory: DomainRateLimiterFactory = null
   @Autowired var reports:ReportManager = null
   @Autowired var diffStore:DomainDifferenceStore = null
+  @Autowired var breakers:BreakerHelper = null
 
   private def getCurrentUser(domain:String) : String = SecurityContextHolder.getContext.getAuthentication.getPrincipal match {
     case user:UserDetails => user.getUsername
@@ -85,7 +89,7 @@ class DomainResource {
   @Path("/config")
   def getConfigResource(@Context uri:UriInfo,
                         @PathParam("domain") domain:String) =
-    withValidDomain(domain, new ConfigurationResource(config, domain, getCurrentUser(domain), uri))
+    withValidDomain(domain, new ConfigurationResource(config, breakers, domain, getCurrentUser(domain), uri))
 
   @Path("/credentials")
   def getCredentialsResource(@Context uri:UriInfo,
