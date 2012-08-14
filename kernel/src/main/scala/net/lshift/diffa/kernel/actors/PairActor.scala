@@ -35,7 +35,7 @@ import concurrent.SyncVar
 import net.lshift.diffa.kernel.diag.{DiagnosticLevel, DiagnosticsManager}
 import net.lshift.diffa.kernel.util.StoreSynchronizationUtils._
 import org.slf4j.{LoggerFactory, Logger}
-import net.lshift.diffa.kernel.config.{DomainConfigStore, Endpoint, DiffaPair}
+import net.lshift.diffa.kernel.config.{DomainConfigStore, Endpoint}
 import net.lshift.diffa.kernel.util.{EndpointSide, DownstreamEndpoint, UpstreamEndpoint}
 import net.lshift.diffa.participant.scanning.{ScanAggregation, ScanRequest, ScanResultEntry, ScanConstraint}
 import akka.util.Timeout
