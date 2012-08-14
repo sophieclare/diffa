@@ -421,21 +421,21 @@ object JooqConfigStoreCompanion {
   def deleteRepairActionsByPair(t:Factory, pair:PairRef) = {
     t.delete(REPAIR_ACTIONS).
       where(REPAIR_ACTIONS.SPACE.equal(pair.space)).
-      and(REPAIR_ACTIONS.NAME.equal(pair.name)).
+      and(REPAIR_ACTIONS.PAIR.equal(pair.name)).
       execute()
   }
 
   def deleteEscalationsByPair(t:Factory, pair:PairRef) = {
     t.delete(ESCALATIONS).
       where(ESCALATIONS.SPACE.equal(pair.space)).
-      and(ESCALATIONS.NAME.equal(pair.name)).
+      and(ESCALATIONS.PAIR.equal(pair.name)).
       execute()
   }
 
   def deleteReportsByPair(t:Factory, pair:PairRef) = {
     t.delete(PAIR_REPORTS).
       where(PAIR_REPORTS.SPACE.equal(pair.space)).
-      and(PAIR_REPORTS.NAME.equal(pair.name)).
+      and(PAIR_REPORTS.PAIR.equal(pair.name)).
       execute()
   }
 
