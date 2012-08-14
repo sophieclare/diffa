@@ -93,14 +93,14 @@ class JooqSystemConfigStore(jooq:JooqDatabaseFacade,
     })
 
     //cachedSpacePaths.evict(space) - this invalidation is triggered by the onDomainRemoved event
-    domainEventSubscribers.foreach(_.onDomainUpdated(path))
+    domainEventSubscribers.foreach(_.onDomainUpdated(sequence))
   }
 
   def deleteDomain(path:String) = {
 
     val space = spacePathCache.resolveSpacePathOrDie(path)
     deleteDomain(space.id)
-    domainEventSubscribers.foreach(_.onDomainRemoved(space.name))
+    domainEventSubscribers.foreach(_.onDomainRemoved(space.id))
     //cachedSpacePaths.evict(path) - this invalidation is triggered by the onDomainRemoved event
 
   }

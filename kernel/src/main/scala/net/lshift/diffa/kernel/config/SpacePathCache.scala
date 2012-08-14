@@ -21,8 +21,14 @@ import net.lshift.diffa.kernel.util.MissingObjectException
   private val cachedSpacePaths = cacheProvider.getCachedMap[String, Space](SPACE_PATHS)
   private val cachedReverseSpacePaths = cacheProvider.getCachedMap[Long, Space](REVERSE_SPACE_PATHS)
 
-  def onDomainUpdated(domain: String) = cachedSpacePaths.evict(domain)
-  def onDomainRemoved(domain: String) = cachedSpacePaths.evict(domain)
+  def onDomainUpdated(space: Long) = evictCaches(space)
+  def onDomainRemoved(space: Long) = evictCaches(space)
+
+  private def evictCaches(id: Long) {
+    val space = lookupSpace(id)
+    cachedSpacePaths.evict(space.name)
+    cachedReverseSpacePaths.evict(id)
+  }
 
   def doesDomainExist(path: String) = resolveSpacePath(path) != NON_EXISTENT_SPACE
 

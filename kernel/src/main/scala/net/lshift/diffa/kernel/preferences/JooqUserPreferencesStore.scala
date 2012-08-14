@@ -119,17 +119,25 @@ class JooqUserPreferencesStore(db:DatabaseFacade, cacheProvider:CacheProvider, s
 
   def onPairUpdated(pair: DiffaPairRef) {
     // This is probably too coarse grained, i.e. it invalidates everything
-    invalidCacheForDomain(pair.domain)
+    maybeInvalidateCacheForDomain(pair.domain)
   }
   def onPairDeleted(pair: DiffaPairRef) {
     // This is probably too coarse grained, i.e. it invalidates everything
-    invalidCacheForDomain(pair.domain)
+    maybeInvalidateCacheForDomain(pair.domain)
   }
-  def onDomainUpdated(domain: String) = invalidCacheForDomain(domain)
-  def onDomainRemoved(domain: String) = invalidCacheForDomain(domain)
 
-  private def invalidCacheForDomain(domain:String) = {
-    cachedFilteredItems.keySubset(FilterByUserPredicate(domain)).evictAll()
+  private def maybeInvalidateCacheForDomain(domain:String) {
+    val space = spacePathCache.resolveSpacePath(domain)
+    if (space != spacePathCache.NON_EXISTENT_SPACE) {
+      invalidCacheForDomain(space.id)
+    }
+  }
+
+  def onDomainUpdated(space: Long) = invalidCacheForDomain(space)
+  def onDomainRemoved(space: Long) = invalidCacheForDomain(space)
+
+  private def invalidCacheForDomain(space:Long) = {
+    cachedFilteredItems.keySubset(FilterByDomainPredicate(space)).evictAll()
   }
 }
 

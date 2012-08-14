@@ -124,14 +124,9 @@ class JooqDomainConfigStore(jooq:JooqDatabaseFacade,
     cachedPairsByEndpoint.keySubset(EndpointByDomainPredicate(space)).evictAll()
   }
 
-  def onDomainUpdated(domain: String) = {
-    val space = spacePathCache.resolveSpacePathOrDie(domain)
-    invalidateAllCaches(space.id)
-  }
-  def onDomainRemoved(domain: String) = {
-    val space = spacePathCache.resolveSpacePathOrDie(domain)
-    invalidateAllCaches(space.id)
-  }
+  def onDomainUpdated(space: Long) = invalidateAllCaches(space)
+
+  def onDomainRemoved(space: Long) = invalidateAllCaches(space)
 
   def createOrUpdateEndpoint(domain:String, endpointDef: EndpointDef) : DomainEndpointDef = {
 
