@@ -222,7 +222,7 @@ class JooqSystemConfigStore(jooq:JooqDatabaseFacade,
                       from(MEMBERS).
                       where(MEMBERS.USERNAME.equal(username)).
                       fetch()
-      results.iterator().map(r => Member(username, r.getValue(MEMBERS.USERNAME)))
+      results.iterator().map(r => Member(username, r.getValue(MEMBERS.SPACE)))
     }).toSeq
   }
 

@@ -341,6 +341,7 @@ case class PairActor(pair:DomainPairDef,
     }
 
     val scanStatement = ScanStatement(
+      space = -1L,
       id = activeScan.id,
       pair = pairRef.key,
       domain = pairRef.domain,
