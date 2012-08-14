@@ -33,11 +33,8 @@ import org.slf4j.LoggerFactory
 import net.lshift.diffa.kernel.util.AlertCodes._
 import net.lshift.diffa.kernel.config.system.CachedSystemConfigStore
 import net.lshift.diffa.kernel.limiting.DomainRateLimiterFactory
-<<<<<<< HEAD
 import net.lshift.diffa.kernel.differencing.{DomainDifferenceStore, DifferencesManager}
-=======
 import net.lshift.diffa.kernel.config.{BreakerHelper, DomainCredentialsManager, User, DomainConfigStore}
->>>>>>> master
 
 /**
  * The policy is that we will publish spaces as the replacement term for domains
