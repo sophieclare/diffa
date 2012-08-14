@@ -26,8 +26,10 @@ import net.lshift.diffa.kernel.util.MissingObjectException
 
   private def evictCaches(id: Long) {
     val space = lookupSpace(id)
-    cachedSpacePaths.evict(space.name)
-    cachedReverseSpacePaths.evict(id)
+    if (space != NON_EXISTENT_SPACE) {
+      cachedSpacePaths.evict(space.name)
+      cachedReverseSpacePaths.evict(id)
+    }
   }
 
   def doesDomainExist(path: String) = resolveSpacePath(path) != NON_EXISTENT_SPACE
