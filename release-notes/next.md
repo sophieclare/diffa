@@ -21,7 +21,7 @@
 
 ## Library Upgrades
 
-* Upgraded to ...
+* Upgraded to Hazelcast 2.2
 
 ## Upgrading
 
