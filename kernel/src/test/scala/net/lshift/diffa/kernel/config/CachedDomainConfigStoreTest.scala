@@ -45,6 +45,7 @@ class CachedDomainConfigStoreTest {
   val spacePathCache = E4.createStrictMock(classOf[SpacePathCache])
 
   expect(spacePathCache.resolveSpacePathOrDie("domain")).andStubReturn(Space(id = -1))
+  expect(spacePathCache.doesDomainExist("domain")).andStubReturn(true)
 
   E4.replay(spacePathCache)
 
