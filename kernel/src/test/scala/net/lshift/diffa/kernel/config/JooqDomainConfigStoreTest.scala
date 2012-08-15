@@ -151,6 +151,9 @@ class JooqDomainConfigStoreTest {
 
     systemConfigStore.deleteDomain(domainName)
 
+    // TODO I find this behavior a bit strange - should these methods not be throwing MissingObjectExceptions
+    // for a non-existent space?
+
     assertTrue(domainConfigStore.listEndpoints(domainName).isEmpty)
     assertTrue(domainConfigStore.listPairs(domainName).isEmpty)
     assertTrue(domainConfigStore.allConfigOptions(domainName).isEmpty)
@@ -399,6 +402,9 @@ class JooqDomainConfigStoreTest {
 
   @Test
   def testDeleteMissing {
+
+    systemConfigStore.createOrUpdateDomain(domainName)
+
     expectMissingObject("endpoint") {
       domainConfigStore.deleteEndpoint(domainName, "MISSING_ENDPOINT")
     }

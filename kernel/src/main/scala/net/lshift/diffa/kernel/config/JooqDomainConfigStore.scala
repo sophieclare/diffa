@@ -275,10 +275,18 @@ class JooqDomainConfigStore(jooq:JooqDatabaseFacade,
 
   def listEndpoints(domain:String): Seq[EndpointDef] = {
 
-    val space = spacePathCache.resolveSpacePathOrDie(domain)
+    if (spacePathCache.doesDomainExist(domain)) {
 
-    cachedEndpoints.readThrough(space.id, () => JooqConfigStoreCompanion.listEndpoints(jooq, Some(space.id)))
-  }.map(_.withoutDomain())
+      val space = spacePathCache.resolveSpacePathOrDie(domain)
+      val endpoints = cachedEndpoints.readThrough(space.id, () => JooqConfigStoreCompanion.listEndpoints(jooq, Some(space.id)))
+      endpoints.map(_.withoutDomain())
+
+    } else {
+
+      Seq[EndpointDef]()
+
+    }
+  }
 
   def createOrUpdatePair(domain:String, pair: PairDef) = {
 
@@ -391,8 +399,12 @@ class JooqDomainConfigStore(jooq:JooqDatabaseFacade,
   }
 
   def listPairs(domain:String) = {
-    val space = spacePathCache.resolveSpacePathOrDie(domain)
-    cachedPairs.readThrough(space.id, () => JooqConfigStoreCompanion.listPairs(jooq, domain, space.id))
+    if (spacePathCache.doesDomainExist(domain)) {
+      val space = spacePathCache.resolveSpacePathOrDie(domain)
+      cachedPairs.readThrough(space.id, () => JooqConfigStoreCompanion.listPairs(jooq, domain, space.id))
+    } else {
+      Seq[DomainPairDef]()
+    }
   }
 
   def listPairsForEndpoint(domain:String, endpoint:String) = {
@@ -474,51 +486,59 @@ class JooqDomainConfigStore(jooq:JooqDatabaseFacade,
 
 
   def allConfigOptions(domain:String) = {
+    if(spacePathCache.doesDomainExist(domain)) {
+      val space = spacePathCache.resolveSpacePathOrDie(domain)
 
-    val space = spacePathCache.resolveSpacePathOrDie(domain)
+      cachedDomainConfigOptionsMap.readThrough(space.id, () => jooq.execute( t => {
+        val results = t.select(CONFIG_OPTIONS.OPT_KEY, CONFIG_OPTIONS.OPT_VAL).
+          from(CONFIG_OPTIONS).
+          where(CONFIG_OPTIONS.SPACE.equal(space.id)).fetch()
 
-    cachedDomainConfigOptionsMap.readThrough(space.id, () => jooq.execute( t => {
-      val results = t.select(CONFIG_OPTIONS.OPT_KEY, CONFIG_OPTIONS.OPT_VAL).
-        from(CONFIG_OPTIONS).
-        where(CONFIG_OPTIONS.SPACE.equal(space.id)).fetch()
+        val configs = new java.util.HashMap[String,String]()
 
-      val configs = new java.util.HashMap[String,String]()
+        results.iterator().foreach(r => {
+          configs.put(r.getValue(CONFIG_OPTIONS.OPT_KEY), r.getValue(CONFIG_OPTIONS.OPT_VAL))
+        })
 
-      results.iterator().foreach(r => {
-        configs.put(r.getValue(CONFIG_OPTIONS.OPT_KEY), r.getValue(CONFIG_OPTIONS.OPT_VAL))
-      })
-
-      configs
-    })).toMap
+        configs
+      })).toMap
+    } else {
+      Map()
+    }
   }
 
 
   def maybeConfigOption(domain:String, key:String) = {
 
-    val space = spacePathCache.resolveSpacePathOrDie(domain)
+    if (spacePathCache.doesDomainExist(domain)) {
 
-    val option = cachedDomainConfigOptions.readThrough(DomainConfigKey(space.id,key), () => jooq.execute( t => {
+      val space = spacePathCache.resolveSpacePathOrDie(domain)
 
-      val record = t.select(CONFIG_OPTIONS.OPT_VAL).
-                     from(CONFIG_OPTIONS).
-                     where(CONFIG_OPTIONS.SPACE.equal(space.id)).
-                       and(CONFIG_OPTIONS.OPT_KEY.equal(key)).
-                     fetchOne()
+      val option = cachedDomainConfigOptions.readThrough(DomainConfigKey(space.id,key), () => jooq.execute( t => {
 
-      if (record != null) {
-        record.getValue(CONFIG_OPTIONS.OPT_VAL)
+        val record = t.select(CONFIG_OPTIONS.OPT_VAL).
+                       from(CONFIG_OPTIONS).
+                       where(CONFIG_OPTIONS.SPACE.equal(space.id)).
+                         and(CONFIG_OPTIONS.OPT_KEY.equal(key)).
+                       fetchOne()
+
+        if (record != null) {
+          record.getValue(CONFIG_OPTIONS.OPT_VAL)
+        }
+        else {
+          // Insert a null byte into as a value for this key in the cache to denote that this key does not
+          // exist and should not get queried for against the the underlying database
+          "\u0000"
+        }
+
+      }))
+
+      option match {
+        case "\u0000"     => None
+        case value        => Some(value)
       }
-      else {
-        // Insert a null byte into as a value for this key in the cache to denote that this key does not
-        // exist and should not get queried for against the the underlying database
-        "\u0000"
-      }
-
-    }))
-
-    option match {
-      case "\u0000"     => None
-      case value        => Some(value)
+    } else {
+      None
     }
   }
 
