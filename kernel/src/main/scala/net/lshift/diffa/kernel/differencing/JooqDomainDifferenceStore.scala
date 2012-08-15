@@ -242,8 +242,6 @@ class JooqDomainDifferenceStore(db: DatabaseFacade,
 
   def ignoreEvent(domain:String, seqId:String) = {
 
-    val space = spacePathCache.resolveSpacePathOrDie(domain)
-
     db.execute { t=>
       val evt = db.getById(t, DIFFS, DIFFS.SEQ_ID, new java.lang.Long(seqId), recordToReportedDifferenceEvent).getOrElse {
         throw new MissingObjectException("No diff found with seqId: " + seqId)

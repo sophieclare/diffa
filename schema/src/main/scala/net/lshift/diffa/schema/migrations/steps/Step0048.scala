@@ -48,6 +48,10 @@ object Step0048 extends VerifiedMigrationStep {
       column("config_version", Types.INTEGER, 11, false).
       pk("id")
 
+    // When this table is hierarchical, this unqiue constraint needs to handled separately - for now, we are just introducing
+    // a surrogate key into the spaces table, which without further ado, opens up the opportunity for duplicate space names
+    migration.alterTable("spaces").addUniqueConstraint("name")
+
     // Let's give ourselves some users and then make sure that they can become space cadets
 
     migration.createTable("users").
