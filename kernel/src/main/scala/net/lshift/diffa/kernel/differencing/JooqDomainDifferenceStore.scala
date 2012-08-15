@@ -85,7 +85,7 @@ class JooqDomainDifferenceStore(db: DatabaseFacade,
     // delete over all pair differences later anyway, so we won't record the result of the removal operation.
     if (hook.isDifferencePartitioningEnabled) {
 
-      JooqConfigStoreCompanion.listPairs(db,space.id).foreach(p => {
+      JooqConfigStoreCompanion.listPairs(db, domain, space.id).foreach(p => {
         hook.removeAllPairDifferences(domain, p.key)
         removeLatestRecordedVersion(p.asRef)
       })

@@ -265,8 +265,13 @@ object JooqConfigStoreCompanion {
     })
   }
 
-
-  def listPairs(jooq:DatabaseFacade, space:Long, key:Option[String] = None, endpoint:Option[String] = None) : Seq[DomainPairDef] = jooq.execute(t => {
+  /**
+   * TODO Passing the domain;String parameter should get nuked - it is currently in here for backwards compatibility
+   * when trying to avoid as little structural change as possible
+   */
+  def listPairs(jooq:DatabaseFacade,
+                @Deprecated domain:String,
+                space:Long, key:Option[String] = None, endpoint:Option[String] = None) : Seq[DomainPairDef] = jooq.execute(t => {
 
     val baseQuery = t.select(PAIRS.getFields).
       select(PAIR_VIEWS.NAME, PAIR_VIEWS.SCAN_CRON_SPEC, PAIR_VIEWS.SCAN_CRON_ENABLED).
@@ -322,6 +327,7 @@ object JooqConfigStoreCompanion {
       val pair = compressed.getOrElseUpdate(compressedKey,
         DomainPairDef(
           space = record.getValue(PAIRS.SPACE),
+          domain = domain,
           key = record.getValue(PAIRS.NAME),
           upstreamName = record.getValue(PAIRS.UPSTREAM),
           downstreamName = record.getValue(PAIRS.DOWNSTREAM),

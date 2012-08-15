@@ -392,12 +392,12 @@ class JooqDomainConfigStore(jooq:JooqDatabaseFacade,
 
   def listPairs(domain:String) = {
     val space = spacePathCache.resolveSpacePathOrDie(domain)
-    cachedPairs.readThrough(space.id, () => JooqConfigStoreCompanion.listPairs(jooq,space.id))
+    cachedPairs.readThrough(space.id, () => JooqConfigStoreCompanion.listPairs(jooq, domain, space.id))
   }
 
   def listPairsForEndpoint(domain:String, endpoint:String) = {
     val space = spacePathCache.resolveSpacePathOrDie(domain)
-    cachedPairsByEndpoint.readThrough(DomainEndpointKey(space.id, endpoint), () => JooqConfigStoreCompanion.listPairs(jooq, space.id, endpoint = Some(endpoint)))
+    cachedPairsByEndpoint.readThrough(DomainEndpointKey(space.id, endpoint), () => JooqConfigStoreCompanion.listPairs(jooq, domain, space.id, endpoint = Some(endpoint)))
   }
 
 
@@ -436,7 +436,7 @@ class JooqDomainConfigStore(jooq:JooqDatabaseFacade,
     val space = spacePathCache.resolveSpacePathOrDie(domain)
 
     cachedPairsByKey.readThrough(DomainPairKey(space.id, key), () => jooq.execute { t =>
-      val pairs = JooqConfigStoreCompanion.listPairs(jooq, space.id, key = Some(key))
+      val pairs = JooqConfigStoreCompanion.listPairs(jooq, domain, space.id, key = Some(key))
       if (pairs.length == 1) {
         pairs(0)
       } else {

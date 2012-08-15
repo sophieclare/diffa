@@ -23,7 +23,7 @@ import org.junit.Assert._
 import net.lshift.diffa.kernel.participants.EndpointLifecycleListener
 import net.lshift.diffa.kernel.config._
 import scala.collection.JavaConversions._
-import org.easymock.IArgumentMatcher
+import org.easymock.{EasyMock, IArgumentMatcher}
 import net.lshift.diffa.kernel.config.DiffaPair
 import net.lshift.diffa.kernel.frontend.DiffaConfig._
 import scala.collection.JavaConversions._
@@ -55,6 +55,7 @@ class ConfigurationTest {
   private val systemConfigStore = storeReferences.systemConfigStore
   private val domainConfigStore = storeReferences.domainConfigStore
   private val serviceLimitsStore = storeReferences.serviceLimitsStore
+  private val spacePathCache = storeReferences.spacePathCache
 
   private val configuration = new Configuration(domainConfigStore,
                                                 systemConfigStore,
@@ -132,6 +133,9 @@ class ConfigurationTest {
   @Test
   def shouldApplyConfigurationToEmptySystem() {
 
+    // Get the sugrrogate key from the cache
+    val space = spacePathCache.resolveSpacePathOrDie(domainName)
+
     // Create users that have membership references in the domain config
 
     val user1 = User(name = "abc", email = "dev_null1@lshift.net", passwordEnc = "TEST")
@@ -140,13 +144,13 @@ class ConfigurationTest {
     systemConfigStore.createOrUpdateUser(user1)
     systemConfigStore.createOrUpdateUser(user2)
 
-    val ep1 = DomainEndpointDef(domain= "domain", name = "upstream1", scanUrl = "http://localhost:1234",
+    val ep1 = DomainEndpointDef(space = space.id, name = "upstream1", scanUrl = "http://localhost:1234",
                 inboundUrl = "http://inbound",
                 categories = Map(
                   "a" -> new RangeCategoryDescriptor("datetime", "2009", "2010"),
                   "b" -> new SetCategoryDescriptor(Set("a", "b", "c"))),
                 views = List(EndpointViewDef("v1")))
-    val ep2 = DomainEndpointDef(domain= "domain", name = "downstream1", scanUrl = "http://localhost:5432/scan",
+    val ep2 = DomainEndpointDef(space = space.id, name = "downstream1", scanUrl = "http://localhost:5432/scan",
           categories = Map(
             "c" -> new PrefixCategoryDescriptor(1, 5, 1),
             "d" -> new PrefixCategoryDescriptor(1, 6, 1)
@@ -202,14 +206,17 @@ class ConfigurationTest {
     shouldApplyConfigurationToEmptySystem
     resetAll
 
+    // Get the surrogate key from the cache
+    val space = spacePathCache.resolveSpacePathOrDie(domainName)
+
       // upstream1 is kept but changed
-    val ep1 = DomainEndpointDef(domain= "domain", name = "upstream1", scanUrl = "http://localhost:6543/scan",
+    val ep1 = DomainEndpointDef(space = space.id, name = "upstream1", scanUrl = "http://localhost:6543/scan",
           inboundUrl = "http://inbound",
           categories = Map(
             "a" -> new RangeCategoryDescriptor("datetime", "2009", "2010"),
             "b" -> new SetCategoryDescriptor(Set("a", "b", "c"))))
       // downstream1 is gone, downstream2 is added
-    val ep2 = DomainEndpointDef(domain= "domain", name = "downstream2", scanUrl = "http://localhost:54321/scan",
+    val ep2 = DomainEndpointDef(space = space.id, name = "downstream2", scanUrl = "http://localhost:54321/scan",
           categories = Map(
             "c" -> new PrefixCategoryDescriptor(1, 5, 1),
             "d" -> new PrefixCategoryDescriptor(1, 6, 1)
