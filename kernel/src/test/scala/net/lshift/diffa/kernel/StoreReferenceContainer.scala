@@ -103,7 +103,7 @@ class LazyCleanStoreReferenceContainer(val applicationEnvironment: DatabaseEnvir
   }
 
   private lazy val jooqDatabaseFacade = new DatabaseFacade(ds, applicationEnvironment.jooqDialect)
-  private lazy val spacePathCache = new SpacePathCache(jooqDatabaseFacade, cacheProvider)
+  private lazy val _spacePathCache = new SpacePathCache(jooqDatabaseFacade, cacheProvider)
 
   private def makeStore[T](consFn: SessionFactory => T, className: String): T = _sessionFactory match {
     case Some(sf) =>
@@ -113,29 +113,29 @@ class LazyCleanStoreReferenceContainer(val applicationEnvironment: DatabaseEnvir
   }
 
   private lazy val _serviceLimitsStore =
-    makeStore[ServiceLimitsStore](sf => new JooqServiceLimitsStore(jooqDatabaseFacade, spacePathCache), "ServiceLimitsStore")
+    makeStore[ServiceLimitsStore](sf => new JooqServiceLimitsStore(jooqDatabaseFacade, _spacePathCache), "ServiceLimitsStore")
 
   private lazy val _domainConfigStore =
-    makeStore(sf => new JooqDomainConfigStore(jooqDatabaseFacade, hookManager, cacheProvider, membershipListener, spacePathCache), "domainConfigStore")
+    makeStore(sf => new JooqDomainConfigStore(jooqDatabaseFacade, hookManager, cacheProvider, membershipListener, _spacePathCache), "domainConfigStore")
 
   private lazy val _systemConfigStore =
     makeStore(sf => {
-      val store = new JooqSystemConfigStore(jooqDatabaseFacade, cacheProvider, sequenceProvider, spacePathCache)
+      val store = new JooqSystemConfigStore(jooqDatabaseFacade, cacheProvider, sequenceProvider, _spacePathCache)
       store.registerDomainEventListener(_domainConfigStore)
       store
     }, "SystemConfigStore")
 
   private lazy val _domainCredentialsStore =
-    makeStore(sf => new JooqDomainCredentialsStore(facade, spacePathCache), "domainCredentialsStore")
+    makeStore(sf => new JooqDomainCredentialsStore(facade, _spacePathCache), "domainCredentialsStore")
 
   private lazy val _userPreferencesStore =
-    makeStore(sf => new JooqUserPreferencesStore(facade, cacheProvider, spacePathCache), "userPreferencesStore")
+    makeStore(sf => new JooqUserPreferencesStore(facade, cacheProvider, _spacePathCache), "userPreferencesStore")
 
   private lazy val _domainDifferenceStore =
-    makeStore(sf => new JooqDomainDifferenceStore(facade, cacheProvider, sequenceProvider, hookManager, spacePathCache), "DomainDifferenceStore")
+    makeStore(sf => new JooqDomainDifferenceStore(facade, cacheProvider, sequenceProvider, hookManager, _spacePathCache), "DomainDifferenceStore")
 
   private lazy val _scanActivityStore =
-    makeStore(sf => new JooqScanActivityStore(facade, spacePathCache), "scanActivityStore")
+    makeStore(sf => new JooqScanActivityStore(facade, _spacePathCache), "scanActivityStore")
 
   def serviceLimitsStore: ServiceLimitsStore = _serviceLimitsStore
   def systemConfigStore: JooqSystemConfigStore = _systemConfigStore
@@ -144,6 +144,7 @@ class LazyCleanStoreReferenceContainer(val applicationEnvironment: DatabaseEnvir
   def domainDifferenceStore: JooqDomainDifferenceStore = _domainDifferenceStore
   def userPreferencesStore: JooqUserPreferencesStore = _userPreferencesStore
   def scanActivityStore: JooqScanActivityStore = _scanActivityStore
+  def spacePathCache: SpacePathCache = _spacePathCache
 
   def prepareEnvironmentForStores {
     performCleanerAction(cleaner => cleaner.clean)
