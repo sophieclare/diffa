@@ -18,7 +18,7 @@ package net.lshift.diffa.kernel.config
 import org.easymock.classextension.{EasyMock => E4}
 import net.lshift.diffa.schema.jooq.DatabaseFacade
 import net.lshift.diffa.kernel.util.cache.HazelcastCacheProvider
-import org.junit.Test
+import org.junit.{Before, Test}
 import org.easymock.EasyMock._
 import org.jooq.impl.Factory
 import org.junit.Assert._
@@ -35,6 +35,11 @@ class CachedSystemConfigStoreTest {
   val spacePathCache = new SpacePathCache(jooq, cp)
 
   val configStore = new JooqSystemConfigStore(jooq,cp, sp, spacePathCache)
+
+  @Before
+  def invalidateCaches {
+    spacePathCache.reset
+  }
 
   @Test
   def shouldCacheDomainExistenceAndInvalidateOnRemoval {
