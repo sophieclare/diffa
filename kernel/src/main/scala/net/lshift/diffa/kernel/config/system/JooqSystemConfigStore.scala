@@ -58,6 +58,8 @@ import org.jooq.{TableField, Record}
 import net.lshift.diffa.schema.tables.records.UsersRecord
 import net.lshift.diffa.kernel.util.sequence.SequenceProvider
 import java.lang.{Long => LONG, Integer => INT}
+import org.jooq.exception.DataAccessException
+import java.sql.SQLIntegrityConstraintViolationException
 
 class JooqSystemConfigStore(jooq:JooqDatabaseFacade,
                             cacheProvider:CacheProvider,
@@ -77,23 +79,47 @@ class JooqSystemConfigStore(jooq:JooqDatabaseFacade,
 
   def createOrUpdateDomain(path:String) = {
 
-    // TODO Sequence provider should take an enum, not a string
-    val sequence = sequenceProvider.nextSequenceValue("spaces")
-
     jooq.execute(t => {
 
       // For now, we're just looking at backward compatibility - later on, we should implement a space update
 
-      t.insertInto(SPACES).
-          set(SPACES.ID, sequence:LONG).
-          set(SPACES.NAME, path).
-          set(SPACES.CONFIG_VERSION, 0:INT).
-        onDuplicateKeyIgnore().
-        execute()
+      val count = t.selectCount().
+                    from(SPACES).
+                    where(SPACES.NAME.equal(path)).
+                    fetchOne().
+                    getValueAsBigInteger(0).longValue()
+
+      // There is small margin for error between the read and the write, but basically we want to prevent unnecessary
+      // sequence churn
+
+      if (count == 0) {
+
+        // TODO Sequence provider should take an enum, not a string
+        val sequence = sequenceProvider.nextSequenceValue("spaces")
+
+        try {
+
+          t.insertInto(SPACES).
+            set(SPACES.ID, sequence:LONG).
+            set(SPACES.NAME, path).
+            set(SPACES.CONFIG_VERSION, 0:INT).
+            execute()
+
+          //cachedSpacePaths.evict(space) - this invalidation is triggered by the onDomainRemoved event
+          domainEventSubscribers.foreach(_.onDomainUpdated(sequence))
+
+        }
+        catch {
+          case u:DataAccessException if u.getCause.isInstanceOf[SQLIntegrityConstraintViolationException] =>
+            logger.warn("Integrity constraint when trying to create space for path " + path)
+            throw u
+          case x => throw x
+        }
+
+      }
+
     })
 
-    //cachedSpacePaths.evict(space) - this invalidation is triggered by the onDomainRemoved event
-    domainEventSubscribers.foreach(_.onDomainUpdated(sequence))
   }
 
   def deleteDomain(path:String) = {
