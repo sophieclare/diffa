@@ -134,7 +134,7 @@ object Step0048 extends VerifiedMigrationStep {
       pk("space", "pair", "name")
 
     migration.alterTable("escalations").
-      addForeignKey("fk_escl_pair", Array("space", "pair"), "pairs", Array("space", "pair"))
+      addForeignKey("fk_escl_pair", Array("space", "pair"), "pairs", Array("space", "name"))
 
     val diffsTable = migration.createTable("diffs").
       column("space", Types.BIGINT, false).
