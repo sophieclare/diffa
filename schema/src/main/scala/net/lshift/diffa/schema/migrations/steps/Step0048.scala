@@ -152,13 +152,15 @@ object Step0048 extends VerifiedMigrationStep {
       pk("space", "pair", "seq_id")
 
     if (migration.canUseListPartitioning) {
-      diffsTable.virtualColumn("partition_name", Types.VARCHAR, 512, "domain || '_' || pair").
+      diffsTable.virtualColumn("partition_name", Types.VARCHAR, 512, "space || '_' || pair").
         listPartitioned("partition_name").
         listPartition("part_dummy_default", "default")
 
       DefinePartitionInformationTable.applyPartitionVersion(migration, "diffs", versionId)
 
-      migration.executeDatabaseScript("sync_pair_diff_partitions", "net.lshift.diffa.schema.procedures")
+      // Do not execute the proc to partition the old diffs table, since the DB has ben sunset
+      // but keep this reference for posterity
+      // migration.executeDatabaseScript("sync_pair_diff_partitions", "net.lshift.diffa.schema.procedures")
     }
 
     migration.alterTable("diffs")
