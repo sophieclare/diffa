@@ -404,7 +404,7 @@
     <constructor-arg ref="hazelcastCacheProvider" />
   </bean>
 
-  <bean id="underlyingConfigStore" class="net.lshift.diffa.kernel.config.system.JooqSystemConfigStore">
+  <bean id="underlyingConfigStore" class="net.lshift.diffa.kernel.config.system.JooqSystemConfigStore" depends-on="diffaSessionFactory">
     <constructor-arg ref="jooqDatabaseFacade" />
     <constructor-arg ref="hazelcastCacheProvider" />
     <constructor-arg ref="hazelcastSequenceProvider" />
