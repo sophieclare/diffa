@@ -34,7 +34,23 @@ class CachedSystemConfigStoreTest {
 
   val spacePathCache = new SpacePathCache(jooq, cp)
 
+  // When the JooqSystemConfigStore, boots it syncs the sequence provider with the database, so we need to mock this out
+
+  val persistentSequenceValue = System.currentTimeMillis()
+
+  expect(jooq.execute(anyObject[Function1[Factory,Long]]())).andReturn(persistentSequenceValue).once()
+
+  E4.replay(jooq)
+
   val configStore = new JooqSystemConfigStore(jooq,cp, sp, spacePathCache)
+
+  // Make sure the that booting the JooqSystemConfigStore has performed the sequence provider sync
+
+  E4.verify(jooq)
+
+  // Make the jooq mock available for use again
+
+  E4.reset(jooq)
 
   @Before
   def invalidateCaches {
@@ -45,7 +61,7 @@ class CachedSystemConfigStoreTest {
   def shouldCacheDomainExistenceAndInvalidateOnRemoval {
     val domain = "a"
 
-    expect(jooq.execute(anyObject[Function1[Factory,Space]]())).andReturn(Space(id = 1L)).once()
+    expect(jooq.execute(anyObject[Function1[Factory,Space]]())).andReturn(Space(id = persistentSequenceValue + 1)).once()
 
     E4.replay(jooq)
 
@@ -90,7 +106,7 @@ class CachedSystemConfigStoreTest {
       }
     }).once()
 
-    expect(jooq.execute(anyObject[Function1[Factory,Space]]())).andReturn(Space(id = 2L)).once()
+    expect(jooq.execute(anyObject[Function1[Factory,Space]]())).andReturn(Space(id = persistentSequenceValue + 2)).once()
 
     E4.replay(jooq)
 

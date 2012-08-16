@@ -60,6 +60,11 @@ import net.lshift.diffa.kernel.util.sequence.SequenceProvider
 import java.lang.{Long => LONG, Integer => INT}
 import org.jooq.exception.DataAccessException
 import java.sql.SQLIntegrityConstraintViolationException
+import org.jooq.impl.Factory._
+import scala.Some
+import net.lshift.diffa.kernel.config.Member
+import net.lshift.diffa.kernel.config.User
+import net.lshift.diffa.kernel.frontend.DomainEndpointDef
 
 class JooqSystemConfigStore(jooq:JooqDatabaseFacade,
                             cacheProvider:CacheProvider,
@@ -69,7 +74,7 @@ class JooqSystemConfigStore(jooq:JooqDatabaseFacade,
 
   val logger = LoggerFactory.getLogger(getClass)
 
-  //private val cachedSpacePaths = cacheProvider.getCachedMap[String, Space](SPACE_PATHS)
+  intializeExistingSequences()
 
   private val domainEventSubscribers = new ListBuffer[DomainLifecycleAware]
 
@@ -296,6 +301,24 @@ class JooqSystemConfigStore(jooq:JooqDatabaseFacade,
       where(SYSTEM_CONFIG_OPTIONS.OPT_KEY.equal(key)).
       execute()
   })
+
+  private def intializeExistingSequences() = {
+    val persistentValue = jooq.execute { t =>
+
+      t.select(max(SPACES.ID).as("max_space_id")).
+        from(SPACES).
+        fetchOne().
+        getValueAsBigInteger("max_space_id").longValue()
+
+    }
+
+    val currentValue = sequenceProvider.currentSequenceValue("spaces")
+
+    if (persistentValue > currentValue) {
+      sequenceProvider.upgradeSequenceValue("spaces", currentValue, persistentValue)
+    }
+  }
+
 
   private def getUserByPredicate(predicate: String, fieldToMatch:TableField[UsersRecord, String]) : User = jooq.execute(t => {
     val record =  t.select().
