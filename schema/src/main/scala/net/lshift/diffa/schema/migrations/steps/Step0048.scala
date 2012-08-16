@@ -328,6 +328,15 @@ object Step0048 extends VerifiedMigrationStep {
       column("cred_type", Types.VARCHAR, 20, false).
       pk("space", "url")
 
+    migration.createTable("breakers").
+      column("space", Types.BIGINT, false).
+      column("pair", Types.VARCHAR, 50, false).
+      column("name", Types.VARCHAR, 255, false).
+      pk("space", "pair", "name")
+
+    migration.alterTable("breakers").
+      addForeignKey("fk_brkrs_pair", Array("space", "pair"), "pairs", Array("space", "name"))
+
     migration.alterTable("external_http_credentials").
       addForeignKey("fk_domain_http_creds", "space", "spaces", "id")
 
@@ -544,6 +553,14 @@ object Step0048 extends VerifiedMigrationStep {
     createUserItemVisibility(migration, spaceId, pair, user)
 
     migration
+  }
+
+  def createBreaker(migration:MigrationBuilder, spaceId:String, pair:String) {
+    migration.insert("breakers").values(Map(
+      "space" -> spaceId,
+      "pair" -> pair,
+      "name" -> randomString()
+    ))
   }
 
   def createUserItemVisibility(migration:MigrationBuilder, spaceId:String, pair:String, user:String) {

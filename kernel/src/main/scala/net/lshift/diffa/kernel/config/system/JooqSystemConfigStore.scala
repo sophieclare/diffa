@@ -23,6 +23,7 @@ import org.apache.commons.lang.RandomStringUtils
 import net.lshift.diffa.kernel.config._
 import net.lshift.diffa.schema.jooq.{DatabaseFacade => JooqDatabaseFacade}
 import net.lshift.diffa.schema.tables.UserItemVisibility.USER_ITEM_VISIBILITY
+import net.lshift.diffa.schema.tables.Breakers.BREAKERS
 import net.lshift.diffa.schema.tables.ExternalHttpCredentials.EXTERNAL_HTTP_CREDENTIALS
 import net.lshift.diffa.schema.tables.PairReports.PAIR_REPORTS
 import net.lshift.diffa.schema.tables.Escalations.ESCALATIONS
@@ -50,10 +51,6 @@ import net.lshift.diffa.schema.tables.Users.USERS
 import net.lshift.diffa.kernel.lifecycle.DomainLifecycleAware
 import collection.mutable.ListBuffer
 import net.lshift.diffa.kernel.util.cache.CacheProvider
-import net.lshift.diffa.kernel.naming.CacheName._
-import net.lshift.diffa.kernel.frontend.DomainEndpointDef
-import net.lshift.diffa.kernel.config.Member
-import net.lshift.diffa.kernel.config.User
 import org.jooq.{TableField, Record}
 import net.lshift.diffa.schema.tables.records.UsersRecord
 import net.lshift.diffa.kernel.util.sequence.SequenceProvider
@@ -154,6 +151,7 @@ class JooqSystemConfigStore(jooq:JooqDatabaseFacade,
       t.delete(ESCALATIONS).where(ESCALATIONS.SPACE.equal(id)).execute()
       t.delete(REPAIR_ACTIONS).where(REPAIR_ACTIONS.SPACE.equal(id)).execute()
       t.delete(PAIR_VIEWS).where(PAIR_VIEWS.SPACE.equal(id)).execute()
+      t.delete(BREAKERS).where(BREAKERS.SPACE.equal(id)).execute()
       t.delete(PAIRS).where(PAIRS.SPACE.equal(id)).execute()
       t.delete(ENDPOINTS).where(ENDPOINTS.SPACE.equal(id)).execute()
       t.delete(CONFIG_OPTIONS).where(CONFIG_OPTIONS.SPACE.equal(id)).execute()

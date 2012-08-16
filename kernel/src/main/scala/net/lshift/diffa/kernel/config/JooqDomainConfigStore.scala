@@ -29,6 +29,7 @@ import net.lshift.diffa.schema.tables.Endpoints.ENDPOINTS
 import net.lshift.diffa.schema.tables.Pairs.PAIRS
 import net.lshift.diffa.schema.tables.Spaces.SPACES
 import net.lshift.diffa.schema.tables.EndpointViews.ENDPOINT_VIEWS
+import net.lshift.diffa.schema.tables.Breakers.BREAKERS
 import JooqConfigStoreCompanion._
 import net.lshift.diffa.kernel.naming.CacheName._
 import net.lshift.diffa.kernel.util.MissingObjectException
@@ -38,6 +39,7 @@ import reflect.BeanProperty
 import java.util
 import collection.mutable.ListBuffer
 import org.jooq.impl.Factory
+import org.jooq.impl.Factory._
 import net.lshift.diffa.kernel.frontend.DomainEndpointDef
 import net.lshift.diffa.kernel.frontend.DomainPairDef
 import net.lshift.diffa.kernel.frontend.PairDef
@@ -64,6 +66,7 @@ class JooqDomainConfigStore(jooq:JooqDatabaseFacade,
   private val cachedEndpoints = cacheProvider.getCachedMap[Long, java.util.List[DomainEndpointDef]]("domain.endpoints")
   private val cachedEndpointsByKey = cacheProvider.getCachedMap[DomainEndpointKey, DomainEndpointDef]("domain.endpoints.by.key")
   private val cachedPairsByEndpoint = cacheProvider.getCachedMap[DomainEndpointKey, java.util.List[DomainPairDef]]("domain.pairs.by.endpoint")
+  private val cachedBreakers = cacheProvider.getCachedMap[BreakerKey, Boolean](DOMAIN_PAIR_BREAKERS)
 
   // Config options
   private val cachedDomainConfigOptionsMap = cacheProvider.getCachedMap[Long, java.util.Map[String,String]](DOMAIN_CONFIG_OPTIONS_MAP)
@@ -79,6 +82,7 @@ class JooqDomainConfigStore(jooq:JooqDatabaseFacade,
     cachedEndpoints.evictAll()
     cachedEndpointsByKey.evictAll()
     cachedPairsByEndpoint.evictAll()
+    cachedBreakers.evictAll()
 
     cachedDomainConfigOptionsMap.evictAll()
     cachedDomainConfigOptions.evictAll()
@@ -102,6 +106,7 @@ class JooqDomainConfigStore(jooq:JooqDatabaseFacade,
     cachedPairsByEndpoint.keySubset(EndpointByDomainPredicate(space)).evictAll()
     cachedPairsByKey.keySubset(PairByDomainPredicate(space)).evictAll()
     cachedEndpointsByKey.keySubset(EndpointByDomainPredicate(space)).evictAll()
+    cachedBreakers.keySubset(BreakerByDomainPredicate(space)).evictAll()
 
     invalidateConfigCaches(space)
 
@@ -655,6 +660,61 @@ class JooqDomainConfigStore(jooq:JooqDatabaseFacade,
     }).toSeq
   }
 
+  def isBreakerTripped(domain: String, pair: String, name: String) = {
+
+    val space = spacePathCache.resolveSpacePathOrDie(domain)
+
+    cachedBreakers.readThrough(BreakerKey(space.id, pair, name), () => jooq.execute(t => {
+      val c = t.selectCount().
+        from(BREAKERS).
+        where(BREAKERS.SPACE.equal(space.id)).
+          and(BREAKERS.PAIR.equal(pair)).
+          and(BREAKERS.NAME.equal(name)).
+        fetchOne().
+        getValue(0).asInstanceOf[java.lang.Number]
+
+      val breakerPresent = (c != null && c.intValue() > 0)
+
+      // We consider a breaker to be tripped (ie, the feature should not be used) when there is a matching row in
+      // the table.
+      breakerPresent
+    }))
+  }
+
+  def tripBreaker(domain: String, pair: String, name: String) {
+
+    val space = spacePathCache.resolveSpacePathOrDie(domain)
+
+    if (!isBreakerTripped(domain, pair, name)) {
+      jooq.execute(t => {
+        t.insertInto(BREAKERS).
+            set(BREAKERS.SPACE, space.id).
+            set(BREAKERS.PAIR, pair).
+            set(BREAKERS.NAME, name).
+          onDuplicateKeyIgnore().
+          execute()
+      })
+
+      cachedBreakers.put(BreakerKey(space.id, pair, name), true)
+    }
+  }
+
+  def clearBreaker(domain: String, pair: String, name: String) {
+
+    val space = spacePathCache.resolveSpacePathOrDie(domain)
+
+    if (isBreakerTripped(domain, pair, name)) {
+      jooq.execute(t => {
+        t.delete(BREAKERS).
+          where(BREAKERS.SPACE.equal(space.id)).
+            and(BREAKERS.PAIR.equal(pair)).
+            and(BREAKERS.NAME.equal(name)).
+          execute()
+      })
+
+      cachedBreakers.put(BreakerKey(space.id, pair, name), false)
+    }
+  }
 }
 
 // These key classes need to be serializable .......
@@ -683,6 +743,14 @@ case class DomainConfigKey(
 
 }
 
+case class BreakerKey(
+  @BeanProperty var space: Long,
+  @BeanProperty var pair:String = null,
+  @BeanProperty var name:String = null) {
+
+  def this() = this(space = 0)
+}
+
 case class ConfigOptionByDomainPredicate(
   @BeanProperty var space:Long) extends KeyPredicate[DomainConfigKey] {
   def this() = this(space = 0)
@@ -706,3 +774,14 @@ case class PairByDomainPredicate(@BeanProperty var space:Long) extends KeyPredic
   def constrain(key: DomainPairKey) = key.space == space
 }
 
+case class BreakerByDomainPredicate(@BeanProperty var space:Long) extends KeyPredicate[BreakerKey] {
+  def this() = this(space = 0)
+  def constrain(key: BreakerKey) = key.space == space
+}
+case class BreakerByPairAndDomainPredicate(
+    @BeanProperty var space:Long,
+    @BeanProperty var pair:String = null) extends KeyPredicate[BreakerKey] {
+
+  def this() = this(space = 0)
+  def constrain(key: BreakerKey) = key.space == space && key.pair == pair
+}
