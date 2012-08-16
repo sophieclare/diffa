@@ -37,7 +37,7 @@ class DomainMembershipAwareTest {
 
   val domainConfigStore = new JooqDomainConfigStore(jf, hm, cp, membershipListener, spacePathCache)
 
-  val member = Member("user",0L)
+  val member = Member("user",0L,"domain")
 
   @Test
   def shouldEmitDomainMembershipCreationEvent() = {

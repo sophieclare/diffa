@@ -607,7 +607,7 @@ class JooqDomainConfigStore(jooq:JooqDatabaseFacade,
 
     invalidateMembershipCache(space.id)
 
-    val member = Member(userName, space.id)
+    val member = Member(userName, space.id, domain)
     membershipListener.onMembershipCreated(member)
     member
   }
@@ -625,7 +625,7 @@ class JooqDomainConfigStore(jooq:JooqDatabaseFacade,
 
     invalidateMembershipCache(space.id)
 
-    val member = Member(userName,space.id)
+    val member = Member(userName,space.id, domain)
     membershipListener.onMembershipRemoved(member)
   }
 
@@ -643,7 +643,12 @@ class JooqDomainConfigStore(jooq:JooqDatabaseFacade,
           fetch()
 
         val members = new java.util.ArrayList[Member]()
-        results.iterator().foreach(r => members.add(Member(r.getValue(MEMBERS.USERNAME), space.id)))
+        results.iterator().foreach(r => members.add(Member(
+          user = r.getValue(MEMBERS.USERNAME),
+          space = space.id,
+          domain = domain
+        ))
+        )
         members
 
       })

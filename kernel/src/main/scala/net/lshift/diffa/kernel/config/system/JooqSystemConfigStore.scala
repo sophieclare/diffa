@@ -249,11 +249,20 @@ class JooqSystemConfigStore(jooq:JooqDatabaseFacade,
 
   def listDomainMemberships(username: String) : Seq[Member] = {
     jooq.execute(t => {
-      val results = t.select(MEMBERS.SPACE).
+      val results = t.select(MEMBERS.SPACE, SPACES.NAME).
                       from(MEMBERS).
+                      join(SPACES).on(SPACES.ID.equal(MEMBERS.SPACE)).
                       where(MEMBERS.USERNAME.equal(username)).
                       fetch()
-      results.iterator().map(r => Member(username, r.getValue(MEMBERS.SPACE)))
+      results.iterator().map(r => Member(
+        user = username,
+        space = r.getValue(MEMBERS.SPACE),
+        // TODO Ideally we shouldn't need to do this join, since the domain field is deprecated
+        // and consumers of this call should be able to deal with the surrogate space id, but
+        // for now that creates further churn in the patch to land space ids, so we'll just backplane the
+        // the existing behavior
+        domain = r.getValue(SPACES.NAME)
+      ))
     }).toSeq
   }
 
