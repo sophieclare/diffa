@@ -194,8 +194,6 @@ object Step0048 extends VerifiedMigrationStep {
     migration.alterTable("pending_diffs")
       .addUniqueConstraint("uk_pending_diffs", "entity_id", "space", "pair")
 
-    migration.createIndex("pdiff_domain_idx", "pending_diffs", "entity_id", "space", "pair")
-
     migration.createTable("pair_views").
       column("space", Types.BIGINT, false).
       column("pair", Types.VARCHAR, 50, false).
