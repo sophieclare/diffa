@@ -443,6 +443,11 @@ object Step0048 extends VerifiedMigrationStep {
       "superuser" -> Boolean.box(true)
     ))
 
+    migration.insert("members").values(Map(
+      "username" -> "guest",
+      "space"    -> "0"
+    ))
+
     migration.insert("schema_version").values(Map(
       "version" -> new java.lang.Integer(versionId)
     ))
