@@ -19,6 +19,7 @@ package net.lshift.diffa.kernel.config
 import org.jooq.{Result, Record}
 import net.lshift.diffa.kernel.frontend.{PairViewDef, DomainPairDef}
 import net.lshift.diffa.schema.tables.Pairs.PAIRS
+import net.lshift.diffa.schema.tables.Spaces.SPACES
 import net.lshift.diffa.schema.tables.PairViews.PAIR_VIEWS
 import scala.collection.JavaConversions._
 import net.lshift.diffa.kernel.util.MissingObjectException
@@ -30,6 +31,7 @@ object ResultMappingUtil {
     DomainPairDef(
       space = r.getValue(PAIRS.SPACE),
       key = r.getValue(PAIRS.NAME),
+      domain = r.getValue(SPACES.NAME),
       upstreamName = r.getValue(PAIRS.UPSTREAM),
       downstreamName = r.getValue(PAIRS.DOWNSTREAM),
       matchingTimeout = r.getValue(PAIRS.MATCHING_TIMEOUT),

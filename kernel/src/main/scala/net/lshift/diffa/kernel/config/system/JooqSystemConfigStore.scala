@@ -182,7 +182,11 @@ class JooqSystemConfigStore(jooq:JooqDatabaseFacade,
   })
 
   def listPairs = jooq.execute { t =>
-    t.select().from(PAIRS).fetch().map(ResultMappingUtil.recordToDomainPairDef)
+    t.select(PAIRS.getFields).select(SPACES.NAME).
+      from(PAIRS).
+      join(SPACES).on(SPACES.ID.equal(PAIRS.SPACE)).
+      fetch().
+      map(ResultMappingUtil.recordToDomainPairDef)
   }
 
   def listEndpoints : Seq[DomainEndpointDef] = JooqConfigStoreCompanion.listEndpoints(jooq)
