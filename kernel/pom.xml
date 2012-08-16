@@ -56,7 +56,12 @@
       <groupId>com.typesafe.akka</groupId>
       <artifactId>akka-actor</artifactId>
     </dependency>
-      <dependency>
+    <dependency>
+      <groupId>com.typesafe.akka</groupId>
+      <artifactId>akka-testkit</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
       <groupId>org.slf4j</groupId>
       <artifactId>slf4j-api</artifactId>
     </dependency>
@@ -161,6 +166,14 @@
     <dependency>
       <groupId>com.ibm.icu</groupId>
       <artifactId>icu4j</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>com.gentlyweb</groupId>
+      <artifactId>gentlyweb-utils</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.josql</groupId>
+      <artifactId>josql</artifactId>
     </dependency>
     <dependency>
       <groupId>postgresql</groupId>

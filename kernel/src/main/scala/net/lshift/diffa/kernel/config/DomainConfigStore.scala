@@ -91,6 +91,21 @@ trait DomainConfigStore {
    * Lists all of the members of the given domain
    */
   def listDomainMembers(domain:String) : Seq[Member]
+
+  /**
+   * Determines whether a breaker has been tripped (ie, the feature disabled) for the given named item.
+   */
+  def isBreakerTripped(domain:String, pair:String, name:String):Boolean
+
+  /**
+   * Disables the feature controlled by the given breaker.
+   */
+  def tripBreaker(domain:String, pair:String, name:String)
+
+  /**
+   * Enables the feature controlled by the given breaker.
+   */
+  def clearBreaker(domain:String, pair:String, name:String)
 }
 
 case class Endpoint(
@@ -156,8 +171,9 @@ case class Endpoint(
   }
 
   /**
-   * Inidication of whether scanning is supported by the given endpoint.
+   * Please use the function on EndpointDef instead
    */
+  @Deprecated
   def supportsScanning = scanUrl != null && scanUrl.length() > 0
 }
 case class EndpointView(
@@ -322,28 +338,11 @@ object RepairAction {
   val ENTITY_SCOPE = "entity"
   val PAIR_SCOPE = "pair"
 }
-/**
- * Defines a step for escalating a detected difference.
- */
-case class Escalation (
-  @BeanProperty var name: String = null,
-  @BeanProperty var pair: DiffaPair = null,
-  @BeanProperty var action: String = null,
-  @BeanProperty var actionType: String = null,
-  @BeanProperty var event: String = null,
-  @BeanProperty var origin: String = null
-) {
-
-  def this() = this(name = null)
-}
 
 /**
  * Enumeration of valid types that an escalating difference should trigger.
  */
 object EscalationEvent {
-  val UPSTREAM_MISSING = "upstream-missing"
-  val DOWNSTREAM_MISSING = "downstream-missing"
-  val MISMATCH = "mismatch"
   val SCAN_FAILED = "scan-failed"
   val SCAN_COMPLETED = "scan-completed"
 }
@@ -361,6 +360,7 @@ object EscalationOrigin {
 object EscalationActionType {
   val REPAIR = "repair"
   val REPORT = "report"
+  val IGNORE = "ignore"
 }
 
 case class User(@BeanProperty var name: String = null,
