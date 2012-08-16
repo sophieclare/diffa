@@ -13,17 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package net.lshift.diffa.kernel.util.sequence
+package net.lshift.diffa.kernel.naming;
 
-import net.lshift.diffa.kernel.naming.SequenceName
 
-trait SequenceProvider {
-
-  def nextSequenceValue(name:SequenceName) : Long
-  def currentSequenceValue(name:SequenceName) : Long
-  def upgradeSequenceValue(name:SequenceName, expectation:Long, newValue:Long) : Boolean
-  @Deprecated def nextSequenceValue(name:String) : Long
-  @Deprecated def currentSequenceValue(name:String) : Long
-  @Deprecated def upgradeSequenceValue(name:String, expectation:Long, newValue:Long) : Boolean
-
+/**
+ * This a is canonical list of names used to identify sequence.
+ */
+public enum SequenceName {
+  SPACES
 }

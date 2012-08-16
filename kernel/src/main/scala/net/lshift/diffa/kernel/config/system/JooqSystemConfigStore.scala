@@ -62,6 +62,7 @@ import scala.Some
 import net.lshift.diffa.kernel.config.Member
 import net.lshift.diffa.kernel.config.User
 import net.lshift.diffa.kernel.frontend.DomainEndpointDef
+import net.lshift.diffa.kernel.naming.SequenceName
 
 class JooqSystemConfigStore(jooq:JooqDatabaseFacade,
                             cacheProvider:CacheProvider,
@@ -71,7 +72,7 @@ class JooqSystemConfigStore(jooq:JooqDatabaseFacade,
 
   val logger = LoggerFactory.getLogger(getClass)
 
-  intializeExistingSequences()
+  initializeExistingSequences()
 
   private val domainEventSubscribers = new ListBuffer[DomainLifecycleAware]
 
@@ -96,8 +97,7 @@ class JooqSystemConfigStore(jooq:JooqDatabaseFacade,
 
       if (count == 0) {
 
-        // TODO Sequence provider should take an enum, not a string
-        val sequence = sequenceProvider.nextSequenceValue("spaces")
+        val sequence = sequenceProvider.nextSequenceValue(SequenceName.SPACES)
 
         try {
 
@@ -313,7 +313,7 @@ class JooqSystemConfigStore(jooq:JooqDatabaseFacade,
       execute()
   })
 
-  private def intializeExistingSequences() = {
+  private def initializeExistingSequences() = {
     val persistentValue = jooq.execute { t =>
 
       t.select(max(SPACES.ID).as("max_space_id")).
@@ -323,10 +323,10 @@ class JooqSystemConfigStore(jooq:JooqDatabaseFacade,
 
     }
 
-    val currentValue = sequenceProvider.currentSequenceValue("spaces")
+    val currentValue = sequenceProvider.currentSequenceValue(SequenceName.SPACES)
 
     if (persistentValue > currentValue) {
-      sequenceProvider.upgradeSequenceValue("spaces", currentValue, persistentValue)
+      sequenceProvider.upgradeSequenceValue(SequenceName.SPACES, currentValue, persistentValue)
     }
   }
 
