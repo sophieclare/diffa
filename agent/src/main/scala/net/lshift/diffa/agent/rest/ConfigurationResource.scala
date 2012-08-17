@@ -22,12 +22,14 @@ import scala.collection.JavaConversions._
 import net.lshift.diffa.agent.rest.ResponseUtils._
 import net.lshift.diffa.kernel.frontend._
 import net.lshift.diffa.kernel.frontend.FrontendConversions._
+import net.lshift.diffa.kernel.config.{DiffaPairRef, BreakerHelper}
 
 /**
  * This is a REST interface to the Configuration abstraction.
  * @see Configuration
  */
 class ConfigurationResource(val config:Configuration,
+                            val breakers:BreakerHelper,
                             val domain:String,
                             val currentUser:String,
                             val uri:UriInfo) {
@@ -114,9 +116,37 @@ class ConfigurationResource(val config:Configuration,
   }
 
   @DELETE
+  @Path("/pairs/{id}/repair-actions")
+  def clearRepairActions(@PathParam("id") id:String) = {
+    config.clearRepairActions(domain, id)
+    resourceDeleted()
+  }
+
+  @DELETE
   @Path("/pairs/{pairKey}/repair-actions/{name}")
   def deleteRepairAction(@PathParam("name") name: String, @PathParam("pairKey") pairKey: String) {
     config.deleteRepairAction(domain, name, pairKey)
+  }
+
+  @POST
+  @Path("/pairs/{id}/escalations")
+  @Consumes(Array("application/json"))
+  def createEscalation(@PathParam("id") id:String, e: EscalationDef) = {
+    config.createOrUpdateEscalation(domain, id, e)
+    resourceCreated(e.name, uri)
+  }
+
+  @DELETE
+  @Path("/pairs/{id}/escalations")
+  def clearEscalations(@PathParam("id") id:String) = {
+    config.clearEscalations(domain, id)
+    resourceDeleted()
+  }
+
+  @DELETE
+  @Path("/pairs/{pairKey}/escalations/{name}")
+  def deleteEscalation(@PathParam("name") name: String, @PathParam("pairKey") pairKey: String) {
+    config.deleteEscalation(domain, name, pairKey)
   }
 
   @GET
@@ -140,4 +170,31 @@ class ConfigurationResource(val config:Configuration,
   @Produces(Array("application/json"))
   def listDomainMembers : Array[String] = config.listDomainMembers(domain).map(m => m.user).toArray
 
+  @PUT
+  @Path("/pairs/{id}/breakers/escalations")
+  def tripAllEscalations(@PathParam("id") id:String) = {
+    breakers.tripAllEscalations(DiffaPairRef(domain = domain, key = id))
+    resourceCreated("*", uri)
+  }
+
+  @DELETE
+  @Path("/pairs/{id}/breakers/escalations")
+  def resetAllEscalations(@PathParam("id") id:String) = {
+    breakers.clearAllEscalations(DiffaPairRef(domain = domain, key = id))
+    resourceDeleted()
+  }
+
+  @PUT
+  @Path("/pairs/{id}/breakers/escalations/{name}")
+  def tripAllEscalations(@PathParam("id") id:String, @PathParam("name") name:String) = {
+    breakers.tripEscalation(DiffaPairRef(domain = domain, key = id), name)
+    resourceCreated(name, uri)
+  }
+
+  @DELETE
+  @Path("/pairs/{id}/breakers/escalations/{name}")
+  def resetAllEscalations(@PathParam("id") id:String, @PathParam("name") name:String) = {
+    breakers.clearEscalation(DiffaPairRef(domain = domain, key = id), name)
+    resourceDeleted()
+  }
 }

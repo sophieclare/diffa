@@ -18,13 +18,12 @@ package net.lshift.diffa.agent.rest
 
 import org.springframework.stereotype.Component
 import org.springframework.beans.factory.annotation.Autowired
-import javax.ws.rs.core.{Response, UriInfo, Context}
+import javax.ws.rs.core.{UriInfo, Context}
 import javax.ws.rs._
 import net.lshift.diffa.kernel.client.ActionsClient
-import net.lshift.diffa.kernel.differencing.DifferencesManager
 import net.lshift.diffa.kernel.diag.DiagnosticsManager
 import net.lshift.diffa.kernel.actors.PairPolicyClient
-import net.lshift.diffa.kernel.frontend.{EscalationDef, Changes, Configuration}
+import net.lshift.diffa.kernel.frontend.{Changes, Configuration}
 import org.springframework.security.access.prepost.PreAuthorize
 import net.lshift.diffa.kernel.reporting.ReportManager
 import com.sun.jersey.api.NotFoundException
@@ -32,14 +31,12 @@ import org.springframework.security.core.context.SecurityContextHolder
 import org.springframework.security.core.userdetails.UserDetails
 import org.slf4j.LoggerFactory
 import net.lshift.diffa.kernel.util.AlertCodes._
-import net.lshift.diffa.kernel.config.{DomainCredentialsManager, User, DomainConfigStore}
 import net.lshift.diffa.kernel.config.system.CachedSystemConfigStore
 import net.lshift.diffa.kernel.limiting.DomainRateLimiterFactory
-import net.lshift.diffa.kernel.config.User
-import net.lshift.diffa.kernel.config.User
 import net.lshift.diffa.agent.rest.ResponseUtils._
-import net.lshift.diffa.kernel.config.User
 import net.lshift.diffa.kernel.frontend.EscalationDef
+import net.lshift.diffa.kernel.differencing.{DomainDifferenceStore, DifferencesManager}
+import net.lshift.diffa.kernel.config.{BreakerHelper, DomainCredentialsManager, User, DomainConfigStore}
 
 /**
  * The policy is that we will publish spaces as the replacement term for domains
@@ -78,6 +75,8 @@ class DomainResource {
   @Autowired var changes:Changes = null
   @Autowired var changeEventRateLimiterFactory: DomainRateLimiterFactory = null
   @Autowired var reports:ReportManager = null
+  @Autowired var diffStore:DomainDifferenceStore = null
+  @Autowired var breakers:BreakerHelper = null
 
   private def getCurrentUser(space:String) : String = SecurityContextHolder.getContext.getAuthentication.getPrincipal match {
     case user:UserDetails => user.getUsername
@@ -144,7 +143,7 @@ class DomainResource {
   @Path("/{space:.+}/config")
   def getConfigResource(@Context uri:UriInfo,
                         @PathParam("space") space:String) =
-    withValidSpace(space, new ConfigurationResource(config, space, getCurrentUser(space), uri))
+    withValidSpace(space, new ConfigurationResource(config, breakers, space, getCurrentUser(space), uri))
 
   @Path("/{space:.+}/credentials")
   def getCredentialsResource(@Context uri:UriInfo,
@@ -158,7 +157,7 @@ class DomainResource {
 
   @Path("/{space:.+}/escalations")
   def getEscalationsResource(@PathParam("space") space:String) =
-    withValidSpace(space, new EscalationsResource(config, space))
+    withValidSpace(space, new EscalationsResource(config, diffStore, space))
 
   @Path("/{space:.+}/actions")
   def getActionsResource(@Context uri:UriInfo,

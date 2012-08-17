@@ -21,28 +21,27 @@ import net.lshift.hibernate.migrations.MigrationBuilder
 import java.sql.Types
 import scala.collection.JavaConversions._
 
-object Step0046 extends VerifiedMigrationStep {
+object Step0049 extends VerifiedMigrationStep {
 
-  def versionId = 46
+  def versionId = 49
   def name = "Introduce sub spaces"
 
   def createMigration(config: Configuration) = {
     val migration = new MigrationBuilder(config)
 
-    migration.createTable("spaces").
-      column("id", Types.INTEGER, false).
-      column("name", Types.VARCHAR, 50, false).
-      column("config_version", Types.INTEGER, 11, false, 0).
-      pk("id")
+    migration.alterTable("spaces").
+      addColumn("parent", Types.BIGINT, false, 0)
+
+    migration.alterTable("spaces").addForeignKey("fk_uniq_chld", "parent", "spaces", "id")
 
     migration.createTable("space_paths").
-      column("parent", Types.INTEGER, false).
-      column("child", Types.INTEGER, false).
+      column("ancestor", Types.BIGINT, false).
+      column("descendant", Types.BIGINT, false).
       column("depth", Types.INTEGER, false).
       pk("parent", "child")
 
-    migration.alterTable("space_paths").addForeignKey("fk_space_par", "parent", "spaces", "id")
-    migration.alterTable("space_paths").addForeignKey("fk_space_chd", "child", "spaces", "id")
+    migration.alterTable("space_paths").addForeignKey("fk_space_par", "ancestor", "spaces", "id")
+    migration.alterTable("space_paths").addForeignKey("fk_space_chd", "descendant", "spaces", "id")
 
     migration
   }
@@ -58,6 +57,7 @@ object Step0046 extends VerifiedMigrationStep {
     migration.insert("spaces").values(Map(
       "id"                -> parentId,
       "name"              -> parentName,
+      "parent"            -> "0",
       "config_version"    -> "0"
     ))
 

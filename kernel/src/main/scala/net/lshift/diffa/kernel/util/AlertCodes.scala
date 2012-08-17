@@ -26,6 +26,7 @@ object AlertCodes {
   def formatAlertCode(pair:DiffaPairRef, code:Int) = "%s [%s/%s]".format(code, pair.domain, pair.key)
   def formatAlertCode(domain:String, pair:String, code:Int) = "%s [%s/%s]".format(code, domain, pair)
   def formatAlertCode(domain:String, code:Int) = "%s [%s]".format(code, domain)
+  def formatAlertCode(space:Long, code:Int) = "%s [%s]".format(code, space)
   def formatAlertCode(code: Int) = "%d".format(code)
 
   // 1xx Informational
@@ -40,6 +41,9 @@ object AlertCodes {
   val SCAN_COMPLETED_BENCHMARK = 131
   val UPSTREAM_SCAN_COMPLETED_BENCHMARK = 132
   val DOWNSTREAM_SCAN_COMPLETED_BENCHMARK = 133
+
+  // 14x Informational non-scan events
+  val BREAKER_TRIPPED = 140
 
   // 2xx Successful
 
