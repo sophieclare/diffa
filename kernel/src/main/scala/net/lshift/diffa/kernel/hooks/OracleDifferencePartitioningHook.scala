@@ -15,7 +15,7 @@ class OracleDifferencePartitioningHook(jooq:DatabaseFacade) extends DifferencePa
 
   def pairCreated(space:Long, key: String) {
 
-    val escapedVal = StringEscapeUtils.escapeSql(1 + "_" + key)
+    val escapedVal = StringEscapeUtils.escapeSql(space + "_" + key)
     val partitionName = generatePartitionName(space, key)
 
     jooq.execute(t => {
