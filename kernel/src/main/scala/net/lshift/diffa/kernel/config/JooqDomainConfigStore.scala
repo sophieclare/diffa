@@ -385,7 +385,7 @@ class JooqDomainConfigStore(jooq:JooqDatabaseFacade,
 
     invalidatePairCachesOnly(space.id)
 
-    hook.pairCreated(domain, pair.key)
+    hook.pairCreated(space.id, pair.key)
     pairEventSubscribers.foreach(_.onPairUpdated(pair.asRef(domain)))
   }
 
@@ -399,7 +399,7 @@ class JooqDomainConfigStore(jooq:JooqDatabaseFacade,
       deletePairWithDependencies(t, ref)
       upgradeConfigVersion(t, space.id)
       pairEventSubscribers.foreach(_.onPairDeleted(DiffaPairRef(key, domain)))
-      hook.pairRemoved(domain, key)
+      hook.pairRemoved(space.id, key)
     })
   }
 

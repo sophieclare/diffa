@@ -86,7 +86,7 @@ class JooqDomainDifferenceStore(db: DatabaseFacade,
     if (hook.isDifferencePartitioningEnabled) {
 
       JooqConfigStoreCompanion.listPairs(db, domain, space.id).foreach(p => {
-        hook.removeAllPairDifferences(domain, p.key)
+        hook.removeAllPairDifferences(space.id, p.key)
         removeLatestRecordedVersion(p.asRef)
       })
 
@@ -97,9 +97,10 @@ class JooqDomainDifferenceStore(db: DatabaseFacade,
   }
 
   def removePair(pair: DiffaPairRef) = {
-    val hookHelped = hook.removeAllPairDifferences(pair.domain, pair.key)
 
     val space = spacePathCache.resolveSpacePathOrDie(pair.domain)
+
+    val hookHelped = hook.removeAllPairDifferences(space.id, pair.key)
 
     db.execute { t =>
       if (!hookHelped) {
