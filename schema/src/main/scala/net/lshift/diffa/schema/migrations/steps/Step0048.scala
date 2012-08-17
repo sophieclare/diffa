@@ -467,8 +467,6 @@ object Step0048 extends VerifiedMigrationStep {
     MigrationUtil.insertLimit(migration, ScanReadTimeout)
     MigrationUtil.insertLimit(migration, ScanResponseSizeLimit)
 
-    // Kick off any partitioning, if required
-
     if (migration.canAnalyze) {
       migration.analyzeTable("diffs");
     }

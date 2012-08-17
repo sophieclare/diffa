@@ -23,14 +23,11 @@ import org.junit.Assert._
 import net.lshift.diffa.kernel.participants.EndpointLifecycleListener
 import net.lshift.diffa.kernel.config._
 import scala.collection.JavaConversions._
-import org.easymock.{EasyMock, IArgumentMatcher}
+import org.easymock.IArgumentMatcher
 import net.lshift.diffa.kernel.config.DiffaPair
-import net.lshift.diffa.kernel.frontend.DiffaConfig._
 import scala.collection.JavaConversions._
-import net.lshift.diffa.kernel.frontend.FrontendConversions._
 import net.lshift.diffa.kernel.diag.DiagnosticsManager
 import net.lshift.diffa.kernel.actors.{PairPolicyClient, ActivePairManager}
-import org.hibernate.cfg.{Configuration => HibernateConfig}
 import net.lshift.diffa.kernel.util.MissingObjectException
 import net.lshift.diffa.kernel.StoreReferenceContainer
 import net.lshift.diffa.schema.environment.TestDatabaseEnvironments
