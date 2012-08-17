@@ -472,6 +472,20 @@ class JooqDomainDifferenceStore(db: DatabaseFacade,
     }
   }
 
+  def unscheduleEscalations(pair:DiffaPairRef) = {
+
+    val space = spacePathCache.resolveSpacePathOrDie(pair.domain)
+
+    db.execute { t =>
+      t.update(DIFFS).
+          set(DIFFS.NEXT_ESCALATION, null).
+          set(DIFFS.NEXT_ESCALATION_TIME, null).
+        where(DIFFS.SPACE.equal(space.id).
+          and(DIFFS.PAIR.equal(pair.key))).
+        execute()
+    }
+  }
+
   def clearAllDifferences = db.execute { t =>
     reset
     t.truncate(DIFFS).execute()
