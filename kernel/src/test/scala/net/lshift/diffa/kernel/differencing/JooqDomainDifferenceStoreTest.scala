@@ -267,7 +267,9 @@ class JooqDomainDifferenceStoreTest {
     assertNull(updatedEvent2.nextEscalationTime)
     val updatedEvent3 = domainDiffStore.getEvent("domain", event3.seqId)
     assertEquals("esc2", updatedEvent3.nextEscalation)
-    assertEquals(timestamp.plusSeconds(10), updatedEvent3.nextEscalationTime)
+
+    // Shred the milliseconds due to MySQL limitation
+    assertEquals(timestamp.plusSeconds(10).withMillis(0), updatedEvent3.nextEscalationTime.withMillis(0))
   }
 
   @Test
