@@ -61,7 +61,7 @@ import net.lshift.diffa.kernel.frontend.EscalationDef
 @Path("/spaces/")
 @Component
 @PreAuthorize("hasPermission(#space, 'domain-user')")
-class SpaceResource {
+class DomainResource {
 
   val log = LoggerFactory.getLogger(getClass)
 
