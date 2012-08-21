@@ -25,6 +25,7 @@ import net.lshift.diffa.kernel.util.{EndpointSide, UpstreamEndpoint, DownstreamE
 import net.lshift.diffa.participant.scanning.{AggregationBuilder, ConstraintsBuilder, SetConstraint, ScanConstraint}
 import java.util.HashMap
 import net.lshift.diffa.kernel.participants._
+import system.RoleKey
 
 /**
  * Provides general configuration options within the scope of a particular domain.
@@ -80,7 +81,7 @@ trait DomainConfigStore {
   /**
    * Make the given user a member of this domain.
    */
-  def makeDomainMember(domain:String, userName:String) : Member
+  def makeDomainMember(domain:String, userName:String, role:RoleKey) : Member
 
   /**
    * Remove the given user a from this domain.
@@ -423,6 +424,8 @@ object ExternalHttpCredentials {
  */
 case class Member(@BeanProperty var user:String = null,
                   @BeanProperty var space:Long = -1L,
+                  @BeanProperty var roleSpace:Long = -1L,     // The space that the role belongs to
+                  @BeanProperty var role:String = null,
                   @Deprecated @BeanProperty var domain:String = null) {
 
   def this() = this(user = null)

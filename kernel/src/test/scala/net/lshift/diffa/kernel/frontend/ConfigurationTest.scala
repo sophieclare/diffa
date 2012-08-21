@@ -32,6 +32,7 @@ import net.lshift.diffa.kernel.util.MissingObjectException
 import net.lshift.diffa.kernel.StoreReferenceContainer
 import net.lshift.diffa.schema.environment.TestDatabaseEnvironments
 import org.junit.{AfterClass, Test, Before}
+import system.RoleKey
 
 /**
  * Test cases for the Configuration frontend.
@@ -96,8 +97,8 @@ class ConfigurationTest {
 
     systemConfigStore.createOrUpdateUser(callingUser)
     systemConfigStore.createOrUpdateUser(anotherUser)
-    domainConfigStore.makeDomainMember("domain", "callingUser")
-    domainConfigStore.makeDomainMember("domain", "anotherUser")
+    domainConfigStore.makeDomainMember("domain", "callingUser", RoleKey(0, "Admin"))
+    domainConfigStore.makeDomainMember("domain", "anotherUser", RoleKey(0, "Admin"))
 
     val configWithCallingUser = DiffaConfig(
       members = Set("callingUser")

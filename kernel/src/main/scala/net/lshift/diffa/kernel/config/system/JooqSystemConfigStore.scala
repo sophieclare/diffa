@@ -42,6 +42,7 @@ import net.lshift.diffa.schema.tables.EndpointViews.ENDPOINT_VIEWS
 import net.lshift.diffa.schema.tables.Endpoints.ENDPOINTS
 import net.lshift.diffa.schema.tables.ConfigOptions.CONFIG_OPTIONS
 import net.lshift.diffa.schema.tables.Members.MEMBERS
+import net.lshift.diffa.schema.tables.RolePermissions.ROLE_PERMISSIONS
 import net.lshift.diffa.schema.tables.StoreCheckpoints.STORE_CHECKPOINTS
 import net.lshift.diffa.schema.tables.PendingDiffs.PENDING_DIFFS
 import net.lshift.diffa.schema.tables.Diffs.DIFFS
@@ -251,7 +252,7 @@ class JooqSystemConfigStore(jooq:JooqDatabaseFacade,
 
   def listDomainMemberships(username: String) : Seq[Member] = {
     jooq.execute(t => {
-      val results = t.select(MEMBERS.SPACE, SPACES.NAME).
+      val results = t.select(MEMBERS.SPACE, MEMBERS.ROLE, MEMBERS.ROLE_SPACE, SPACES.NAME).
                       from(MEMBERS).
                       join(SPACES).on(SPACES.ID.equal(MEMBERS.SPACE)).
                       where(MEMBERS.USERNAME.equal(username)).
@@ -259,6 +260,9 @@ class JooqSystemConfigStore(jooq:JooqDatabaseFacade,
       results.iterator().map(r => Member(
         user = username,
         space = r.getValue(MEMBERS.SPACE),
+        roleSpace = r.getValue(MEMBERS.ROLE_SPACE),
+        role = r.getValue(MEMBERS.ROLE),
+
         // TODO Ideally we shouldn't need to do this join, since the domain field is deprecated
         // and consumers of this call should be able to deal with the surrogate space id, but
         // for now that creates further churn in the patch to land space ids, so we'll just backplane the
@@ -266,6 +270,17 @@ class JooqSystemConfigStore(jooq:JooqDatabaseFacade,
         domain = r.getValue(SPACES.NAME)
       ))
     }).toSeq
+  }
+
+  def lookupPermissions(role:RoleKey) = {
+    jooq.execute(t => {
+      val results = t.select(ROLE_PERMISSIONS.PERMISSION).
+                      from(ROLE_PERMISSIONS).
+                      where(ROLE_PERMISSIONS.SPACE.equal(role.space).and(ROLE_PERMISSIONS.ROLE.equal(role.name))).
+                      fetch()
+
+      results.iterator().map(_.getValue(ROLE_PERMISSIONS.PERMISSION)).toSeq
+    })
   }
 
   def containsRootUser(usernames: Seq[String]) : Boolean = jooq.execute(t => {

@@ -6,6 +6,7 @@ import net.lshift.hibernate.migrations.MigrationBuilder
 import java.sql.Types
 import Step0048.{createSpace,createUser}
 import scala.collection.JavaConversions._
+import org.hibernate.mapping.Column
 
 /**
  * Database step adding user roles.
@@ -35,6 +36,16 @@ object Step0049 extends VerifiedMigrationStep {
       column("permission", Types.VARCHAR, 50, false).
       pk("space", "role", "permission")
 
+    migration.insert("member_roles").values(Map(
+      "space" -> "0",
+      "name" -> "user"
+    ))
+    migration.insert("role_permissions").values(Map(
+      "space" -> "0",
+      "role" -> "Admin",
+      "permission" -> "domain-user"
+    ))
+
     // We can no longer create a foreign key based purely upon the user being a member of the space. Instead, just
     // ensure the user exists.
     migration.alterTable("user_item_visibility").
@@ -45,10 +56,11 @@ object Step0049 extends VerifiedMigrationStep {
     //       the role was defined. This will allow a role to be defined at a high level, and then be used in applied
     //       to specific child spaces (ie, define a top level "Admin" role, but then only apply it to a specific subspace).
     migration.alterTable("members").
-      addColumn("role", Types.VARCHAR, 50, false, "member").
+      addColumn("role", Types.VARCHAR, 50, false, "Admin").
+      addColumn("role_space", Types.BIGINT, Column.DEFAULT_LENGTH, false, 0).
       dropPrimaryKey().
-      addPrimaryKey("space", "username", "role").
-      addForeignKey("fk_mmbs_role", Array("space", "role"), "member_roles", Array("space", "name"))
+      addPrimaryKey("space", "username", "role_space", "role").
+      addForeignKey("fk_mmbs_role", Array("role_space", "role"), "member_roles", Array("space", "name"))
 
     migration
   }
@@ -68,7 +80,7 @@ object Step0049 extends VerifiedMigrationStep {
 
     createUser(migration, user)
     createRole(migration, spaceId, role, permission1, permission2)
-    createMember(migration, spaceId, user, role)
+    createMember(migration, spaceId, user, spaceId, role)
 
     migration
   }
@@ -88,10 +100,11 @@ object Step0049 extends VerifiedMigrationStep {
     )
   }
 
-  def createMember(migration:MigrationBuilder, spaceId:String, user:String, role:String) {
+  def createMember(migration:MigrationBuilder, spaceId:String, user:String, roleSpaceId:String, role:String) {
     migration.insert("members").values(Map(
       "space" -> spaceId,
       "username" -> user,
+      "role_space" -> roleSpaceId,
       "role" -> role
     ))
   }

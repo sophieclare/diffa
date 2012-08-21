@@ -64,8 +64,11 @@ trait SystemConfigStore {
   def deleteUser(name: String): Unit
   def listUsers : Seq[User]
   def listDomainMemberships(username: String) : Seq[Member]
+  def lookupPermissions(role:RoleKey): Seq[String]
   def getUser(name: String) : User
   def getUserByToken(token: String) : User
   def containsRootUser(names:Seq[String]):Boolean
 
 }
+
+case class RoleKey(space:Long, name:String)

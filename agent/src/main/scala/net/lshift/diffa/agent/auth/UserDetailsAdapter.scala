@@ -20,10 +20,10 @@ import scala.collection.JavaConversions._
 import org.springframework.security.access.PermissionEvaluator
 import java.io.Serializable
 import org.springframework.security.core.{GrantedAuthority, Authentication}
-import net.lshift.diffa.kernel.config.system.SystemConfigStore
 import net.lshift.diffa.kernel.util.MissingObjectException
 import org.springframework.security.core.authority.SimpleGrantedAuthority
 import net.lshift.diffa.kernel.config.User
+import net.lshift.diffa.kernel.config.system.{RoleKey, SystemConfigStore}
 
 /**
  * Adapter for providing UserDetailsService on top of the underlying Diffa user store.
@@ -82,7 +82,8 @@ class UserDetailsAdapter(val systemConfigStore:SystemConfigStore)
   def extractDetails(user:User) = {
     val isRoot = user.superuser
     val memberships = systemConfigStore.listDomainMemberships(user.name)
-    val domainAuthorities = memberships.map(m => DomainAuthority(m.domain, "user"))
+    val domainAuthorities = memberships.flatMap(m =>
+      systemConfigStore.lookupPermissions(RoleKey(m.roleSpace, m.role)).map(p => DomainAuthority(m.domain, p)))
     val authorities = domainAuthorities ++
                       Seq(new SimpleGrantedAuthority("user"), new UserAuthority(user.name)) ++
     (isRoot match {

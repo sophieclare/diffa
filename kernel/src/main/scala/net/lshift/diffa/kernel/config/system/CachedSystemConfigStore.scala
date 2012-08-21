@@ -19,6 +19,7 @@ package net.lshift.diffa.kernel.config.system
 import net.lshift.diffa.kernel.util.cache.CacheProvider
 import net.lshift.diffa.kernel.config._
 import scala.collection.JavaConversions._
+import net.lshift.diffa.kernel.naming.CacheName
 
 class CachedSystemConfigStore(underlying:SystemConfigStore, cacheProvider:CacheProvider)
   extends SystemConfigStore
@@ -27,6 +28,7 @@ class CachedSystemConfigStore(underlying:SystemConfigStore, cacheProvider:CacheP
   val userTokenCache = cacheProvider.getCachedMap[String, User]("user.tokens")
   val usersCache = cacheProvider.getCachedMap[String, User]("users")
   val membershipCache = cacheProvider.getCachedMap[String, java.util.List[Member]]("user.domain.memberships")
+  val roleCache = cacheProvider.getCachedMap[RoleKey, java.util.List[String]](CacheName.SPACE_ROLE_PERMISSIONS)
 
   def reset {
     usersCache.evictAll()
@@ -78,6 +80,11 @@ class CachedSystemConfigStore(underlying:SystemConfigStore, cacheProvider:CacheP
   def listDomainMemberships(username: String) = {
     membershipCache.readThrough(username,
       () => underlying.listDomainMemberships(username).toList)
+  }
+
+  def lookupPermissions(role:RoleKey) = {
+    roleCache.readThrough(role,
+      () => underlying.lookupPermissions(role))
   }
 
   def getUser(username: String) = {

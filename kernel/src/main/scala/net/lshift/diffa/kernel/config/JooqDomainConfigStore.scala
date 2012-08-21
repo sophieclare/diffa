@@ -46,6 +46,7 @@ import net.lshift.diffa.kernel.frontend.PairDef
 import net.lshift.diffa.kernel.frontend.EndpointDef
 import org.jooq.{Record, Field, Condition, Table}
 import java.lang.{Long => LONG}
+import system.RoleKey
 
 class JooqDomainConfigStore(jooq:JooqDatabaseFacade,
                             hookManager:HookManager,
@@ -598,7 +599,7 @@ class JooqDomainConfigStore(jooq:JooqDatabaseFacade,
       execute()
   }
 
-  def makeDomainMember(domain:String, userName:String) = {
+  def makeDomainMember(domain:String, userName:String, role:RoleKey) = {
 
     val space = spacePathCache.resolveSpacePathOrDie(domain)
 
@@ -606,13 +607,15 @@ class JooqDomainConfigStore(jooq:JooqDatabaseFacade,
       t.insertInto(MEMBERS).
         set(MEMBERS.SPACE, space.id).
         set(MEMBERS.USERNAME, userName).
+        set(MEMBERS.ROLE_SPACE, role.space).
+        set(MEMBERS.ROLE, role.name).
         onDuplicateKeyIgnore().
         execute()
     })
 
     invalidateMembershipCache(space.id)
 
-    val member = Member(userName, space.id, domain)
+    val member = Member(userName, space.id, role.space, role.name, domain)
     membershipListener.onMembershipCreated(member)
     member
   }
