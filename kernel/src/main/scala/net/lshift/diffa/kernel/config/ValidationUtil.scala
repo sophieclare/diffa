@@ -109,7 +109,7 @@ object ValidationUtil {
    * Throws ConfigValidationException otherwise.
    */
   def ensurePathSegmentFormat(path: String,  name: String): Boolean = {
-    if (name == null || !name.matches("(?i)[a-z0-9]([a-z0-9_-]*[a-z0-9])?")) {
+    if (name == null || name.isEmpty || !name.matches("(?i)[a-z0-9]([a-z0-9_-]*[a-z0-9])?")) {
       throw new ConfigValidationException(path, "Path segment %s is invalid, must begin and end with an alphanumeric and contain alphanumeric, _ or -".format(name))
     }
 
