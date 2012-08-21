@@ -110,6 +110,7 @@ trait DomainConfigStore {
 
 case class Space (
   @BeanProperty var id: java.lang.Long = null,
+  @BeanProperty var parent: java.lang.Long = null,
   @BeanProperty var name: String = null,
   @BeanProperty var configVersion: java.lang.Integer = null) {
 

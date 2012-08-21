@@ -30,11 +30,16 @@ import net.lshift.diffa.kernel.config.Member
  */
 trait SystemConfigStore {
 
-  def createOrUpdateDomain(domain: String)
+  def createOrUpdateSpace(path: String) : Space
+
+  @Deprecated def createOrUpdateDomain(domain: String)
+
   def deleteDomain(name: String)
   def doesDomainExist(name: String): Boolean
-  def listDomains : Seq[String]
-  
+
+  @Deprecated  def listDomains : Seq[String]
+  def listSpaces : Seq[Space]
+
   /**
    * Sets the given configuration option to the given value.
    * This option is marked as internal will not be returned by the allConfigOptions method. This allows

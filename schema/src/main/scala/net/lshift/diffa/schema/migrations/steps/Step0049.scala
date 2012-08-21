@@ -38,10 +38,16 @@ object Step0049 extends VerifiedMigrationStep {
       column("ancestor", Types.BIGINT, false).
       column("descendant", Types.BIGINT, false).
       column("depth", Types.INTEGER, false).
-      pk("parent", "child")
+      pk("ancestor", "descendant")
 
     migration.alterTable("space_paths").addForeignKey("fk_space_par", "ancestor", "spaces", "id")
     migration.alterTable("space_paths").addForeignKey("fk_space_chd", "descendant", "spaces", "id")
+
+    migration.insert("space_paths").values(Map(
+      "ancestor"    -> "0",
+      "descendant"  -> "0",
+      "depth"       -> "0"
+    ))
 
     migration
   }
@@ -62,8 +68,8 @@ object Step0049 extends VerifiedMigrationStep {
     ))
 
     migration.insert("space_paths").values(Map(
-      "parent"  -> parentId,
-      "child"   -> parentId,
+      "ancestor"  -> parentId,
+      "descendant"   -> parentId,
       "depth"   -> "0"
     ))
 
@@ -74,14 +80,14 @@ object Step0049 extends VerifiedMigrationStep {
     ))
 
     migration.insert("space_paths").values(Map(
-      "parent"  -> childId,
-      "child"   -> childId,
+      "ancestor"  -> childId,
+      "descendant"   -> childId,
       "depth"   -> "0"
     ))
 
     migration.insert("space_paths").values(Map(
-      "parent"  -> parentId,
-      "child"   -> childId,
+      "ancestor"  -> parentId,
+      "descendant"   -> childId,
       "depth"   -> "1"
     ))
 

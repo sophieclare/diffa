@@ -46,6 +46,7 @@ import net.lshift.diffa.schema.tables.StoreCheckpoints.STORE_CHECKPOINTS
 import net.lshift.diffa.schema.tables.PendingDiffs.PENDING_DIFFS
 import net.lshift.diffa.schema.tables.Diffs.DIFFS
 import net.lshift.diffa.schema.tables.Spaces.SPACES
+import net.lshift.diffa.schema.tables.SpacePaths.SPACE_PATHS
 import net.lshift.diffa.schema.tables.SystemConfigOptions.SYSTEM_CONFIG_OPTIONS
 import net.lshift.diffa.schema.tables.Users.USERS
 import net.lshift.diffa.kernel.lifecycle.DomainLifecycleAware
@@ -63,6 +64,7 @@ import net.lshift.diffa.kernel.config.Member
 import net.lshift.diffa.kernel.config.User
 import net.lshift.diffa.kernel.frontend.DomainEndpointDef
 import net.lshift.diffa.kernel.naming.SequenceName
+import org.jooq.impl.Factory
 
 class JooqSystemConfigStore(jooq:JooqDatabaseFacade,
                             cacheProvider:CacheProvider,
@@ -72,6 +74,8 @@ class JooqSystemConfigStore(jooq:JooqDatabaseFacade,
 
   val logger = LoggerFactory.getLogger(getClass)
 
+  val ROOT_SPACE = Space(id = 0L, parent = 0L, name = "diffa")
+
   initializeExistingSequences()
 
   private val domainEventSubscribers = new ListBuffer[DomainLifecycleAware]
@@ -80,49 +84,137 @@ class JooqSystemConfigStore(jooq:JooqDatabaseFacade,
 
   registerDomainEventListener(spacePathCache)
 
-  def createOrUpdateDomain(path:String) = {
+  def createOrUpdateDomain(path:String) = createOrUpdateSpace(path)
 
-    jooq.execute(t => {
+  def createOrUpdateSpace(path:String) = {
 
-      // For now, we're just looking at backward compatibility - later on, we should implement a space update
+    val lastSlash = path.lastIndexOf("/")
 
-      val count = t.selectCount().
-                    from(SPACES).
-                    where(SPACES.NAME.equal(path)).
-                    fetchOne().
-                    getValueAsBigInteger(0).longValue()
+    if (lastSlash > 0) {
 
-      // There is small margin for error between the read and the write, but basically we want to prevent unnecessary
-      // sequence churn
+      val parentPath = path.substring(0, lastSlash)
+      val childPath = path.substring(lastSlash + 1)
 
-      if (count == 0) {
+      ValidationUtil.ensurePathSegmentFormat("spaces", childPath)
 
-        val sequence = sequenceProvider.nextSequenceValue(SequenceName.SPACES)
+      jooq.execute(t => {
 
-        try {
+        val spacePath = Factory.groupConcat(SPACES.NAME).orderBy(SPACES.ID).separator("/").as("path")
 
-          t.insertInto(SPACES).
-            set(SPACES.ID, sequence:LONG).
-            set(SPACES.NAME, path).
-            set(SPACES.CONFIG_VERSION, 0:INT).
-            execute()
+        val parent =  t.select(SPACE_PATHS.as("d").DESCENDANT).select(spacePath).
+                        from(SPACE_PATHS.as("d")).
+                        join(SPACE_PATHS.as("a")).
+                          on(SPACE_PATHS.as("a").DESCENDANT.equal(SPACE_PATHS.as("d").DESCENDANT)).
+                        join(SPACES).
+                          on(SPACES.ID.equal(SPACE_PATHS.as("a").ANCESTOR)).
+                        where(SPACE_PATHS.as("d").ANCESTOR.equal(0)).
+                          and(SPACE_PATHS.as("d").ANCESTOR.notEqual(SPACE_PATHS.as("d").DESCENDANT)).
+                        groupBy(SPACE_PATHS.as("d").DESCENDANT).
+                        having(spacePath.like(ROOT_SPACE.name + "/" + parentPath + "%")).
+                        fetchOne()
 
-          //cachedSpacePaths.evict(space) - this invalidation is triggered by the onDomainRemoved event
-          domainEventSubscribers.foreach(_.onDomainUpdated(sequence))
-
+        if (null == parent) {
+          throw new MissingObjectException(parentPath)
         }
-        catch {
-          case u:DataAccessException if u.getCause.isInstanceOf[SQLIntegrityConstraintViolationException] =>
-            logger.warn("Integrity constraint when trying to create space for path " + path)
-            throw u
-          case x => throw x
+        else {
+          val parentId = parent.getValueAsBigInteger(SPACE_PATHS.as("d").DESCENDANT).longValue()
+          createSpace(t, childPath, parentId)
         }
+      })
+    }
 
-      }
+    else {
 
-    })
+      ValidationUtil.ensurePathSegmentFormat("spaces", path)
+      jooq.execute(createSpace(_, path, ROOT_SPACE.id))
+
+    }
 
   }
+
+  private def createSpace(t:Factory, name:String, parent:Long) : Space =  {
+
+    val count = t.selectCount().
+                  from(SPACES).
+                  where(SPACES.NAME.equal(name)).
+                    and(SPACES.PARENT.equal(parent)).
+                  fetchOne().
+                  getValueAsBigInteger(0).longValue()
+
+    // There is small margin for error between the read and the write, but basically we want to prevent unnecessary
+    // sequence churn
+
+    if (count == 0) {
+
+      val sequence = sequenceProvider.nextSequenceValue(SequenceName.SPACES)
+
+      try {
+
+        val space = insertSpacePath(t, sequence, name, parent)
+
+        //cachedSpacePaths.evict(space) - this invalidation is triggered by the onDomainRemoved event
+        domainEventSubscribers.foreach(_.onDomainUpdated(sequence))
+
+        space
+      }
+      catch {
+        case u:DataAccessException if u.getCause.isInstanceOf[SQLIntegrityConstraintViolationException] =>
+          logger.warn("Integrity constraint when trying to create space for path " + name)
+          throw u
+        case x => throw x
+      }
+
+    }
+
+    else {
+
+      // This is the U in CRUD, which currently is a NOOP
+
+      val record =  t.select().
+                      from(SPACES).
+                      where(SPACES.NAME.equal(name)).
+                        and(SPACES.PARENT.equal(parent)).
+                      fetchOne()
+      Space(
+        id = record.getValue(SPACES.ID),
+        parent = record.getValue(SPACES.PARENT),
+        name = record.getValue(SPACES.NAME),
+        configVersion = record.getValue(SPACES.CONFIG_VERSION)
+      )
+    }
+
+  }
+
+  private def insertSpacePath(t:Factory, space:Long, name:String, parent:Long) : Space = {
+
+    t.insertInto(SPACES).
+        set(SPACES.ID, space:LONG).
+        set(SPACES.PARENT, parent:LONG).
+        set(SPACES.NAME, name).
+        set(SPACES.CONFIG_VERSION, 0:INT).
+      execute()
+
+    val leaf = Factory.field(space.toString)
+    val zero = Factory.field("0")
+
+    t.insertInto(SPACE_PATHS, SPACE_PATHS.ANCESTOR, SPACE_PATHS.DESCENDANT, SPACE_PATHS.DEPTH).
+      select(
+        t.select(SPACE_PATHS.ANCESTOR).
+          select(leaf).
+          select(SPACE_PATHS.DEPTH.add(1)).
+          from(SPACE_PATHS).
+          where(SPACE_PATHS.DESCENDANT.equal(parent)).
+          unionAll(t.select(leaf, leaf, zero))
+      ).execute()
+
+    Space(
+      id = space,
+      parent = parent,
+      name = name,
+      configVersion = 0
+    )
+  }
+
 
   def deleteDomain(path:String) = {
 
@@ -171,12 +263,19 @@ class JooqSystemConfigStore(jooq:JooqDatabaseFacade,
 
   def doesDomainExist(path: String) = spacePathCache.doesDomainExist(path)
 
-  def listDomains = jooq.execute( t => {
-    t.select(SPACES.NAME).
+  def listDomains = listSpaces.map(_.name)
+
+  def listSpaces = jooq.execute( t => {
+    t.select().
       from(SPACES).
       orderBy(SPACES.NAME).
       fetch().
-      iterator().map(_.getValue(SPACES.NAME)).toSeq
+      iterator().map(s => Space(
+        id = s.getValue(SPACES.ID),
+        parent = s.getValue(SPACES.PARENT),
+        name = s.getValue(SPACES.NAME),
+        configVersion = s.getValue(SPACES.CONFIG_VERSION)
+      )).toSeq
   })
 
   def listPairs = jooq.execute { t =>
