@@ -99,9 +99,9 @@ class JooqSystemConfigStore(jooq:JooqDatabaseFacade,
 
       jooq.execute(t => {
 
-        val spacePath = Factory.groupConcat(SPACES.NAME).orderBy(SPACES.ID).separator("/").as("path")
+        val spacePath = Factory.groupConcat(SPACES.NAME).orderBy(SPACES.ID).separator("/")
 
-        val parent =  t.select(SPACE_PATHS.as("d").DESCENDANT).select(spacePath).
+        val parent =  t.select(SPACE_PATHS.as("d").DESCENDANT).select(spacePath.as("path")).
                         from(SPACE_PATHS.as("d")).
                         join(SPACE_PATHS.as("a")).
                           on(SPACE_PATHS.as("a").DESCENDANT.equal(SPACE_PATHS.as("d").DESCENDANT)).
