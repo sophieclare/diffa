@@ -17,7 +17,7 @@ package net.lshift.diffa.kernel.config
 
 import net.lshift.diffa.schema.environment.TestDatabaseEnvironments
 import net.lshift.diffa.kernel.StoreReferenceContainer
-import org.junit.{Ignore, Test, AfterClass}
+import org.junit.{Test, AfterClass}
 import org.junit.Assert._
 import org.apache.commons.lang.RandomStringUtils
 import net.lshift.diffa.kernel.util.MissingObjectException
@@ -73,22 +73,33 @@ class SpacePathCacheTest {
   @Test
   def shouldCreateSubspaceForExistingLineage {
 
-    val parentSpace = RandomStringUtils.randomAlphanumeric(10)
-    val childSpace = parentSpace + "/" + RandomStringUtils.randomAlphanumeric(10)
+    val firstParentSpace = RandomStringUtils.randomAlphanumeric(10)
+    val secondParentSpace = RandomStringUtils.randomAlphanumeric(10)
+    val childSpace = firstParentSpace + "/" + RandomStringUtils.randomAlphanumeric(10)
     val grandChildSpace = childSpace + "/" + RandomStringUtils.randomAlphanumeric(10)
     val greatGrandChildSpace = grandChildSpace + "/" + RandomStringUtils.randomAlphanumeric(10)
 
-    systemConfigStore.createOrUpdateSpace(parentSpace)
-    assertTrue(systemConfigStore.doesDomainExist(parentSpace))
+    val firstParent = systemConfigStore.createOrUpdateSpace(firstParentSpace)
+    assertTrue(systemConfigStore.doesDomainExist(firstParent.name))
 
-    systemConfigStore.createOrUpdateSpace(childSpace)
+    val secondParent = systemConfigStore.createOrUpdateSpace(secondParentSpace)
+    assertTrue(systemConfigStore.doesDomainExist(secondParent.name))
+
+    val child = systemConfigStore.createOrUpdateSpace(childSpace)
 
     // TODO This doesn't work yet
     //assertTrue(systemConfigStore.doesDomainExist(childSpace))
 
-    systemConfigStore.createOrUpdateSpace(grandChildSpace)
+    val grandChild = systemConfigStore.createOrUpdateSpace(grandChildSpace)
 
-    systemConfigStore.createOrUpdateSpace(greatGrandChildSpace)
+    val greatGrandChild = systemConfigStore.createOrUpdateSpace(greatGrandChildSpace)
+
+    // Verify the reported hierarchy
+
+    val hierarchy = systemConfigStore.descendentSpaces(firstParent.id)
+
+    assertEquals(Seq(greatGrandChild, grandChild, child, firstParent), hierarchy)
+    assertFalse(hierarchy.contains(secondParent))
   }
 
   @Test(expected = classOf[MissingObjectException])

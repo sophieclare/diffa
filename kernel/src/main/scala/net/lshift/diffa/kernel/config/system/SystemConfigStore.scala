@@ -31,6 +31,8 @@ import net.lshift.diffa.kernel.config.Member
 trait SystemConfigStore {
 
   def createOrUpdateSpace(path: String) : Space
+  def descendentSpaces(parent:Long) : Seq[Space]
+
 
   @Deprecated def createOrUpdateDomain(domain: String)
 

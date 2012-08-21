@@ -65,6 +65,7 @@ import net.lshift.diffa.kernel.config.User
 import net.lshift.diffa.kernel.frontend.DomainEndpointDef
 import net.lshift.diffa.kernel.naming.SequenceName
 import org.jooq.impl.Factory
+import javax.xml.stream.FactoryConfigurationError
 
 class JooqSystemConfigStore(jooq:JooqDatabaseFacade,
                             cacheProvider:CacheProvider,
@@ -175,12 +176,8 @@ class JooqSystemConfigStore(jooq:JooqDatabaseFacade,
                       where(SPACES.NAME.equal(name)).
                         and(SPACES.PARENT.equal(parent)).
                       fetchOne()
-      Space(
-        id = record.getValue(SPACES.ID),
-        parent = record.getValue(SPACES.PARENT),
-        name = record.getValue(SPACES.NAME),
-        configVersion = record.getValue(SPACES.CONFIG_VERSION)
-      )
+
+      recordToSpace(record)
     }
 
   }
@@ -216,49 +213,85 @@ class JooqSystemConfigStore(jooq:JooqDatabaseFacade,
   }
 
 
+  private def descendancyTree(t:Factory, parent:Long) = {
+    val hierarchy = t.select().
+                      from(SPACES).
+                      join(SPACE_PATHS).
+                        on(SPACE_PATHS.DESCENDANT.equal(SPACES.ID)).
+                      where(SPACE_PATHS.ANCESTOR.equal(parent)).
+                      orderBy(SPACE_PATHS.DEPTH.desc()).
+                      fetch()
+
+    if (hierarchy == null) {
+      throw new MissingObjectException(parent.toString)
+    }
+    else {
+      hierarchy.iterator().map(recordToSpace(_))
+    }
+  }
+
+  private def recordToSpace(record:Record) = {
+    Space(
+      id = record.getValue(SPACES.ID),
+      parent = record.getValue(SPACES.PARENT),
+      name = record.getValue(SPACES.NAME),
+      configVersion = record.getValue(SPACES.CONFIG_VERSION)
+    )
+  }
+
   def deleteDomain(path:String) = {
 
     val space = spacePathCache.resolveSpacePathOrDie(path)
-    deleteDomain(space.id)
-    domainEventSubscribers.foreach(_.onDomainRemoved(space.id))
-    //cachedSpacePaths.evict(path) - this invalidation is triggered by the onDomainRemoved event
-
-  }
-
-  private def deleteDomain(id:Long) = {
 
     jooq.execute(t => {
-      t.delete(EXTERNAL_HTTP_CREDENTIALS).where(EXTERNAL_HTTP_CREDENTIALS.SPACE.equal(id)).execute()
-      t.delete(USER_ITEM_VISIBILITY).where(USER_ITEM_VISIBILITY.SPACE.equal(id)).execute()
-      t.delete(PREFIX_CATEGORIES).where(PREFIX_CATEGORIES.SPACE.equal(id)).execute()
-      t.delete(PREFIX_CATEGORY_VIEWS).where(PREFIX_CATEGORY_VIEWS.SPACE.equal(id)).execute()
-      t.delete(SET_CATEGORIES).where(SET_CATEGORIES.SPACE.equal(id)).execute()
-      t.delete(SET_CATEGORY_VIEWS).where(SET_CATEGORY_VIEWS.SPACE.equal(id)).execute()
-      t.delete(RANGE_CATEGORIES).where(RANGE_CATEGORIES.SPACE.equal(id)).execute()
-      t.delete(RANGE_CATEGORY_VIEWS).where(RANGE_CATEGORY_VIEWS.SPACE.equal(id)).execute()
-      t.delete(UNIQUE_CATEGORY_NAMES).where(UNIQUE_CATEGORY_NAMES.SPACE.equal(id)).execute()
-      t.delete(UNIQUE_CATEGORY_VIEW_NAMES).where(UNIQUE_CATEGORY_VIEW_NAMES.SPACE.equal(id)).execute()
-      t.delete(ENDPOINT_VIEWS).where(ENDPOINT_VIEWS.SPACE.equal(id)).execute()
-      t.delete(PAIR_REPORTS).where(PAIR_REPORTS.SPACE.equal(id)).execute()
-      t.delete(ESCALATIONS).where(ESCALATIONS.SPACE.equal(id)).execute()
-      t.delete(REPAIR_ACTIONS).where(REPAIR_ACTIONS.SPACE.equal(id)).execute()
-      t.delete(PAIR_VIEWS).where(PAIR_VIEWS.SPACE.equal(id)).execute()
-      t.delete(BREAKERS).where(BREAKERS.SPACE.equal(id)).execute()
-      t.delete(PAIRS).where(PAIRS.SPACE.equal(id)).execute()
-      t.delete(ENDPOINTS).where(ENDPOINTS.SPACE.equal(id)).execute()
-      t.delete(CONFIG_OPTIONS).where(CONFIG_OPTIONS.SPACE.equal(id)).execute()
-      t.delete(MEMBERS).where(MEMBERS.SPACE.equal(id)).execute()
-      t.delete(STORE_CHECKPOINTS).where(STORE_CHECKPOINTS.SPACE.equal(id)).execute()
-      t.delete(PENDING_DIFFS).where(PENDING_DIFFS.SPACE.equal(id)).execute()
-      t.delete(DIFFS).where(DIFFS.SPACE.equal(id)).execute()
-
-      val deleted = t.delete(SPACES).where(SPACES.ID.equal(id)).execute()
-
-      if (deleted == 0) {
-        logger.error("%s: Attempt to delete non-existent space: %s".format(AlertCodes.INVALID_DOMAIN, id))
-        throw new MissingObjectException(id + "")
-      }
+      descendancyTree(t, space.id).foreach(s => {
+        deleteSpace(t, s.id)
+        domainEventSubscribers.foreach(_.onDomainRemoved(s.id))
+        //cachedSpacePaths.evict(path) - this invalidation is triggered by the onDomainRemoved event
+      })
     })
+  }
+
+  def descendentSpaces(parent:Long) = jooq.execute(descendancyTree(_, parent)).toSeq
+
+
+  private def deleteSpace(t:Factory, id:Long) = {
+
+    t.delete(EXTERNAL_HTTP_CREDENTIALS).where(EXTERNAL_HTTP_CREDENTIALS.SPACE.equal(id)).execute()
+    t.delete(USER_ITEM_VISIBILITY).where(USER_ITEM_VISIBILITY.SPACE.equal(id)).execute()
+    t.delete(PREFIX_CATEGORIES).where(PREFIX_CATEGORIES.SPACE.equal(id)).execute()
+    t.delete(PREFIX_CATEGORY_VIEWS).where(PREFIX_CATEGORY_VIEWS.SPACE.equal(id)).execute()
+    t.delete(SET_CATEGORIES).where(SET_CATEGORIES.SPACE.equal(id)).execute()
+    t.delete(SET_CATEGORY_VIEWS).where(SET_CATEGORY_VIEWS.SPACE.equal(id)).execute()
+    t.delete(RANGE_CATEGORIES).where(RANGE_CATEGORIES.SPACE.equal(id)).execute()
+    t.delete(RANGE_CATEGORY_VIEWS).where(RANGE_CATEGORY_VIEWS.SPACE.equal(id)).execute()
+    t.delete(UNIQUE_CATEGORY_NAMES).where(UNIQUE_CATEGORY_NAMES.SPACE.equal(id)).execute()
+    t.delete(UNIQUE_CATEGORY_VIEW_NAMES).where(UNIQUE_CATEGORY_VIEW_NAMES.SPACE.equal(id)).execute()
+    t.delete(ENDPOINT_VIEWS).where(ENDPOINT_VIEWS.SPACE.equal(id)).execute()
+    t.delete(PAIR_REPORTS).where(PAIR_REPORTS.SPACE.equal(id)).execute()
+    t.delete(ESCALATIONS).where(ESCALATIONS.SPACE.equal(id)).execute()
+    t.delete(REPAIR_ACTIONS).where(REPAIR_ACTIONS.SPACE.equal(id)).execute()
+    t.delete(PAIR_VIEWS).where(PAIR_VIEWS.SPACE.equal(id)).execute()
+    t.delete(BREAKERS).where(BREAKERS.SPACE.equal(id)).execute()
+    t.delete(PAIRS).where(PAIRS.SPACE.equal(id)).execute()
+    t.delete(ENDPOINTS).where(ENDPOINTS.SPACE.equal(id)).execute()
+    t.delete(CONFIG_OPTIONS).where(CONFIG_OPTIONS.SPACE.equal(id)).execute()
+    t.delete(MEMBERS).where(MEMBERS.SPACE.equal(id)).execute()
+    t.delete(STORE_CHECKPOINTS).where(STORE_CHECKPOINTS.SPACE.equal(id)).execute()
+    t.delete(PENDING_DIFFS).where(PENDING_DIFFS.SPACE.equal(id)).execute()
+    t.delete(DIFFS).where(DIFFS.SPACE.equal(id)).execute()
+
+    t.delete(SPACE_PATHS).
+      where(SPACE_PATHS.ANCESTOR.equal(id)).
+        or(SPACE_PATHS.DESCENDANT.equal(id)).
+      execute()
+
+    val deleted = t.delete(SPACES).where(SPACES.ID.equal(id)).execute()
+
+    if (deleted == 0) {
+      logger.error("%s: Attempt to delete non-existent space: %s".format(AlertCodes.INVALID_DOMAIN, id))
+      throw new MissingObjectException(id + "")
+    }
   }
 
   def doesDomainExist(path: String) = spacePathCache.doesDomainExist(path)
