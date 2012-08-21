@@ -101,7 +101,7 @@ class ConfigurationTest {
     domainConfigStore.makeDomainMember("domain", "anotherUser", RoleKey(0, "Admin"))
 
     val configWithCallingUser = DiffaConfig(
-      members = Set("callingUser")
+      members = Set(RoleMember("callingUser", "Admin"))
     )
 
     configuration.applyConfiguration("domain", DiffaConfig(), Some("callingUser"))
@@ -156,7 +156,7 @@ class ConfigurationTest {
           views = List(EndpointViewDef("v1")))
     val config = new DiffaConfig(
       properties = Map("diffa.host" -> "localhost:1234", "a" -> "b"),
-      members = Set("abc","def"),
+      members = Set(RoleMember("abc", "Admin"),RoleMember("def", "Admin")),
       endpoints = Set(ep1.withoutDomain, ep2.withoutDomain),
       pairs = Set(
         PairDef("ab", "same", 5, "upstream1", "downstream1", "0 * * * * ?",
@@ -223,7 +223,7 @@ class ConfigurationTest {
         // diffa.host is changed, a -> b is gone, c -> d is added
       properties = Map("c" -> "d", "diffa.host" -> "localhost:2345"),
         // abc is changed, def is gone, ghi is added
-      members = Set("abc","def"),
+      members = Set(RoleMember("abc", "Admin"),RoleMember("def", "Admin")),
       endpoints = Set(ep2.withoutDomain(), ep1.withoutDomain()),
         // gaa is gone, gcc is created, gbb is the same
       pairs = Set(

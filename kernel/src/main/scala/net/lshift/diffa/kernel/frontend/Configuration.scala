@@ -62,19 +62,17 @@ class Configuration(val configStore: DomainConfigStore,
     diffaConfig.properties.foreach { case (k, v) => configStore.setConfigOption(domain, k, v) }
 
     // Remove missing members, and create/update the rest
-    val removedMembers = configStore.listDomainMembers(domain).filter(m => diffaConfig.members.find(newM => newM == m.user).isEmpty)
+    val existingMembers = listDomainMembers(domain)
+    val removedMembers = existingMembers.diff(diffaConfig.members.toSeq)
     removedMembers.foreach(m => {
-      val userToRemove = m.user
-      callingUser match {
-        case Some(currentUser) if userToRemove == currentUser => // don't this guy kill himself
-        case _                                                => configStore.removeDomainMembership(domain, userToRemove)
+      if (m.username != callingUser) {      // Users aren't allowed to remove memberships for themselves
+        removeDomainMembership(domain, m.username, m.role)
       }
     })
-
-    diffaConfig.members.foreach(member => {
-      callingUser match {
-        case Some(currentUser) if member == currentUser => // this guy must already be there
-        case _                                          => configStore.makeDomainMember(domain, member)
+    val newMembers = diffaConfig.members.toSeq.diff(existingMembers)
+    newMembers.foreach(m => {
+      if (m.username != callingUser) {      // Users aren't allowed to add memberships for themselves
+        makeDomainMember(domain, m.username, m.role)
       }
     })
 
@@ -95,7 +93,7 @@ class Configuration(val configStore: DomainConfigStore,
     if (doesDomainExist(domain))
       Some(DiffaConfig(
         properties = configStore.allConfigOptions(domain),
-        members = configStore.listDomainMembers(domain).map(_.user).toSet,
+        members = listDomainMembers(domain).toSet,
         endpoints = configStore.listEndpoints(domain).toSet,
         pairs = configStore.listPairs(domain).map(_.withoutDomain).toSet
       ))
@@ -260,9 +258,14 @@ class Configuration(val configStore: DomainConfigStore,
     updatePair(domain, pairKey, pair => replaceByName(pair.reports, report))
   }
 
-  def makeDomainMember(domain:String, userName:String) = configStore.makeDomainMember(domain,userName)
-  def removeDomainMembership(domain:String, userName:String) = configStore.removeDomainMembership(domain, userName)
-  def listDomainMembers(domain:String) = configStore.listDomainMembers(domain)
+  def makeDomainMember(domain:String, userName:String, role:String) {
+    val roleKey = configStore.lookupRole(domain, role)
+    configStore.makeDomainMember(domain, userName, roleKey)
+  }
+  def removeDomainMembership(domain:String, userName:String, role:String) {
+    configStore.removeDomainMembership(domain, userName, role)
+  }
+  def listDomainMembers(domain:String) = configStore.listDomainMembers(domain).map(m => RoleMember(m.user, m.role))
 
   def notifyPairUpdate(p:DiffaPairRef) {
     supervisors.foreach(_.startActor(p))

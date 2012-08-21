@@ -77,6 +77,10 @@ trait DomainConfigStore {
    */
   def clearConfigOption(domain:String, key:String)
 
+  /**
+   * Looks up the key for a role based upon its name and domain.
+   */
+  def lookupRole(domain:String, role:String):RoleKey
 
   /**
    * Make the given user a member of this domain.
@@ -84,9 +88,9 @@ trait DomainConfigStore {
   def makeDomainMember(domain:String, userName:String, role:RoleKey) : Member
 
   /**
-   * Remove the given user a from this domain.
+   * Remove the given user from the given role in this domain.
    */
-  def removeDomainMembership(domain:String, userName:String) : Unit
+  def removeDomainMembership(domain:String, userName:String, role:String) : Unit
 
   /**
    * Lists all of the members of the given domain

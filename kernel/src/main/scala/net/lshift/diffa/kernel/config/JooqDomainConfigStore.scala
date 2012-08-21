@@ -20,6 +20,7 @@ import scala.collection.JavaConversions._
 import net.lshift.diffa.kernel.hooks.HookManager
 import net.lshift.diffa.schema.jooq.{DatabaseFacade => JooqDatabaseFacade}
 import net.lshift.diffa.schema.tables.Members.MEMBERS
+import net.lshift.diffa.schema.tables.MemberRoles.MEMBER_ROLES
 import net.lshift.diffa.schema.tables.ConfigOptions.CONFIG_OPTIONS
 import net.lshift.diffa.schema.tables.RepairActions.REPAIR_ACTIONS
 import net.lshift.diffa.schema.tables.Escalations.ESCALATIONS
@@ -75,6 +76,7 @@ class JooqDomainConfigStore(jooq:JooqDatabaseFacade,
 
   // Members
   private val cachedMembers = cacheProvider.getCachedMap[Long, java.util.List[Member]](USER_DOMAIN_MEMBERS)
+  private val cachedRoles = cacheProvider.getCachedMap[SpaceRoleKey, RoleKey](SPACE_ROLES)
 
   def reset {
     cachedConfigVersions.evictAll()
@@ -89,6 +91,7 @@ class JooqDomainConfigStore(jooq:JooqDatabaseFacade,
     cachedDomainConfigOptions.evictAll()
 
     cachedMembers.evictAll()
+    cachedRoles.evictAll()
   }
 
   private def invalidateMembershipCache(space:Long) = {
@@ -599,6 +602,30 @@ class JooqDomainConfigStore(jooq:JooqDatabaseFacade,
       execute()
   }
 
+  def lookupRole(domain:String, role:String) = {
+    val space = spacePathCache.resolveSpacePathOrDie(domain)
+
+    cachedRoles.readThrough(SpaceRoleKey(space.id, role), () => {
+      jooq.execute(t => {
+        def searchSpace(spaceId:Long) = {
+          val result = t.select().
+                       from(MEMBER_ROLES).
+                       where(MEMBER_ROLES.SPACE.equal(spaceId).and(MEMBER_ROLES.NAME.equal(role))).
+                       fetchOne()
+          if (result == null) {
+            None
+          } else {
+            Some(RoleKey(spaceId, role))
+          }
+        }
+
+        // Search the current space first, then look at the root space.
+        // TODO: When hierachical spaces exist, this should work up the hierarchy.
+        searchSpace(space.id).getOrElse(searchSpace(0).getOrElse(throw new MissingObjectException("role")))
+      })
+    })
+  }
+
   def makeDomainMember(domain:String, userName:String, role:RoleKey) = {
 
     val space = spacePathCache.resolveSpacePathOrDie(domain)
@@ -620,20 +647,22 @@ class JooqDomainConfigStore(jooq:JooqDatabaseFacade,
     member
   }
 
-  def removeDomainMembership(domain:String, userName:String) = {
+  def removeDomainMembership(domain:String, userName:String, role:String) {
 
     val space = spacePathCache.resolveSpacePathOrDie(domain)
 
     jooq.execute(t => {
       t.delete(MEMBERS).
         where(MEMBERS.SPACE.equal(space.id)).
-        and(MEMBERS.USERNAME.equal(userName)).
+          and(MEMBERS.USERNAME.equal(userName)).
+          and(MEMBERS.ROLE.equal(role)).
         execute()
     })
 
     invalidateMembershipCache(space.id)
 
-    val member = Member(userName,space.id, domain)
+      // TODO: This should include the right space id
+    val member = Member(userName, space.id, space.id, role, domain)
     membershipListener.onMembershipRemoved(member)
   }
 
@@ -741,6 +770,14 @@ case class DomainPairKey(
 case class DomainConfigKey(
   @BeanProperty var space: Long,
   @BeanProperty var configKey: String = null) {
+
+  def this() = this(space = 0)
+
+}
+
+case class SpaceRoleKey(
+  @BeanProperty var space: Long,
+  @BeanProperty var role: String = null) {
 
   def this() = this(space = 0)
 

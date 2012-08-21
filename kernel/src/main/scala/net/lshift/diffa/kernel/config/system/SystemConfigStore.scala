@@ -71,4 +71,4 @@ trait SystemConfigStore {
 
 }
 
-case class RoleKey(space:Long, name:String)
+case class RoleKey(space:java.lang.Long, name:String)
