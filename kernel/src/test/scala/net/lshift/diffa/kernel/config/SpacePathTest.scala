@@ -22,9 +22,9 @@ import org.junit.Assert._
 import org.apache.commons.lang.RandomStringUtils
 import net.lshift.diffa.kernel.util.MissingObjectException
 
-class SpacePathCacheTest {
+class SpacePathTest {
 
-  private val storeReferences = SpacePathCacheTest.storeReferences
+  private val storeReferences = SpacePathTest.storeReferences
   private val systemConfigStore = storeReferences.systemConfigStore
 
   @Test
@@ -96,7 +96,7 @@ class SpacePathCacheTest {
 
     // Verify the reported hierarchy
 
-    val hierarchy = systemConfigStore.descendentSpaces(firstParent.id)
+    val hierarchy = systemConfigStore.listSubspaces(firstParent.id)
 
     assertEquals(Seq(greatGrandChild, grandChild, child, firstParent), hierarchy)
     assertFalse(hierarchy.contains(secondParent))
@@ -114,7 +114,7 @@ class SpacePathCacheTest {
 
 }
 
-object SpacePathCacheTest {
+object SpacePathTest {
   private[SpacePathCacheTest] val env =
     TestDatabaseEnvironments.uniqueEnvironment("target/domainConfigStore")
 

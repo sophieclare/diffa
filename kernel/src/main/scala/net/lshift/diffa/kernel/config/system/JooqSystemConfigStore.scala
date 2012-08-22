@@ -65,7 +65,6 @@ import net.lshift.diffa.kernel.config.User
 import net.lshift.diffa.kernel.frontend.DomainEndpointDef
 import net.lshift.diffa.kernel.naming.SequenceName
 import org.jooq.impl.Factory
-import javax.xml.stream.FactoryConfigurationError
 
 class JooqSystemConfigStore(jooq:JooqDatabaseFacade,
                             cacheProvider:CacheProvider,
@@ -252,7 +251,7 @@ class JooqSystemConfigStore(jooq:JooqDatabaseFacade,
     })
   }
 
-  def descendentSpaces(parent:Long) = jooq.execute(descendancyTree(_, parent)).toSeq
+  def listSubspaces(parent:Long) = jooq.execute(descendancyTree(_, parent)).toSeq
 
 
   private def deleteSpace(t:Factory, id:Long) = {
