@@ -52,6 +52,8 @@ class CachedSystemConfigStore(underlying:SystemConfigStore, cacheProvider:CacheP
   def createOrUpdateSpace(path: String)  = underlying.createOrUpdateSpace(path)
   def listSpaces : Seq[Space] = underlying.listSpaces
 
+  def descendentSpaces(parent:Long) = underlying.descendentSpaces(parent)
+
   def createOrUpdateDomain(domain:String) = underlying.createOrUpdateDomain(domain)
   def deleteDomain(domain:String) = underlying.deleteDomain(domain)
   def doesDomainExist(name: String) = underlying.doesDomainExist(name)
