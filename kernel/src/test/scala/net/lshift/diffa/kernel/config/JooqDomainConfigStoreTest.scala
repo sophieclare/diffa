@@ -571,7 +571,6 @@ class JooqDomainConfigStoreTest {
 
   @Test
   def shouldAllowViewsWithTheSameNameToBeAppliedToBothSidesOfAPair = {
-    val domain = new UUID().toString
 
     val parentCategories = Map("some-date-category" ->  new RangeCategoryDescriptor("date", "2009-11-11", "2009-11-20"))
     val viewCategories = Map("some-date-category" ->  new RangeCategoryDescriptor("date", "2009-11-18", "2009-11-19"))
@@ -613,7 +612,7 @@ class JooqDomainConfigStoreTest {
       case x:DataAccessException => // expected
     }
     finally {
-      systemConfigStore.deleteDomain(domain)
+      systemConfigStore.deleteSpace(space.id)
     }
 
   }
