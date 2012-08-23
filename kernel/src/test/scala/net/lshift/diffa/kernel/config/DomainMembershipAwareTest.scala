@@ -23,6 +23,7 @@ import org.easymock.EasyMock._
 import org.easymock.classextension.{EasyMock => E4}
 import org.junit.Test
 import net.lshift.diffa.kernel.util.cache.HazelcastCacheProvider
+import org.jooq.impl.Factory
 
 class DomainMembershipAwareTest {
 
@@ -42,24 +43,31 @@ class DomainMembershipAwareTest {
   def shouldEmitDomainMembershipCreationEvent() = {
     expect(membershipListener.onMembershipCreated(member)).once()
 
+    // TODO This is only necessary because of the deprecated resolveSpaceName call
+    expect(jf.execute(anyObject[Function1[Factory,String]]())).andStubReturn("domain")
+
     replay(membershipListener)
+    E4.replay(jf)
 
     domainConfigStore.makeDomainMember(0L, "user")
 
     verify(membershipListener)
-
+    E4.verify(jf)
   }
 
   @Test
   def shouldEmitDomainMembershipRemovalEvent() = {
     expect(membershipListener.onMembershipRemoved(member)).once()
 
+    expect(jf.execute(anyObject[Function1[Factory,String]]())).andStubReturn("domain")
+
     replay(membershipListener)
+    E4.replay(jf)
 
     domainConfigStore.removeDomainMembership(0L, "user")
 
     verify(membershipListener)
-
+    E4.verify(jf)
   }
 
 
