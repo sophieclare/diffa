@@ -3,14 +3,20 @@ package net.lshift.diffa.kernel.config
 import net.lshift.diffa.schema.servicelimits.{ServiceLimit, Unlimited}
 import net.lshift.diffa.schema.environment.TestDatabaseEnvironments
 import net.lshift.diffa.kernel.StoreReferenceContainer
-import org.junit.{AfterClass, Before, Test}
+import org.junit._
 
 import org.junit.Assert.assertEquals
-import org.junit.Assert
 import net.lshift.diffa.kernel.frontend.{PairDef, EndpointDef}
 import org.junit.runner.RunWith
 import org.junit.experimental.theories.{DataPoint, Theories, Theory, DataPoints}
 import org.apache.commons.lang.RandomStringUtils
+import net.lshift.diffa.kernel.config.PairRef
+import net.lshift.diffa.kernel.frontend.EndpointDef
+import net.lshift.diffa.kernel.config.LimitEnforcementScenario
+import net.lshift.diffa.kernel.frontend.PairDef
+import scala.Some
+import net.lshift.diffa.kernel.config.Space
+import net.lshift.diffa.kernel.config.CascadingLimitScenario
 
 /**
  */
@@ -29,10 +35,11 @@ class JooqServiceLimitsStoreTest {
 
   private val storeReferences = JooqServiceLimitsStoreTest.storeReferences
   private val serviceLimitsStore = storeReferences.serviceLimitsStore
+  private val systemConfigStore = storeReferences.systemConfigStore
 
   @Before
   def prepareStores {
-    space = storeReferences.systemConfigStore.createOrUpdateSpace(RandomStringUtils.randomAlphanumeric(10))
+    space = systemConfigStore.createOrUpdateSpace(RandomStringUtils.randomAlphanumeric(10))
     pairRef = PairRef(name = "diffa-test-pair", space = space.id)
     
     val upstream = EndpointDef(name = "upstream")
@@ -42,14 +49,15 @@ class JooqServiceLimitsStoreTest {
       versionPolicyName = "same",
       upstreamName = upstream.name,
       downstreamName = downstream.name)
-
-    storeReferences.clearConfiguration(space.id)
     
     storeReferences.domainConfigStore.createOrUpdateEndpoint(space.id, upstream)
     storeReferences.domainConfigStore.createOrUpdateEndpoint(space.id, downstream)
     storeReferences.domainConfigStore.createOrUpdatePair(space.id, pair)
     serviceLimitsStore.defineLimit(testLimit)
   }
+
+  @After
+  def clearUp { storeReferences.clearConfiguration(space.id) }
 
   @Test
   def givenExistingDependentsWhenSystemHardLimitConfiguredToValidValueNotLessThanDependentLimitsThenLimitShouldBeAppliedAndNoDependentLimitsChanged {
