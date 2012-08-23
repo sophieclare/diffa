@@ -81,6 +81,7 @@ class CachedDomainConfigStoreTest {
 
     members.remove("m1")
     expect(jooq.execute(anyObject[Function1[Factory,Unit]]())).andReturn(Unit).once()
+    expect(jooq.execute(anyObject[Function1[Factory,String]]())).andReturn("domain").once() // resolveSpaceName is deprecated, BTW
     expect(jooq.execute(anyObject[Function1[Factory,java.util.List[String]]]())).andReturn(members).once()
 
     E4.replay(jooq)
@@ -101,6 +102,7 @@ class CachedDomainConfigStoreTest {
 
     members.remove("m3")
     expect(jooq.execute(anyObject[Function1[Factory,Unit]]())).andReturn(Unit).once()
+    expect(jooq.execute(anyObject[Function1[Factory,String]]())).andReturn("domain").once() // resolveSpaceName is deprecated, BTW
     expect(jooq.execute(anyObject[Function1[Factory,java.util.List[String]]]())).andReturn(members).once()
 
     E4.replay(jooq)
