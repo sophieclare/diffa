@@ -57,7 +57,7 @@ class QuartzScanSchedulerTest {
       mb.poll(3, TimeUnit.SECONDS) match {
         case null => fail("Scan was not triggered")
         case ScanInvocation(p, v) =>
-          assertEquals("PairA", p.key)
+          assertEquals("PairA", p.name)
           assertEquals(None, v)
       }
     }
@@ -81,7 +81,7 @@ class QuartzScanSchedulerTest {
       mb.poll(3, TimeUnit.SECONDS) match {
         case null => fail("Scan was not triggered")
         case ScanInvocation(p, v) =>
-          assertEquals("PairA", p.key)
+          assertEquals("PairA", p.name)
           assertEquals(Some("someview"), v)
       }
     }
@@ -102,7 +102,7 @@ class QuartzScanSchedulerTest {
       mb.poll(3, TimeUnit.SECONDS) match {
         case null => fail("Scan was not triggered")
         case ScanInvocation(p, v) =>
-          assertEquals("PairB", p.key)
+          assertEquals("PairB", p.name)
           assertEquals(None, v)
       }
     }
@@ -149,7 +149,7 @@ class QuartzScanSchedulerTest {
 
       mb.poll(5, TimeUnit.SECONDS) match {
         case null => fail("Scan was not triggered")
-        case ScanInvocation(p, v) => assertEquals("PairD", p.key)
+        case ScanInvocation(p, v) => assertEquals("PairD", p.name)
       }
 
       verify(systemConfig, domainConfig, pairPolicyClient)
@@ -184,7 +184,7 @@ class QuartzScanSchedulerTest {
       mb.poll(5, TimeUnit.SECONDS) match {
         case null => fail("Scan was not triggered")
         case ScanInvocation(p, v) =>
-          assertEquals("PairF", p.key)
+          assertEquals("PairF", p.name)
           assertEquals(Some("someview2"), v)
       }
 
@@ -264,7 +264,7 @@ class QuartzScanSchedulerTest {
       mb.poll(3, TimeUnit.SECONDS) match {
         case null => fail("Scan was not triggered")
         case ScanInvocation(p, v) =>
-          assertEquals("PairH", p.key)
+          assertEquals("PairH", p.name)
           assertEquals(None, v)
       }
     }
@@ -314,7 +314,7 @@ class QuartzScanSchedulerTest {
       mb.poll(3, TimeUnit.SECONDS) match {
         case null => fail("Scan was not triggered")
         case ScanInvocation(p, v) =>
-          assertEquals("PairJ", p.key)
+          assertEquals("PairJ", p.name)
           assertEquals(Some("someview"), v)
       }
     }
@@ -342,9 +342,9 @@ class QuartzScanSchedulerTest {
 
   private def createExecuteListenerQueue = {
     val q = new LinkedBlockingQueue[ScanInvocation]
-    expect(pairPolicyClient.scanPair(anyObject.asInstanceOf[DiffaPairRef], anyObject.asInstanceOf[Option[String]], anyObject.asInstanceOf[Option[String]])).andAnswer(new IAnswer[Unit] {
+    expect(pairPolicyClient.scanPair(anyObject.asInstanceOf[PairRef], anyObject.asInstanceOf[Option[String]], anyObject.asInstanceOf[Option[String]])).andAnswer(new IAnswer[Unit] {
       def answer = {
-        val pair = getCurrentArguments()(0).asInstanceOf[DiffaPairRef]
+        val pair = getCurrentArguments()(0).asInstanceOf[PairRef]
         val view = getCurrentArguments()(1).asInstanceOf[Option[String]]
         q.add(ScanInvocation(pair, view))
       }
@@ -357,5 +357,5 @@ class QuartzScanSchedulerTest {
     PairViewDef(name, scanCronSpec, scanCronEnabled)
   }
 
-  private case class ScanInvocation(pair:DiffaPairRef, view:Option[String])
+  private case class ScanInvocation(pair:PairRef, view:Option[String])
 }

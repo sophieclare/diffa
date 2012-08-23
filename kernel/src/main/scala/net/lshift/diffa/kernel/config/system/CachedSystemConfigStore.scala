@@ -56,7 +56,9 @@ class CachedSystemConfigStore(underlying:SystemConfigStore, cacheProvider:CacheP
 
   def createOrUpdateDomain(domain:String) = underlying.createOrUpdateDomain(domain)
   def deleteDomain(domain:String) = underlying.deleteDomain(domain)
+  def deleteSpace(id:Long) = underlying.deleteSpace(id)
   def doesDomainExist(name: String) = underlying.doesDomainExist(name)
+  def doesSpaceExist(id:Long) = underlying.doesSpaceExist(id)
   def listDomains = underlying.listDomains
   def setSystemConfigOption(key: String, value: String) = underlying.setSystemConfigOption(key, value)
   def clearSystemConfigOption(key: String) = underlying.clearSystemConfigOption(key)

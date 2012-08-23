@@ -41,7 +41,7 @@ class LocalDiagnosticsManagerTest {
   @Test
   def shouldAcceptAndStoreLogEventForPair() {
     val pairKey = "moderateLoggingPair"
-    val pair = DiffaPairRef(pairKey, domainName)
+    val pair = PairRef(pairKey, domainName)
 
     expectEventBufferLimitQuery(domainName, pairKey, 10)
 
@@ -62,7 +62,7 @@ class LocalDiagnosticsManagerTest {
 
     expectEventBufferLimitQuery(domainName, pairKey, 100)
 
-    val pair = DiffaPairRef(pairKey, domainName)
+    val pair = PairRef(pairKey, domainName)
 
     for (i <- 1 until 1000)
       diagnostics.logPairEvent(None, pair, DiagnosticLevel.INFO, "Some msg")
@@ -116,7 +116,7 @@ class LocalDiagnosticsManagerTest {
   @Test
   def shouldNotGenerateAnyOutputWhenCheckpointIsCalledOnASilentPair() {
     val key = "quiet"
-    diagnostics.checkpointExplanations(None, DiffaPairRef(key, domainName))
+    diagnostics.checkpointExplanations(None, PairRef(key, domainName))
 
     val pairDir = new File(explainRoot, "%s/%s".format(domainName, key))
     if (pairDir.exists())
@@ -126,7 +126,7 @@ class LocalDiagnosticsManagerTest {
   @Test
   def shouldGenerateOutputWhenExplanationsHaveBeenLogged() {
     val pairKey = "explained"
-    val pair = DiffaPairRef(pairKey, domainName)
+    val pair = PairRef(pairKey, domainName)
 
     expectMaxExplainFilesLimitQuery(domainName, pairKey, 1)
 
@@ -150,7 +150,7 @@ class LocalDiagnosticsManagerTest {
   @Test
   def shouldIncludeContentsOfObjectsAdded() {
     val pairKey = "explainedobj"
-    val pair = DiffaPairRef(pairKey, domainName)
+    val pair = PairRef(pairKey, domainName)
 
     expectMaxExplainFilesLimitQuery(domainName, pairKey, 1)
 
@@ -179,7 +179,7 @@ class LocalDiagnosticsManagerTest {
   @Test
   def shouldAddLogMessageIndicatingObjectWasAttached() {
     val pairKey = "explainedobj"
-    val pair = DiffaPairRef(pairKey, domainName)
+    val pair = PairRef(pairKey, domainName)
 
     expectMaxExplainFilesLimitQuery(domainName, pairKey, 1)
 
@@ -211,7 +211,7 @@ class LocalDiagnosticsManagerTest {
 
     expectMaxExplainFilesLimitQuery(domainName, pairKey, 2)
 
-    val pair = DiffaPairRef(pairKey, domainName)
+    val pair = PairRef(pairKey, domainName)
 
     diagnostics.logPairExplanation(None, pair, "Test Case", "Diffa did something")
     diagnostics.checkpointExplanations(None, pair)
@@ -230,7 +230,7 @@ class LocalDiagnosticsManagerTest {
     val filesToKeep = 20
     val generateCount = 100
     val pairKey = "controlled_100_20"
-    val pair = DiffaPairRef(pairKey, domainName)
+    val pair = PairRef(pairKey, domainName)
 
     expectMaxExplainFilesLimitQuery(domainName, pairKey, filesToKeep)
 

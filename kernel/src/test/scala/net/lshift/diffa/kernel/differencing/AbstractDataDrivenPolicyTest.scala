@@ -64,9 +64,9 @@ abstract class AbstractDataDrivenPolicyTest {
   val extendedWriter = createMock("extendedWriter", classOf[ExtendedVersionCorrelationWriter])
   val store = createMock("versionStore", classOf[VersionCorrelationStore])
   val stores = new VersionCorrelationStoreFactory {
-    def apply(pair: DiffaPairRef) = store
-    def remove(pair: DiffaPairRef) {}
-    def close(pair: DiffaPairRef) {}
+    def apply(pair: PairRef) = store
+    def remove(pair: PairRef) {}
+    def close(pair: PairRef) {}
     def close {}
   }
 
@@ -372,46 +372,46 @@ abstract class AbstractDataDrivenPolicyTest {
   //
 
   protected def setupStubs(scenario:Scenario) {
-    expect(domainConfigStore.getPairDef(scenario.pair.domain, scenario.pair.key)).andReturn(scenario.pair).anyTimes
+    expect(domainConfigStore.getPairDef(scenario.pair.space, scenario.pair.key)).andReturn(scenario.pair).anyTimes
   }
 
-  protected def expectUpstreamAggregateScan(pair:DiffaPairRef, bucketing:Seq[CategoryFunction], constraints:Seq[ScanConstraint],
+  protected def expectUpstreamAggregateScan(pair:PairRef, bucketing:Seq[CategoryFunction], constraints:Seq[ScanConstraint],
                                             partResp:Seq[Bucket], storeResp:Seq[Bucket]) {
     expect(usMock.scan(asUnorderedList(constraints), asUnorderedList(bucketing))).andReturn(participantDigestResponse(partResp))
     expectUpstreamStoreQuery(pair, bucketing, constraints, storeResp)
   }
-  protected def expectUpstreamStoreQuery(pair:DiffaPairRef, bucketing:Seq[CategoryFunction], constraints:Seq[ScanConstraint],
+  protected def expectUpstreamStoreQuery(pair:PairRef, bucketing:Seq[CategoryFunction], constraints:Seq[ScanConstraint],
                                          storeResp:Seq[Bucket]) {
     store.queryUpstreams(asUnorderedList(constraints), anyUnitF4)
       expectLastCall[Unit].andAnswer(UpstreamVersionAnswer(pair, storeResp))
   }
-  protected def expectDownstreamAggregateScan(pair:DiffaPairRef, bucketing:Seq[CategoryFunction], constraints:Seq[ScanConstraint],
+  protected def expectDownstreamAggregateScan(pair:PairRef, bucketing:Seq[CategoryFunction], constraints:Seq[ScanConstraint],
                                               partResp:Seq[Bucket], storeResp:Seq[Bucket]) {
     expect(dsMock.scan(asUnorderedList(constraints), asUnorderedList(bucketing))).andReturn(participantDigestResponse(partResp))
     expectDownstreamStoreQuery(pair, bucketing, constraints, storeResp)
   }
-  protected def expectDownstreamStoreQuery(pair:DiffaPairRef, bucketing:Seq[CategoryFunction], constraints:Seq[ScanConstraint],
+  protected def expectDownstreamStoreQuery(pair:PairRef, bucketing:Seq[CategoryFunction], constraints:Seq[ScanConstraint],
                                            storeResp:Seq[Bucket]) {
     store.queryDownstreams(asUnorderedList(constraints), anyUnitF5)
       expectLastCall[Unit].andAnswer(DownstreamVersionAnswer(pair, storeResp))
   }
 
-  protected def expectUpstreamEntityScan(pair:DiffaPairRef, constraints:Seq[ScanConstraint], partResp:Seq[Vsn], storeResp:Seq[Vsn]) {
+  protected def expectUpstreamEntityScan(pair:PairRef, constraints:Seq[ScanConstraint], partResp:Seq[Vsn], storeResp:Seq[Vsn]) {
     expect(usMock.scan(asUnorderedList(constraints), EasyMock.eq(Seq()))).andReturn(participantEntityResponse(partResp))
     expectUpstreamStoreQuery(pair, constraints, storeResp)
   }
-  protected def expectUpstreamStoreQuery(pair:DiffaPairRef, constraints:Seq[ScanConstraint], storeResp:Seq[Vsn]) {
+  protected def expectUpstreamStoreQuery(pair:PairRef, constraints:Seq[ScanConstraint], storeResp:Seq[Vsn]) {
     val correlations = storeResp.map(v=> {
       Correlation(id = v.id, upstreamAttributes = v.strAttrs, lastUpdate = v.lastUpdated, upstreamVsn = v.vsn)
     })
 
     expect(store.queryUpstreams(asUnorderedList(constraints))).andReturn(correlations)
   }
-  protected def expectDownstreamEntityScan(pair:DiffaPairRef, constraints:Seq[ScanConstraint], partResp:Seq[Vsn], storeResp:Seq[Vsn]) {
+  protected def expectDownstreamEntityScan(pair:PairRef, constraints:Seq[ScanConstraint], partResp:Seq[Vsn], storeResp:Seq[Vsn]) {
     expect(dsMock.scan(asUnorderedList(constraints), EasyMock.eq(Seq()))).andReturn(participantEntityResponse(partResp))
     expectDownstreamStoreQuery(pair, constraints, storeResp)
   }
-  protected def expectDownstreamStoreQuery(pair:DiffaPairRef, constraints:Seq[ScanConstraint], storeResp:Seq[Vsn]) {
+  protected def expectDownstreamStoreQuery(pair:PairRef, constraints:Seq[ScanConstraint], storeResp:Seq[Vsn]) {
     val correlations = storeResp.map(v=> {
       Correlation(id = v.id, downstreamAttributes = v.strAttrs, lastUpdate = v.lastUpdated, downstreamDVsn = v.vsn)
     })
@@ -419,7 +419,7 @@ abstract class AbstractDataDrivenPolicyTest {
     expect(store.queryDownstreams(asUnorderedList(constraints))).andReturn(correlations)
   }
 
-  protected def expectUpstreamEntityStore(pair:DiffaPairRef, entities:Seq[Vsn], matched:Boolean, scanId:Option[Long]) {
+  protected def expectUpstreamEntityStore(pair:PairRef, entities:Seq[Vsn], matched:Boolean, scanId:Option[Long]) {
     entities.foreach(v => {
       val downstreamVsnToUse = if (matched) { v.vsn } else { null }   // If we're matched, make the vsn match
 
@@ -427,7 +427,7 @@ abstract class AbstractDataDrivenPolicyTest {
         andReturn(new Correlation(null, pair, v.id, v.strAttrs, null, v.lastUpdated, now, v.vsn, downstreamVsnToUse, downstreamVsnToUse, matched))
     })
   }
-  protected def expectDownstreamEntityStore(pair:DiffaPairRef, entities:Seq[Vsn], matched:Boolean, scanId:Option[Long]) {
+  protected def expectDownstreamEntityStore(pair:PairRef, entities:Seq[Vsn], matched:Boolean, scanId:Option[Long]) {
     entities.foreach(v => {
       val upstreamVsnToUse = if (matched) { v.vsn } else { null }   // If we're matched, make the vsn match
 
@@ -455,13 +455,13 @@ abstract class AbstractDataDrivenPolicyTest {
     def answerEntities(entities:Seq[Vsn], cb:T):Unit
   }
 
-  protected case class UpstreamVersionAnswer(pair:DiffaPairRef, res:Seq[Bucket])
+  protected case class UpstreamVersionAnswer(pair:PairRef, res:Seq[Bucket])
       extends VersionAnswer[Function4[VersionID, Map[String, String], DateTime, String, Unit]] {
     def answerEntities(entities:Seq[Vsn], cb:Function4[VersionID, Map[String, String], DateTime, String, Unit]) {
       entities.foreach(v => cb(VersionID(pair, v.id), v.strAttrs, v.lastUpdated, v.vsn))
     }
   }
-  protected case class DownstreamVersionAnswer(pair:DiffaPairRef, res:Seq[Bucket])
+  protected case class DownstreamVersionAnswer(pair:PairRef, res:Seq[Bucket])
       extends VersionAnswer[Function5[VersionID, Map[String, String], DateTime, String, String, Unit]] {
     def answerEntities(entities:Seq[Vsn], cb:Function5[VersionID, Map[String, String], DateTime, String, String, Unit]) {
       entities.foreach(v => cb(VersionID(pair, v.id), v.strAttrs, v.lastUpdated, v.vsn, v.vsn))

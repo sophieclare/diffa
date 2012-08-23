@@ -264,7 +264,7 @@ object ScanCompatibilityTest {
 
   val scanningParticipant = createStrictMock(classOf[ScanningParticipantHandler])
 
-  val pair = new DiffaPairRef("some-domain", "some-pair")
+  val pair = new PairRef("some-domain", "some-pair")
 
 
   val domainCredentialsLookup = new FixedDomainCredentialsLookup(pair.domain, None)

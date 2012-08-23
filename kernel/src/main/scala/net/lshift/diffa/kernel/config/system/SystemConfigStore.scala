@@ -51,11 +51,13 @@ trait SystemConfigStore {
    */
   def listSubspaces(parent:Long) : Seq[Space]
 
-
   @Deprecated def createOrUpdateDomain(domain: String)
 
   def deleteDomain(name: String)
+  def deleteSpace(id: Long)
   def doesDomainExist(name: String): Boolean
+
+  def doesSpaceExist(space: Long): Boolean
 
   @Deprecated  def listDomains : Seq[String]
   def listSpaces : Seq[Space]

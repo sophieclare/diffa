@@ -20,7 +20,7 @@ import javax.ws.rs._
 import core.UriInfo
 import net.lshift.diffa.kernel.frontend.wire.InvocationResult
 import net.lshift.diffa.kernel.client.{Actionable, ActionableRequest, ActionsClient}
-import net.lshift.diffa.kernel.config.{DiffaPairRef, RepairAction}
+import net.lshift.diffa.kernel.config.{PairRef, RepairAction}
 
 class ActionsResource(val proxy:ActionsClient,
                       val domain:String,
@@ -31,9 +31,9 @@ class ActionsResource(val proxy:ActionsClient,
   @Produces(Array("application/json"))
   def listActions(@PathParam("pairId") pairId: String,
                   @QueryParam("scope") scope: String): Array[Actionable] = (scope match {
-    case RepairAction.ENTITY_SCOPE => proxy.listEntityScopedActions(DiffaPairRef(pairId,domain))
-    case RepairAction.PAIR_SCOPE => proxy.listPairScopedActions(DiffaPairRef(pairId,domain))
-    case _ => proxy.listActions(DiffaPairRef(pairId,domain))
+    case RepairAction.ENTITY_SCOPE => proxy.listEntityScopedActions(PairRef(pairId,domain))
+    case RepairAction.PAIR_SCOPE => proxy.listPairScopedActions(PairRef(pairId,domain))
+    case _ => proxy.listActions(PairRef(pairId,domain))
   }).toArray
 
   @POST

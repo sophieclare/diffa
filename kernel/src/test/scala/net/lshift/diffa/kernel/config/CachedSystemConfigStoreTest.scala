@@ -32,8 +32,6 @@ class CachedSystemConfigStoreTest {
   val cp = new HazelcastCacheProvider
   val sp = new HazelcastSequenceProvider
 
-  val spacePathCache = new SpacePathCache(jooq, cp)
-
   // When the JooqSystemConfigStore, boots it syncs the sequence provider with the database, so we need to mock this out
 
   val persistentSequenceValue = System.currentTimeMillis()
@@ -42,7 +40,7 @@ class CachedSystemConfigStoreTest {
 
   E4.replay(jooq)
 
-  val configStore = new JooqSystemConfigStore(jooq,cp, sp, spacePathCache)
+  val configStore = new JooqSystemConfigStore(jooq,cp, sp)
 
   // Make sure the that booting the JooqSystemConfigStore has performed the sequence provider sync
 
@@ -51,11 +49,6 @@ class CachedSystemConfigStoreTest {
   // Make the jooq mock available for use again
 
   E4.reset(jooq)
-
-  @Before
-  def invalidateCaches {
-    spacePathCache.reset
-  }
 
   @Test
   def shouldCacheDomainExistenceAndInvalidateOnRemoval {
@@ -79,7 +72,6 @@ class CachedSystemConfigStoreTest {
     // Remove the domain and verify that this result is also cached
 
     expect(jooq.execute(anyObject[Function1[Factory,Unit]]())).andReturn(Unit).once()
-    expect(jooq.execute(anyObject[Function1[Factory,Space]]())).andReturn(spacePathCache.NON_EXISTENT_SPACE).times(2)
 
     E4.replay(jooq)
 
@@ -98,13 +90,6 @@ class CachedSystemConfigStoreTest {
     // Reset the mocks control and an intermediate step to verify the calls to the underlying mock are all in order
 
     E4.reset(jooq)
-
-    // Now re-add the old domain and make sure that doesDomainExist reflects this coherently
-    expect(jooq.execute(anyObject[Function1[Factory,Unit]]())).andAnswer(new IAnswer[Unit] {
-      def answer = {
-        spacePathCache.reset
-      }
-    }).once()
 
     expect(jooq.execute(anyObject[Function1[Factory,Space]]())).andReturn(Space(id = persistentSequenceValue + 2)).once()
 

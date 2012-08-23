@@ -80,7 +80,7 @@ class TestEnvironment(val pairKey: String,
   val domain = TestEnvironment.domain
 
   // Pair
-  val pairRef = DiffaPairRef(key = pairKey, domain = domain.name)
+  val pairRef = PairRef(key = pairKey, domain = domain.name)
 
   val serverRoot = TestEnvironment.serverRoot
 

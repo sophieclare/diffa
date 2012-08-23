@@ -606,7 +606,7 @@ class LuceneVersionCorrelationStoreTest {
     } catch {
       case e:IncompatibleCategoryChangeException =>
         assertEquals(
-          "Change to category newSet is not allowed: Cannot add a category as existing data is stored for pair DiffaPairRef(pair,domain)",
+          "Change to category newSet is not allowed: Cannot add a category as existing data is stored for pair PairRef(pair,domain)",
           e.getMessage)
     }
   }
@@ -638,7 +638,7 @@ class LuceneVersionCorrelationStoreTest {
     } catch {
       case e:IncompatibleCategoryChangeException =>
         assertEquals(
-          "Change to category someSet is not allowed: Updated category bounds do not cover all stored values for pair DiffaPairRef(pair,domain)",
+          "Change to category someSet is not allowed: Updated category bounds do not cover all stored values for pair PairRef(pair,domain)",
           e.getMessage)
     }
   }
@@ -678,7 +678,7 @@ class LuceneVersionCorrelationStoreTest {
     } catch {
       case e:IncompatibleCategoryChangeException =>
         assertEquals(
-          "Change to category someSet is not allowed: Cannot change category type as existing data is stored for pair DiffaPairRef(pair,domain)",
+          "Change to category someSet is not allowed: Cannot change category type as existing data is stored for pair PairRef(pair,domain)",
           e.getMessage)
     }
   }
@@ -699,7 +699,7 @@ class LuceneVersionCorrelationStoreTest {
     } catch {
       case e:IncompatibleCategoryChangeException =>
         assertEquals(
-          "Change to category someDate is not allowed: Cannot change category type as existing data is stored for pair DiffaPairRef(pair,domain)",
+          "Change to category someDate is not allowed: Cannot change category type as existing data is stored for pair PairRef(pair,domain)",
           e.getMessage)
     }
   }
@@ -739,9 +739,9 @@ class Collector {
 object LuceneVersionCorrelationStoreTest {
 
   val domainName = "domain"
-  val pair = DiffaPairRef(key="pair",domain=domainName)
-  val otherPair = DiffaPairRef(key="other-pair",domain=domainName)
-  val pairWithUnicodeOrder = DiffaPairRef(key="pair-with-unicode-ordering",domain=domainName)
+  val pair = PairRef(key="pair",domain=domainName)
+  val otherPair = PairRef(key="other-pair",domain=domainName)
+  val pairWithUnicodeOrder = PairRef(key="pair-with-unicode-ordering",domain=domainName)
 
   val dummyConfigStore = EasyMock.createMock(classOf[SystemConfigStore])
 

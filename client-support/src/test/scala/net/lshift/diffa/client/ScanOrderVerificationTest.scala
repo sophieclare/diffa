@@ -25,7 +25,7 @@ import org.junit.Before
 import org.junit.runner.RunWith
 import org.junit.Assert._
 import org.hamcrest.Matchers._
-import net.lshift.diffa.kernel.config.DiffaPairRef
+import net.lshift.diffa.kernel.config.PairRef
 import net.lshift.diffa.kernel.config.Endpoint
 import scala.collection.JavaConversions._
 import java.io.IOException
@@ -33,7 +33,7 @@ import java.io.IOException
 
 object ScanOrderVerificationTest {
 
-  val pair = new DiffaPairRef("some-domain", "some-pair")
+  val pair = new PairRef("some-domain", "some-pair")
 
   val serverPort = 41559
 

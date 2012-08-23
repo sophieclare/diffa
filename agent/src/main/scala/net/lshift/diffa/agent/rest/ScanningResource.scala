@@ -21,7 +21,7 @@ import javax.ws.rs.core.Response
 import net.lshift.diffa.kernel.frontend.Configuration
 import javax.ws.rs._
 import net.lshift.diffa.kernel.diag.DiagnosticsManager
-import net.lshift.diffa.kernel.config.{DiffaPairRef, DomainConfigStore}
+import net.lshift.diffa.kernel.config.{PairRef, DomainConfigStore}
 import org.slf4j.{LoggerFactory, Logger}
 import net.lshift.diffa.kernel.util.AlertCodes._
 
@@ -45,7 +45,7 @@ class ScanningResource(val pairPolicyClient:PairPolicyClient,
   @Path("/pairs/{pairKey}/scan")
   def startScan(@PathParam("pairKey") pairKey:String, @FormParam("view") view:String) = {
 
-    val ref = DiffaPairRef(pairKey, domain)
+    val ref = PairRef(pairKey, domain)
 
     val pair = domainConfigStore.getPairDef(ref)
     val up = domainConfigStore.getEndpointDef(domain, pair.upstreamName)
@@ -77,7 +77,7 @@ class ScanningResource(val pairPolicyClient:PairPolicyClient,
   @DELETE
   @Path("/pairs/{pairKey}/scan")
   def cancelScanning(@PathParam("pairKey") pairKey:String) = {
-    pairPolicyClient.cancelScans(DiffaPairRef(pairKey, domain))
+    pairPolicyClient.cancelScans(PairRef(pairKey, domain))
     Response.status(Response.Status.OK).build
   }
 

@@ -326,7 +326,7 @@ class JooqServiceLimitsStoreTest {
     serviceLimitsStore.setPairLimit(testDomain, testPair.key, limit, otherLimitsValue)
   }
 
-  private def limitValuesForPairByName(pair: DiffaPair, limit: ServiceLimit) = {
+  private def limitValuesForPairByName(pair: PairRef, limit: ServiceLimit) = {
     val systemHardLimit = serviceLimitsStore.getSystemHardLimitForName(limit).get
     val systemDefaultLimit = serviceLimitsStore.getSystemDefaultLimitForName(limit).get
     val domainHardLimit = serviceLimitsStore.getDomainHardLimitForDomainAndName(pair.domain.name, limit).get

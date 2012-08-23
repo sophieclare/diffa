@@ -29,7 +29,7 @@ class DomainsScanningTest {
     def getEffectiveLimitByNameForPair(domainName: String, pairKey: String, limit:ServiceLimit): Int = limit.defaultLimit
   }
 
-  val pair = DiffaPairRef("foo","bar")
+  val pair = PairRef("foo","bar")
   val endpoint = Endpoint(name = "domainsScanningTestEndpoint", scanUrl = agentURL + "/root/domains/scan")
 
 

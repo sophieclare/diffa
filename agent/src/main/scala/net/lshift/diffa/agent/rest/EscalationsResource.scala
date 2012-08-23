@@ -19,7 +19,7 @@ package net.lshift.diffa.agent.rest
 import javax.ws.rs._
 import net.lshift.diffa.kernel.frontend.{EscalationDef, Configuration}
 import net.lshift.diffa.kernel.differencing.DomainDifferenceStore
-import net.lshift.diffa.kernel.config.DiffaPairRef
+import net.lshift.diffa.kernel.config.PairRef
 import net.lshift.diffa.agent.rest.ResponseUtils._
 
 /**
@@ -40,7 +40,7 @@ class EscalationsResource(val config:Configuration,
   @DELETE
   @Path("/{pairId}")
   def unscheduleEscalations(@PathParam("pairId") pairId: String) = {
-    diffStore.unscheduleEscalations(DiffaPairRef(domain = domain, key = pairId))
+    diffStore.unscheduleEscalations(PairRef(domain = domain, key = pairId))
     resourceDeleted()
   }
 

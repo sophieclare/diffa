@@ -29,8 +29,13 @@ class JooqDomainCredentialsStoreTest {
 
   val domainName = "domain-with-http-creds"
 
+  var space:Space = null
+
   @Before
-  def setUp = storeReferences.clearConfiguration(domainName)
+  def setUp = {
+    space = systemConfigStore.createOrUpdateSpace(domainName)
+    storeReferences.clearConfiguration(space.id)
+  }
 
   @Test
   def externalHttpCredentialsShouldBeWriteOnly() {
@@ -43,26 +48,26 @@ class JooqDomainCredentialsStoreTest {
     val basicAuthOut = OutboundExternalHttpCredentialsDef(url = "https://acme.com/foo", key = "scott", `type` = "basic_auth")
     val queryParamOut = OutboundExternalHttpCredentialsDef(url = "https://acme.com/bar", key = "authToken", `type` = "query_parameter")
 
-    domainCredentialsStore.addExternalHttpCredentials(domainName, basicAuthIn)
-    domainCredentialsStore.addExternalHttpCredentials(domainName, queryParamIn)
+    domainCredentialsStore.addExternalHttpCredentials(space.id, basicAuthIn)
+    domainCredentialsStore.addExternalHttpCredentials(space.id, queryParamIn)
 
-    val creds1 = domainCredentialsStore.listCredentials(domainName)
+    val creds1 = domainCredentialsStore.listCredentials(space.id)
 
     assertEquals(2, creds1.length)
     assertTrue(creds1.contains(basicAuthOut))
     assertTrue(creds1.contains(queryParamOut))
 
-    domainCredentialsStore.deleteExternalHttpCredentials(domainName, "https://acme.com/foo")
+    domainCredentialsStore.deleteExternalHttpCredentials(space.id, "https://acme.com/foo")
 
-    val creds2 = domainCredentialsStore.listCredentials(domainName)
+    val creds2 = domainCredentialsStore.listCredentials(space.id)
 
     assertEquals(1, creds2.length)
     assertFalse(creds2.contains(basicAuthOut))
     assertTrue(creds2.contains(queryParamOut))
 
-    domainCredentialsStore.deleteExternalHttpCredentials(domainName, "https://acme.com/bar")
+    domainCredentialsStore.deleteExternalHttpCredentials(space.id, "https://acme.com/bar")
 
-    val creds3 = domainCredentialsStore.listCredentials(domainName)
+    val creds3 = domainCredentialsStore.listCredentials(space.id)
 
     assertTrue(creds3.isEmpty)
 
@@ -71,7 +76,7 @@ class JooqDomainCredentialsStoreTest {
   @Test
   def shouldReturnMostSpecificCredentials() {
 
-    systemConfigStore.createOrUpdateDomain(domainName)
+    space = systemConfigStore.createOrUpdateSpace(domainName)
 
     Seq(
       InboundExternalHttpCredentialsDef(url = "https://acme.com:8081/foo/bar", key = "wendy", value = "shell", `type` = "basic_auth"),
@@ -80,9 +85,9 @@ class JooqDomainCredentialsStoreTest {
       InboundExternalHttpCredentialsDef(url = "https://acme.com:8080",         key = "alice", value = "seven", `type` = "basic_auth"),
       InboundExternalHttpCredentialsDef(url = "https://acme.com:8080/foo",     key = "shane", value = "yetti", `type` = "basic_auth"),
       InboundExternalHttpCredentialsDef(url = "https://acme.com:8080/foo/",    key = "tango", value = "split", `type` = "basic_auth")
-      ).foreach(domainCredentialsStore.addExternalHttpCredentials(domainName, _))
+      ).foreach(domainCredentialsStore.addExternalHttpCredentials(space.id, _))
 
-    val creds = domainCredentialsStore.credentialsForUrl(domainName, "https://acme.com:8080/foo/bar/baz")
+    val creds = domainCredentialsStore.credentialsForUrl(space.id, "https://acme.com:8080/foo/bar/baz")
 
     assertEquals(Some(BasicAuthCredentials(username = "scott", password = "tiger")), creds)
 

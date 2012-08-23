@@ -19,7 +19,7 @@ import java.io.{IOException, InputStream}
 import net.lshift.diffa.participant.common.JSONHelper
 import net.lshift.diffa.schema.servicelimits.ScanResponseSizeLimit
 import net.lshift.diffa.kernel.differencing.ScanLimitBreachedException
-import net.lshift.diffa.kernel.config.{PairServiceLimitsView, DiffaPairRef}
+import net.lshift.diffa.kernel.config.{PairServiceLimitsView, PairRef}
 
 class ValidatingScanResultParser(validatorFactory: ScanEntityValidatorFactory) extends JsonScanResultParser {
   def parse(s: InputStream) = JSONHelper.readQueryResult(s, validatorFactory.createValidator).toSeq
@@ -28,7 +28,7 @@ class ValidatingScanResultParser(validatorFactory: ScanEntityValidatorFactory) e
 
 trait LengthCheckingParser extends JsonScanResultParser {
   val serviceLimitsView: PairServiceLimitsView
-  val pair: DiffaPairRef
+  val pair: PairRef
 
   abstract override def parse(s: InputStream) = {
     val responseSizeLimit = serviceLimitsView.getEffectiveLimitByNameForPair(

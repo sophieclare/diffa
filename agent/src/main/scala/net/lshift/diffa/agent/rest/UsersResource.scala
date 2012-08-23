@@ -23,7 +23,7 @@ import org.springframework.beans.factory.annotation.Autowired
 import net.lshift.diffa.kernel.config.system.CachedSystemConfigStore
 import com.sun.jersey.api.NotFoundException
 import net.lshift.diffa.kernel.preferences.{UserPreferencesStore, FilteredItemType}
-import net.lshift.diffa.kernel.config.DiffaPairRef
+import net.lshift.diffa.kernel.config.PairRef
 
 @Path("/users/{user}/{domain}")
 @Component
@@ -66,7 +66,7 @@ class UsersResource {
                    @PathParam("itemType") itemType:String) {
     checkDomain(domain)
     val filterType = getFilterType(itemType)
-    userPreferences.createFilteredItem(DiffaPairRef(pair,domain), user, filterType)
+    userPreferences.createFilteredItem(PairRef(pair,domain), user, filterType)
   }
 
   @DELETE
@@ -77,7 +77,7 @@ class UsersResource {
                    @PathParam("itemType") itemType:String) {
     checkDomain(domain)
     val filterType = getFilterType(itemType)
-    userPreferences.removeFilteredItem(DiffaPairRef(pair,domain), user, filterType)
+    userPreferences.removeFilteredItem(PairRef(pair,domain), user, filterType)
   }
 
   private def getFilterType(unparsed:String) = {

@@ -31,6 +31,7 @@ import net.lshift.diffa.kernel.preferences.FilteredItemType
 import com.eaio.uuid.UUID
 import java.sql.SQLIntegrityConstraintViolationException
 import org.jooq.exception.DataAccessException
+import org.apache.commons.lang.RandomStringUtils
 
 class JooqDomainConfigStoreTest {
   private val log = LoggerFactory.getLogger(getClass)
@@ -57,6 +58,8 @@ class JooqDomainConfigStoreTest {
 
   val stringPrefixCategoriesMap = Map(stringCategoryName -> new PrefixCategoryDescriptor(1, 3, 1))
 
+  val spaceId = System.currentTimeMillis()
+  
   val domainName = "domain"
   val domain = new Domain(domainName)
 
@@ -96,8 +99,7 @@ class JooqDomainConfigStoreTest {
     escalations = Set(escalation),
     reports = Set(report))
 
-  val pair = DiffaPair(key = pairKey, domain = domain)
-  val pairRef = DiffaPairRef(key = pairKey, domain = domainName)
+  val pair = PairRef(name = pairKey, space = spaceId)
 
   val configKey = "foo"
   val configValue = "bar"
@@ -111,22 +113,22 @@ class JooqDomainConfigStoreTest {
 
   def declareAll() {
     systemConfigStore.createOrUpdateDomain(domainName)
-    domainConfigStore.createOrUpdateEndpoint(domainName, upstream1)
-    domainConfigStore.createOrUpdateEndpoint(domainName, upstream2)
-    domainConfigStore.createOrUpdateEndpoint(domainName, downstream1)
-    domainConfigStore.createOrUpdateEndpoint(domainName, downstream2)
-    domainConfigStore.createOrUpdatePair(domainName, pairDef)
-    domainConfigStore.setConfigOption(domainName, configKey, configValue)
+    domainConfigStore.createOrUpdateEndpoint(spaceId, upstream1)
+    domainConfigStore.createOrUpdateEndpoint(spaceId, upstream2)
+    domainConfigStore.createOrUpdateEndpoint(spaceId, downstream1)
+    domainConfigStore.createOrUpdateEndpoint(spaceId, downstream2)
+    domainConfigStore.createOrUpdatePair(spaceId, pairDef)
+    domainConfigStore.setConfigOption(spaceId, configKey, configValue)
   }
 
   @Before
   def setUp {
-    storeReferences.clearConfiguration(domainName)
+    storeReferences.clearConfiguration(spaceId)
     domainConfigStore.reset
   }
 
   def exists (e:EndpointDef, count:Int, offset:Int) : Unit = {
-    val endpoints = domainConfigStore.listEndpoints(domainName).sortWith((a, b) => a.name < b.name)
+    val endpoints = domainConfigStore.listEndpoints(spaceId).sortWith((a, b) => a.name < b.name)
     assertEquals(count, endpoints.length)
     assertEquals(e.name, endpoints(offset).name)
     assertEquals(e.inboundUrl, endpoints(offset).inboundUrl)
@@ -146,19 +148,19 @@ class JooqDomainConfigStoreTest {
     exists(downstream1, 4, 2)
     exists(downstream2, 4, 3)
 
-    assertFalse(domainConfigStore.listPairs(domainName).isEmpty)
-    assertFalse(domainConfigStore.allConfigOptions(domainName).isEmpty)
+    assertFalse(domainConfigStore.listPairs(spaceId).isEmpty)
+    assertFalse(domainConfigStore.allConfigOptions(spaceId).isEmpty)
 
     systemConfigStore.deleteDomain(domainName)
 
     // TODO I find this behavior a bit strange - should these methods not be throwing MissingObjectExceptions
     // for a non-existent space?
 
-    assertTrue(domainConfigStore.listEndpoints(domainName).isEmpty)
-    assertTrue(domainConfigStore.listPairs(domainName).isEmpty)
-    assertTrue(domainConfigStore.allConfigOptions(domainName).isEmpty)
+    assertTrue(domainConfigStore.listEndpoints(spaceId).isEmpty)
+    assertTrue(domainConfigStore.listPairs(spaceId).isEmpty)
+    assertTrue(domainConfigStore.allConfigOptions(spaceId).isEmpty)
 
-    assertTrue(systemConfigStore.listDomains.filter(_ == domainName).isEmpty)
+    assertTrue(systemConfigStore.listDomains.filter(_ == spaceId).isEmpty)
   }
 
 
@@ -173,24 +175,23 @@ class JooqDomainConfigStoreTest {
     val report2 = report.copy(target = "http://example.com/diff_listener2")
     val report3 = report.copy(target = "http://example.com/diff_listener3")
 
-    val domain2 = domainName + "2"
-
     val pair2 = pairDef.copy(key = pairKey + "2", // Different name, difference associated objects
         repairActions = Set(repairAction2), escalations = Set(escalation2), reports = Set(report2))
     var pair3 = pairDef.copy(     // Same name, but different associated objects
         repairActions = Set(repairAction3), escalations = Set(escalation3), reports = Set(report3))
 
-    domainConfigStore.createOrUpdatePair(domainName, pair2)
+    domainConfigStore.createOrUpdatePair(spaceId, pair2)
 
-    systemConfigStore.createOrUpdateDomain(domain2)
-    domainConfigStore.createOrUpdateEndpoint(domain2, upstream1)
-    domainConfigStore.createOrUpdateEndpoint(domain2, downstream1)
-    domainConfigStore.createOrUpdatePair(domain2, pair3)
+    val space2 = systemConfigStore.createOrUpdateSpace(RandomStringUtils.randomAlphanumeric(10))
+    
+    domainConfigStore.createOrUpdateEndpoint(space2.id, upstream1)
+    domainConfigStore.createOrUpdateEndpoint(space2.id, downstream1)
+    domainConfigStore.createOrUpdatePair(space2.id, pair3)
 
     // Load the created pairs, and ensure the data remains unique
-    val retrievedPair = domainConfigStore.getPairDef(domainName, pairKey).withoutDomain
-    val retrievedPair2 = domainConfigStore.getPairDef(domainName, pairKey + "2").withoutDomain
-    val retrievedPair3 = domainConfigStore.getPairDef(domain2, pairKey).withoutDomain
+    val retrievedPair = domainConfigStore.getPairDef(spaceId, pairKey).withoutDomain
+    val retrievedPair2 = domainConfigStore.getPairDef(spaceId, pairKey + "2").withoutDomain
+    val retrievedPair3 = domainConfigStore.getPairDef(space2.id, pairKey).withoutDomain
 
     assertEquals(pairDef, retrievedPair)
     assertEquals(pair2, retrievedPair2)
@@ -204,16 +205,16 @@ class JooqDomainConfigStoreTest {
     systemConfigStore.createOrUpdateDomain(domainName)
 
     // Declare endpoints
-    domainConfigStore.createOrUpdateEndpoint(domainName, upstream1)
+    domainConfigStore.createOrUpdateEndpoint(spaceId, upstream1)
     exists(upstream1, 1)
 
-    domainConfigStore.createOrUpdateEndpoint(domainName, downstream1)
+    domainConfigStore.createOrUpdateEndpoint(spaceId, downstream1)
     exists(downstream1, 2)
 
     // Declare a pair
-    domainConfigStore.createOrUpdatePair(domainName, pairDef)
+    domainConfigStore.createOrUpdatePair(spaceId, pairDef)
 
-    val retrPair = domainConfigStore.getPairDef(domainName, pairDef.key)
+    val retrPair = domainConfigStore.getPairDef(spaceId, pairDef.key)
     assertEquals(pairKey, retrPair.key)
     assertEquals(upstream1.name, retrPair.upstreamName)
     assertEquals(downstream1.name, retrPair.downstreamName)
@@ -229,10 +230,10 @@ class JooqDomainConfigStoreTest {
     declareAll()
 
     systemConfigStore.createOrUpdateUser(user)
-    domainConfigStore.makeDomainMember(domainName, user.name)
-    userPreferencesStore.createFilteredItem(pairRef, user.name, FilteredItemType.SWIM_LANE)
+    domainConfigStore.makeDomainMember(spaceId, user.name)
+    userPreferencesStore.createFilteredItem(pair, user.name, FilteredItemType.SWIM_LANE)
 
-    domainConfigStore.deletePair(pairRef)
+    domainConfigStore.deletePair(pair)
 
   }
 
@@ -241,8 +242,8 @@ class JooqDomainConfigStoreTest {
     declareAll()
 
     systemConfigStore.createOrUpdateUser(user)
-    domainConfigStore.makeDomainMember(domainName, user.name)
-    userPreferencesStore.createFilteredItem(pairRef, user.name, FilteredItemType.SWIM_LANE)
+    domainConfigStore.makeDomainMember(spaceId, user.name)
+    userPreferencesStore.createFilteredItem(pair, user.name, FilteredItemType.SWIM_LANE)
 
     systemConfigStore.deleteDomain(domainName)
 
@@ -259,9 +260,9 @@ class JooqDomainConfigStoreTest {
     val endpoint = new EndpointDef(name = "ENDPOINT_WITH_OVERIDE", scanUrl = "testScanUrlOverride",
                                    contentRetrievalUrl = "contentRetrieveUrlOverride",
                                    categories = categories)
-    domainConfigStore.createOrUpdateEndpoint(domainName, endpoint)
+    domainConfigStore.createOrUpdateEndpoint(spaceId, endpoint)
     exists(endpoint, 1)
-    val retrEndpoint = domainConfigStore.getEndpointDef(domainName, endpoint.name)
+    val retrEndpoint = domainConfigStore.getEndpointDef(spaceId, endpoint.name)
     val descriptor = retrEndpoint.categories(dateCategoryName).asInstanceOf[RangeCategoryDescriptor]
     assertEquals("individual", descriptor.maxGranularity)
 
@@ -272,16 +273,16 @@ class JooqDomainConfigStoreTest {
     // declare the domain
     systemConfigStore.createOrUpdateDomain(domainName)
     // Declare endpoints
-    domainConfigStore.createOrUpdateEndpoint(domainName, upstream1)
+    domainConfigStore.createOrUpdateEndpoint(spaceId, upstream1)
     exists(upstream1, 1)
 
-    domainConfigStore.createOrUpdateEndpoint(domainName, downstream1)
+    domainConfigStore.createOrUpdateEndpoint(spaceId, downstream1)
     exists(downstream1, 2)
 
     pairDef.scanCronSpec = "invalid"
 
     try {
-      domainConfigStore.createOrUpdatePair(domainName, pairDef)
+      domainConfigStore.createOrUpdatePair(spaceId, pairDef)
       fail("Should have thrown ConfigValidationException")
     } catch {
       case ex:ConfigValidationException =>
@@ -293,10 +294,10 @@ class JooqDomainConfigStoreTest {
   def testEndpointsWithSameScanURL {
     // declare the domain
     systemConfigStore.createOrUpdateDomain(domainName)
-    domainConfigStore.createOrUpdateEndpoint(domainName, upstream1)
+    domainConfigStore.createOrUpdateEndpoint(spaceId, upstream1)
 
     upstream2.scanUrl = upstream1.scanUrl
-    domainConfigStore.createOrUpdateEndpoint(domainName, upstream2)
+    domainConfigStore.createOrUpdateEndpoint(spaceId, upstream2)
 
     exists(upstream1, 2, 0)
     exists(upstream2, 2, 1)
@@ -308,28 +309,28 @@ class JooqDomainConfigStoreTest {
     // declare the domain
     systemConfigStore.createOrUpdateDomain(domainName)
     // Create endpoint
-    domainConfigStore.createOrUpdateEndpoint(domainName, upstream1)
+    domainConfigStore.createOrUpdateEndpoint(spaceId, upstream1)
     exists(upstream1, 1)
 
-    domainConfigStore.deleteEndpoint(domainName, upstream1.name)
+    domainConfigStore.deleteEndpoint(spaceId, upstream1.name)
     expectMissingObject("endpoint") {
-      domainConfigStore.getEndpointDef(domainName, upstream1.name)
+      domainConfigStore.getEndpointDef(spaceId, upstream1.name)
     }
         
     // Change its name
-    domainConfigStore.createOrUpdateEndpoint(domainName, EndpointDef(name = upstreamRenamed,
+    domainConfigStore.createOrUpdateEndpoint(spaceId, EndpointDef(name = upstreamRenamed,
                                                                      scanUrl = upstream1.scanUrl,
                                                                      inboundUrl = "changes"))
 
-    val retrieved = domainConfigStore.getEndpointDef(domainName, upstreamRenamed)
+    val retrieved = domainConfigStore.getEndpointDef(spaceId, upstreamRenamed)
     assertEquals(upstreamRenamed, retrieved.name)
   }
 
   @Test
   def testEndpointCollationIsPersisted = {
     systemConfigStore.createOrUpdateDomain(domainName)
-    domainConfigStore.createOrUpdateEndpoint(domainName, upstream1.copy(collation = UnicodeCollationOrdering.name))
-    val retrieved = domainConfigStore.getEndpointDef(domainName, upstream1.name)
+    domainConfigStore.createOrUpdateEndpoint(spaceId, upstream1.copy(collation = UnicodeCollationOrdering.name))
+    val retrieved = domainConfigStore.getEndpointDef(spaceId, upstream1.name)
     assertEquals(UnicodeCollationOrdering.name, retrieved.collation)
   }
 
@@ -338,15 +339,15 @@ class JooqDomainConfigStoreTest {
     declareAll
 
     // Rename, change a few fields and swap endpoints by deleting and creating new
-    domainConfigStore.deletePair(domainName, pairKey)
+    domainConfigStore.deletePair(spaceId, pairKey)
     expectMissingObject("pair") {
-      domainConfigStore.getPairDef(domainName, pairKey)
+      domainConfigStore.getPairDef(spaceId, pairKey)
     }
 
-    domainConfigStore.createOrUpdatePair(domainName, PairDef(pairRenamed, versionPolicyName2, DiffaPair.NO_MATCHING,
+    domainConfigStore.createOrUpdatePair(spaceId, PairDef(pairRenamed, versionPolicyName2, 10,
       downstream1.name, upstream1.name, "0 0 * * * ?", scanCronEnabled = false, allowManualScans = false))
     
-    val retrieved = domainConfigStore.getPairDef(domainName, pairRenamed)
+    val retrieved = domainConfigStore.getPairDef(spaceId, pairRenamed)
     assertEquals(pairRenamed, retrieved.key)
     assertEquals(downstream1.name, retrieved.upstreamName) // check endpoints are swapped
     assertEquals(upstream1.name, retrieved.downstreamName)
@@ -354,20 +355,20 @@ class JooqDomainConfigStoreTest {
     assertEquals("0 0 * * * ?", retrieved.scanCronSpec)
     assertEquals(false, retrieved.scanCronEnabled)
     assertEquals(false, retrieved.allowManualScans)
-    assertEquals(DiffaPair.NO_MATCHING, retrieved.matchingTimeout)
+    assertEquals(10, retrieved.matchingTimeout)
   }
 
   @Test
   def testDeleteEndpointCascade: Unit = {
     declareAll
 
-    assertEquals(upstream1.name, domainConfigStore.getEndpointDef(domainName, upstream1.name).name)
-    domainConfigStore.deleteEndpoint(domainName, upstream1.name)
+    assertEquals(upstream1.name, domainConfigStore.getEndpointDef(spaceId, upstream1.name).name)
+    domainConfigStore.deleteEndpoint(spaceId, upstream1.name)
     expectMissingObject("endpoint") {
-      domainConfigStore.getEndpointDef(domainName, upstream1.name)
+      domainConfigStore.getEndpointDef(spaceId, upstream1.name)
     }
     expectMissingObject("pair") {
-      domainConfigStore.getPairDef(domainName, pairKey) // delete should cascade
+      domainConfigStore.getPairDef(spaceId, pairKey) // delete should cascade
     }
   }
 
@@ -375,29 +376,29 @@ class JooqDomainConfigStoreTest {
   def testDeletePair {
     declareAll
 
-    assertEquals(pairKey, domainConfigStore.getPairDef(domainName, pairKey).key)
-    domainConfigStore.deletePair(domainName, pairKey)
+    assertEquals(pairKey, domainConfigStore.getPairDef(spaceId, pairKey).key)
+    domainConfigStore.deletePair(spaceId, pairKey)
     expectMissingObject("pair") {
-      domainConfigStore.getPairDef(domainName, pairKey)
+      domainConfigStore.getPairDef(spaceId, pairKey)
     }
   }
 
   @Test
   def testDeleteRepairsReportsAndEscalations {
     declareAll
-    assertEquals(1, domainConfigStore.getPairDef(domainName, pairKey).repairActions.size)
-    assertEquals(1, domainConfigStore.getPairDef(domainName, pairKey).escalations.size)
-    assertEquals(1, domainConfigStore.getPairDef(domainName, pairKey).reports.size)
+    assertEquals(1, domainConfigStore.getPairDef(spaceId, pairKey).repairActions.size)
+    assertEquals(1, domainConfigStore.getPairDef(spaceId, pairKey).escalations.size)
+    assertEquals(1, domainConfigStore.getPairDef(spaceId, pairKey).reports.size)
 
-    domainConfigStore.createOrUpdatePair(domainName,
+    domainConfigStore.createOrUpdatePair(spaceId,
       pairDef.copy(
         repairActions = Set[RepairActionDef](),
         escalations = Set[EscalationDef](),
         reports = Set[PairReportDef]()))
 
-    assertEquals(0, domainConfigStore.getPairDef(domainName, pairKey).repairActions.size)
-    assertEquals(0, domainConfigStore.getPairDef(domainName, pairKey).escalations.size)
-    assertEquals(0, domainConfigStore.getPairDef(domainName, pairKey).reports.size)
+    assertEquals(0, domainConfigStore.getPairDef(spaceId, pairKey).repairActions.size)
+    assertEquals(0, domainConfigStore.getPairDef(spaceId, pairKey).escalations.size)
+    assertEquals(0, domainConfigStore.getPairDef(spaceId, pairKey).reports.size)
   }
 
   @Test
@@ -406,7 +407,7 @@ class JooqDomainConfigStoreTest {
     systemConfigStore.createOrUpdateDomain(domainName)
 
     expectMissingObject("endpoint") {
-      domainConfigStore.deleteEndpoint(domainName, "MISSING_ENDPOINT")
+      domainConfigStore.deleteEndpoint(spaceId, "MISSING_ENDPOINT")
     }
 
     // TODO changed the expectation from domain/MISSING_PAIR to just MISSING_PAIR
@@ -414,7 +415,7 @@ class JooqDomainConfigStoreTest {
     // of the space, which this version of the test doesn't know anything about.
     // This needs to get fixed in the long term.
     expectMissingObject("MISSING_PAIR") {
-      domainConfigStore.deletePair(domainName, "MISSING_PAIR")
+      domainConfigStore.deletePair(spaceId, "MISSING_PAIR")
     }
   }
 
@@ -424,18 +425,18 @@ class JooqDomainConfigStoreTest {
     // Note that this is a heuristic that attempts to flush out all of the main state transitions
     // that we can think of. It is in no way systematic or exhaustive.
     // If somebody knew their way around property based testing, then could break a leg here.
-
-    systemConfigStore.createOrUpdateDomain("domain")
+    
+    val space = systemConfigStore.createOrUpdateSpace(RandomStringUtils.randomAlphanumeric(10))
 
     def verifyEndpoints(endpoints:Seq[EndpointDef]) {
       endpoints.foreach(e => {
-        domainConfigStore.createOrUpdateEndpoint("domain", e)
+        domainConfigStore.createOrUpdateEndpoint(space.id, e)
 
-        val endpoint = domainConfigStore.getEndpointDef("domain", e.name)
+        val endpoint = domainConfigStore.getEndpointDef(space.id, e.name)
         assertEquals(e, endpoint)
       })
 
-      val result = domainConfigStore.listEndpoints("domain")
+      val result = domainConfigStore.listEndpoints(space.id)
       assertEquals(endpoints, result)
     }
 
@@ -503,11 +504,11 @@ class JooqDomainConfigStoreTest {
   @Test
   def rangeCategory = {
     declareAll
-    val pair = domainConfigStore.getPairDef(domainName, pairKey)
+    val pair = domainConfigStore.getPairDef(spaceId, pairKey)
     assertNotNull(pair.upstreamName)
     assertNotNull(pair.downstreamName)
-    val upstream = domainConfigStore.getEndpointDef(domainName, pair.upstreamName)
-    val downstream = domainConfigStore.getEndpointDef(domainName, pair.downstreamName)
+    val upstream = domainConfigStore.getEndpointDef(spaceId, pair.upstreamName)
+    val downstream = domainConfigStore.getEndpointDef(spaceId, pair.downstreamName)
     assertNotNull(upstream.categories)
     assertNotNull(downstream.categories)
     val us_descriptor = upstream.categories(dateCategoryName).asInstanceOf[RangeCategoryDescriptor]
@@ -521,7 +522,7 @@ class JooqDomainConfigStoreTest {
   @Test
   def setCategory = {
     declareAll
-    val endpoint = domainConfigStore.getEndpointDef(domainName, upstream2.name)
+    val endpoint = domainConfigStore.getEndpointDef(spaceId, upstream2.name)
     assertNotNull(endpoint.categories)
     val descriptor = endpoint.categories(dateCategoryName).asInstanceOf[SetCategoryDescriptor]
     assertEquals(setCategoryValues, descriptor.values.toSet)
@@ -530,7 +531,7 @@ class JooqDomainConfigStoreTest {
   @Test
   def prefixCategory = {
     declareAll
-    val endpoint = domainConfigStore.getEndpointDef(domainName, downstream2.name)
+    val endpoint = domainConfigStore.getEndpointDef(spaceId, downstream2.name)
     assertNotNull(endpoint.categories)
     val descriptor = endpoint.categories(stringCategoryName).asInstanceOf[PrefixCategoryDescriptor]
     assertEquals(1, descriptor.prefixLength)
@@ -541,7 +542,7 @@ class JooqDomainConfigStoreTest {
   @Test
   def shouldStoreViewsOnEndpoints = {
     declareAll
-    val endpoint = domainConfigStore.getEndpointDef(domainName, upstream2.name)
+    val endpoint = domainConfigStore.getEndpointDef(spaceId, upstream2.name)
     assertNotNull(endpoint.views)
     assertEquals(1, endpoint.views.length)
 
@@ -555,7 +556,7 @@ class JooqDomainConfigStoreTest {
   @Test
   def shouldStoreViewsOnPairs = {
     declareAll
-    val pair = domainConfigStore.getPairDef(domainName, pairKey)
+    val pair = domainConfigStore.getPairDef(spaceId, pairKey)
     assertNotNull(pair.views)
     assertEquals(1, pair.views.length)
 
@@ -587,11 +588,11 @@ class JooqDomainConfigStoreTest {
 
     val pair = PairDef(key = new UUID().toString, upstreamName = upstream.name, downstreamName = downstream.name)
 
-    systemConfigStore.createOrUpdateDomain(domain)
+    val space = systemConfigStore.createOrUpdateSpace(RandomStringUtils.randomAlphanumeric(10))
 
-    domainConfigStore.createOrUpdateEndpoint(domain, upstream)
-    domainConfigStore.createOrUpdateEndpoint(domain, downstream)
-    domainConfigStore.createOrUpdatePair(domain, pair)
+    domainConfigStore.createOrUpdateEndpoint(space.id, upstream)
+    domainConfigStore.createOrUpdateEndpoint(space.id, downstream)
+    domainConfigStore.createOrUpdatePair(space.id, pair)
 
     // It should not be possible to create more than one view with the same name within the same endpoint
 
@@ -600,7 +601,7 @@ class JooqDomainConfigStoreTest {
     val invalidUpstream = EndpointDef(name = new UUID().toString, categories = parentCategories, views = invalidUpstreamViews)
 
     try {
-      domainConfigStore.createOrUpdateEndpoint(domain, invalidUpstream)
+      domainConfigStore.createOrUpdateEndpoint(space.id, invalidUpstream)
       fail("Should have thrown integrity error")
     }
     catch {
@@ -614,21 +615,21 @@ class JooqDomainConfigStoreTest {
 
   @Test
   def testApplyingDefaultConfigOption = {
-    assertEquals("defaultVal", domainConfigStore.configOptionOrDefault(domainName,"some.option", "defaultVal"))
+    assertEquals("defaultVal", domainConfigStore.configOptionOrDefault(spaceId,"some.option", "defaultVal"))
   }
 
   @Test
   def testReturningNoneForConfigOption {
-    assertEquals(None, domainConfigStore.maybeConfigOption(domainName, "some.option"))
+    assertEquals(None, domainConfigStore.maybeConfigOption(spaceId, "some.option"))
   }
 
   @Test
   def testRetrievingConfigOption = {
     // declare the domain
     systemConfigStore.createOrUpdateDomain(domainName)
-    domainConfigStore.setConfigOption(domainName, "some.option2", "storedVal")
-    assertEquals("storedVal", domainConfigStore.configOptionOrDefault(domainName, "some.option2", "defaultVal"))
-    assertEquals(Some("storedVal"), domainConfigStore.maybeConfigOption(domainName, "some.option2"))
+    domainConfigStore.setConfigOption(spaceId, "some.option2", "storedVal")
+    assertEquals("storedVal", domainConfigStore.configOptionOrDefault(spaceId, "some.option2", "defaultVal"))
+    assertEquals(Some("storedVal"), domainConfigStore.maybeConfigOption(spaceId, "some.option2"))
   }
 
   @Test
@@ -636,10 +637,10 @@ class JooqDomainConfigStoreTest {
     // declare the domain
     systemConfigStore.createOrUpdateDomain(domainName)
 
-    domainConfigStore.setConfigOption(domainName, "some.option3", "storedVal")
-    domainConfigStore.setConfigOption(domainName, "some.option3", "storedVal2")
-    assertEquals("storedVal2", domainConfigStore.configOptionOrDefault(domainName, "some.option3", "defaultVal"))
-    assertEquals(Some("storedVal2"), domainConfigStore.maybeConfigOption(domainName, "some.option3"))
+    domainConfigStore.setConfigOption(spaceId, "some.option3", "storedVal")
+    domainConfigStore.setConfigOption(spaceId, "some.option3", "storedVal2")
+    assertEquals("storedVal2", domainConfigStore.configOptionOrDefault(spaceId, "some.option3", "defaultVal"))
+    assertEquals(Some("storedVal2"), domainConfigStore.maybeConfigOption(spaceId, "some.option3"))
   }
 
   @Test
@@ -647,10 +648,10 @@ class JooqDomainConfigStoreTest {
     // declare the domain
     systemConfigStore.createOrUpdateDomain(domainName)
 
-    domainConfigStore.setConfigOption(domainName, "some.option3", "storedVal")
-    domainConfigStore.clearConfigOption(domainName, "some.option3")
-    assertEquals("defaultVal", domainConfigStore.configOptionOrDefault(domainName, "some.option3", "defaultVal"))
-    assertEquals(None, domainConfigStore.maybeConfigOption(domainName, "some.option3"))
+    domainConfigStore.setConfigOption(spaceId, "some.option3", "storedVal")
+    domainConfigStore.clearConfigOption(spaceId, "some.option3")
+    assertEquals("defaultVal", domainConfigStore.configOptionOrDefault(spaceId, "some.option3", "defaultVal"))
+    assertEquals(None, domainConfigStore.maybeConfigOption(spaceId, "some.option3"))
   }
 
   @Test
@@ -658,9 +659,9 @@ class JooqDomainConfigStoreTest {
     // declare the domain
     systemConfigStore.createOrUpdateDomain(domainName)
 
-    domainConfigStore.setConfigOption(domainName, "some.option3", "storedVal")
-    domainConfigStore.setConfigOption(domainName, "some.option4", "storedVal3")
-    assertEquals(Map("some.option3" -> "storedVal", "some.option4" -> "storedVal3"), domainConfigStore.allConfigOptions(domainName))
+    domainConfigStore.setConfigOption(spaceId, "some.option3", "storedVal")
+    domainConfigStore.setConfigOption(spaceId, "some.option4", "storedVal3")
+    assertEquals(Map("some.option3" -> "storedVal", "some.option4" -> "storedVal3"), domainConfigStore.allConfigOptions(spaceId))
   }
 
   @Test
@@ -668,16 +669,18 @@ class JooqDomainConfigStoreTest {
     // declare the child domain
     systemConfigStore.createOrUpdateDomain(domainName)
 
-    domainConfigStore.setConfigOption(domainName, "some.option3", "storedVal")
+    domainConfigStore.setConfigOption(spaceId, "some.option3", "storedVal")
     systemConfigStore.setSystemConfigOption("some.option4", "storedVal3")
-    assertEquals(Map("some.option3" -> "storedVal"), domainConfigStore.allConfigOptions(domainName))
+    assertEquals(Map("some.option3" -> "storedVal"), domainConfigStore.allConfigOptions(spaceId))
   }
 
   @Test
   def shouldBeAbleToManageDomainMembership = {
 
+    val space = systemConfigStore.createOrUpdateSpace(RandomStringUtils.randomAlphanumeric(10))
+
     def assertIsDomainMember(member:Member, expectation:Boolean) = {
-      val members = domainConfigStore.listDomainMembers(domain.name)
+      val members = domainConfigStore.listDomainMembers(space.id)
       val isMember = members.contains(member)
       assertEquals(expectation, isMember)
 
@@ -686,13 +689,13 @@ class JooqDomainConfigStoreTest {
       assertEquals(expectation, hasDomainMember)
     }
 
-    systemConfigStore.createOrUpdateDomain(domainName)
+
     systemConfigStore.createOrUpdateUser(user)
 
-    val member = domainConfigStore.makeDomainMember(domain.name, user.name)
+    val member = domainConfigStore.makeDomainMember(space.id, user.name)
     assertIsDomainMember(member, true)
 
-    domainConfigStore.removeDomainMembership(domain.name, user.name)
+    domainConfigStore.removeDomainMembership(space.id, user.name)
     assertIsDomainMember(member, false)
   }
 
@@ -767,77 +770,77 @@ class JooqDomainConfigStoreTest {
     val down = EndpointDef(name = "some-downstream-endpoint")
     val pair = PairDef(key = "some-pair", upstreamName = up.name, downstreamName = down.name)
 
-    val v1 = domainConfigStore.getConfigVersion(domainName)
-    domainConfigStore.createOrUpdateEndpoint(domainName, up)
-    verifyDomainConfigVersionWasUpgraded(domainName, v1)
+    val v1 = domainConfigStore.getConfigVersion(spaceId)
+    domainConfigStore.createOrUpdateEndpoint(spaceId, up)
+    verifyDomainConfigVersionWasUpgraded(spaceId, v1)
 
-    val v2 = domainConfigStore.getConfigVersion(domainName)
-    domainConfigStore.createOrUpdateEndpoint(domainName, down)
-    verifyDomainConfigVersionWasUpgraded(domainName, v2)
+    val v2 = domainConfigStore.getConfigVersion(spaceId)
+    domainConfigStore.createOrUpdateEndpoint(spaceId, down)
+    verifyDomainConfigVersionWasUpgraded(spaceId, v2)
 
-    val v3 = domainConfigStore.getConfigVersion(domainName)
-    domainConfigStore.createOrUpdatePair(domainName, pair)
-    verifyDomainConfigVersionWasUpgraded(domainName, v3)
+    val v3 = domainConfigStore.getConfigVersion(spaceId)
+    domainConfigStore.createOrUpdatePair(spaceId, pair)
+    verifyDomainConfigVersionWasUpgraded(spaceId, v3)
 
-    val v4 = domainConfigStore.getConfigVersion(domainName)
-    domainConfigStore.deletePair(domainName, pair.key)
-    verifyDomainConfigVersionWasUpgraded(domainName, v4)
+    val v4 = domainConfigStore.getConfigVersion(spaceId)
+    domainConfigStore.deletePair(spaceId, pair.key)
+    verifyDomainConfigVersionWasUpgraded(spaceId, v4)
 
-    val v5 = domainConfigStore.getConfigVersion(domainName)
-    domainConfigStore.deleteEndpoint(domainName, up.name)
-    domainConfigStore.deleteEndpoint(domainName, down.name)
-    verifyDomainConfigVersionWasUpgraded(domainName, v5)
+    val v5 = domainConfigStore.getConfigVersion(spaceId)
+    domainConfigStore.deleteEndpoint(spaceId, up.name)
+    domainConfigStore.deleteEndpoint(spaceId, down.name)
+    verifyDomainConfigVersionWasUpgraded(spaceId, v5)
 
   }
 
   @Test
   def shouldDefaultToReportingBreakerAsUntripped() {
     systemConfigStore.createOrUpdateDomain(domainName)
-    assertFalse(domainConfigStore.isBreakerTripped(domainName, pairKey, "escalations:*"))
+    assertFalse(domainConfigStore.isBreakerTripped(spaceId, pairKey, "escalations:*"))
   }
 
   @Test
   def shouldStoreTrippedBreaker() {
     systemConfigStore.createOrUpdateDomain(domainName)
 
-    val e1 = domainConfigStore.createOrUpdateEndpoint(domainName, EndpointDef(name = "some-upstream-endpoint"))
-    val e2 = domainConfigStore.createOrUpdateEndpoint(domainName, EndpointDef(name = "some-downstream-endpoint"))
-    domainConfigStore.createOrUpdatePair(domainName, PairDef(key = pairKey, upstreamName = e1.name, downstreamName = e2.name))
+    val e1 = domainConfigStore.createOrUpdateEndpoint(spaceId, EndpointDef(name = "some-upstream-endpoint"))
+    val e2 = domainConfigStore.createOrUpdateEndpoint(spaceId, EndpointDef(name = "some-downstream-endpoint"))
+    domainConfigStore.createOrUpdatePair(spaceId, PairDef(key = pairKey, upstreamName = e1.name, downstreamName = e2.name))
 
-    domainConfigStore.tripBreaker(domainName, pairKey, "escalations:*")
-    assertTrue(domainConfigStore.isBreakerTripped(domainName, pairKey, "escalations:*"))
+    domainConfigStore.tripBreaker(spaceId, pairKey, "escalations:*")
+    assertTrue(domainConfigStore.isBreakerTripped(spaceId, pairKey, "escalations:*"))
   }
 
   @Test
   def shouldKeepTrippedBreakersIsolated() {
     systemConfigStore.createOrUpdateDomain(domainName)
 
-    val e1 = domainConfigStore.createOrUpdateEndpoint(domainName, EndpointDef(name = "some-upstream-endpoint"))
-    val e2 = domainConfigStore.createOrUpdateEndpoint(domainName, EndpointDef(name = "some-downstream-endpoint"))
-    domainConfigStore.createOrUpdatePair(domainName, PairDef(key = pairKey, upstreamName = e1.name, downstreamName = e2.name))
+    val e1 = domainConfigStore.createOrUpdateEndpoint(spaceId, EndpointDef(name = "some-upstream-endpoint"))
+    val e2 = domainConfigStore.createOrUpdateEndpoint(spaceId, EndpointDef(name = "some-downstream-endpoint"))
+    domainConfigStore.createOrUpdatePair(spaceId, PairDef(key = pairKey, upstreamName = e1.name, downstreamName = e2.name))
 
-    domainConfigStore.tripBreaker(domainName, pairKey, "escalations:*")
-    assertTrue(domainConfigStore.isBreakerTripped(domainName, pairKey, "escalations:*"))
-    assertFalse(domainConfigStore.isBreakerTripped(domainName, pairKey, "escalations:other"))
+    domainConfigStore.tripBreaker(spaceId, pairKey, "escalations:*")
+    assertTrue(domainConfigStore.isBreakerTripped(spaceId, pairKey, "escalations:*"))
+    assertFalse(domainConfigStore.isBreakerTripped(spaceId, pairKey, "escalations:other"))
   }
 
   @Test
   def shouldSupportClearingABreaker() {
     systemConfigStore.createOrUpdateDomain(domainName)
 
-    val e1 = domainConfigStore.createOrUpdateEndpoint(domainName, EndpointDef(name = "some-upstream-endpoint"))
-    val e2 = domainConfigStore.createOrUpdateEndpoint(domainName, EndpointDef(name = "some-downstream-endpoint"))
-    domainConfigStore.createOrUpdatePair(domainName, PairDef(key = pairKey, upstreamName = e1.name, downstreamName = e2.name))
+    val e1 = domainConfigStore.createOrUpdateEndpoint(spaceId, EndpointDef(name = "some-upstream-endpoint"))
+    val e2 = domainConfigStore.createOrUpdateEndpoint(spaceId, EndpointDef(name = "some-downstream-endpoint"))
+    domainConfigStore.createOrUpdatePair(spaceId, PairDef(key = pairKey, upstreamName = e1.name, downstreamName = e2.name))
 
-    domainConfigStore.tripBreaker(domainName, pairKey, "escalations:*")
-    domainConfigStore.tripBreaker(domainName, pairKey, "escalations:other")
-    domainConfigStore.clearBreaker(domainName, pairKey, "escalations:*")
-    assertFalse(domainConfigStore.isBreakerTripped(domainName, pairKey, "escalations:*"))
-    assertTrue(domainConfigStore.isBreakerTripped(domainName, pairKey, "escalations:other"))
+    domainConfigStore.tripBreaker(spaceId, pairKey, "escalations:*")
+    domainConfigStore.tripBreaker(spaceId, pairKey, "escalations:other")
+    domainConfigStore.clearBreaker(spaceId, pairKey, "escalations:*")
+    assertFalse(domainConfigStore.isBreakerTripped(spaceId, pairKey, "escalations:*"))
+    assertTrue(domainConfigStore.isBreakerTripped(spaceId, pairKey, "escalations:other"))
   }
 
-  private def verifyDomainConfigVersionWasUpgraded(domain:String, oldVersion:Int) {
-    val currentVersion = domainConfigStore.getConfigVersion(domain)
+  private def verifyDomainConfigVersionWasUpgraded(space:Long, oldVersion:Int) {
+    val currentVersion = domainConfigStore.getConfigVersion(space)
     assertTrue("Current version %s is not greater than old version %s".format(currentVersion,oldVersion), currentVersion > oldVersion)
   }
 

@@ -32,39 +32,34 @@ class DomainMembershipAwareTest {
 
   val cp = new HazelcastCacheProvider
 
-  val spacePathCache = E4.createStrictMock(classOf[SpacePathCache])
   val membershipListener = createStrictMock(classOf[DomainMembershipAware])
 
-  val domainConfigStore = new JooqDomainConfigStore(jf, hm, cp, membershipListener, spacePathCache)
+  val domainConfigStore = new JooqDomainConfigStore(jf, hm, cp, membershipListener)
 
   val member = Member("user",0L,"domain")
 
   @Test
   def shouldEmitDomainMembershipCreationEvent() = {
     expect(membershipListener.onMembershipCreated(member)).once()
-    expect(spacePathCache.resolveSpacePathOrDie("domain")).andReturn(Space(id = 0L)).once()
 
     replay(membershipListener)
-    E4.replay(spacePathCache)
 
-    domainConfigStore.makeDomainMember("domain", "user")
+    domainConfigStore.makeDomainMember(0L, "user")
 
     verify(membershipListener)
-    E4.verify(spacePathCache)
+
   }
 
   @Test
   def shouldEmitDomainMembershipRemovalEvent() = {
     expect(membershipListener.onMembershipRemoved(member)).once()
-    expect(spacePathCache.resolveSpacePathOrDie("domain")).andReturn(Space(id = 0L)).once()
 
     replay(membershipListener)
-    E4.replay(spacePathCache)
 
-    domainConfigStore.removeDomainMembership("domain", "user")
+    domainConfigStore.removeDomainMembership(0L, "user")
 
     verify(membershipListener)
-    E4.verify(spacePathCache)
+
   }
 
 

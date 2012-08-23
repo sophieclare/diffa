@@ -68,8 +68,7 @@ import org.jooq.impl.Factory
 
 class JooqSystemConfigStore(jooq:JooqDatabaseFacade,
                             cacheProvider:CacheProvider,
-                            sequenceProvider:SequenceProvider,
-                            spacePathCache:SpacePathCache)
+                            sequenceProvider:SequenceProvider)
     extends SystemConfigStore {
 
   val logger = LoggerFactory.getLogger(getClass)
@@ -81,8 +80,6 @@ class JooqSystemConfigStore(jooq:JooqDatabaseFacade,
   private val domainEventSubscribers = new ListBuffer[DomainLifecycleAware]
 
   def registerDomainEventListener(d:DomainLifecycleAware) = domainEventSubscribers += d
-
-  registerDomainEventListener(spacePathCache)
 
   def createOrUpdateDomain(path:String) = createOrUpdateSpace(path)
 
@@ -98,7 +95,7 @@ class JooqSystemConfigStore(jooq:JooqDatabaseFacade,
       ValidationUtil.ensurePathSegmentFormat("spaces", childPath)
 
       jooq.execute(t => {
-
+        /*
         val spacePath = Factory.groupConcat(SPACES.NAME).orderBy(SPACES.ID).separator("/")
 
         val parent =  t.select(SPACE_PATHS.as("d").DESCENDANT).select(spacePath.as("path")).
@@ -120,6 +117,9 @@ class JooqSystemConfigStore(jooq:JooqDatabaseFacade,
           val parentId = parent.getValueAsBigInteger(SPACE_PATHS.as("d").DESCENDANT).longValue()
           createSpace(t, childPath, parentId)
         }
+        */
+        val parentId = lookupSpaceId(t, parentPath + "%")
+        createSpace(t, childPath, parentId)
       })
     }
 
@@ -130,6 +130,30 @@ class JooqSystemConfigStore(jooq:JooqDatabaseFacade,
 
     }
 
+  }
+
+  private def lookupSpaceId(t:Factory, path:String) : Long = {
+
+    val spacePath = Factory.groupConcat(SPACES.NAME).orderBy(SPACES.ID).separator("/")
+
+    val space = t.select(SPACE_PATHS.as("d").DESCENDANT).select(spacePath.as("path")).
+                  from(SPACE_PATHS.as("d")).
+                  join(SPACE_PATHS.as("a")).
+                    on(SPACE_PATHS.as("a").DESCENDANT.equal(SPACE_PATHS.as("d").DESCENDANT)).
+                  join(SPACES).
+                    on(SPACES.ID.equal(SPACE_PATHS.as("a").ANCESTOR)).
+                  where(SPACE_PATHS.as("d").ANCESTOR.equal(0)).
+                    and(SPACE_PATHS.as("d").ANCESTOR.notEqual(SPACE_PATHS.as("d").DESCENDANT)).
+                  groupBy(SPACE_PATHS.as("d").DESCENDANT).
+                  having(spacePath.like(ROOT_SPACE.name + "/" + path)).
+                  fetchOne()
+
+    if (null == space) {
+      throw new MissingObjectException(path)
+    }
+    else {
+      space.getValueAsBigInteger(SPACE_PATHS.as("d").DESCENDANT).longValue()
+    }
   }
 
   private def createSpace(t:Factory, name:String, parent:Long) : Space =  {
@@ -238,23 +262,30 @@ class JooqSystemConfigStore(jooq:JooqDatabaseFacade,
     )
   }
 
-  def deleteDomain(path:String) = {
-
-    val space = spacePathCache.resolveSpacePathOrDie(path)
-
+  def deleteSpace(id: Long) = {
     jooq.execute(t => {
-      descendancyTree(t, space.id).foreach(s => {
-        deleteSpace(t, s.id)
-        domainEventSubscribers.foreach(_.onDomainRemoved(s.id))
-        //cachedSpacePaths.evict(path) - this invalidation is triggered by the onDomainRemoved event
-      })
+      deleteSpace(t, id)
+    })
+  }
+
+  private def deleteSpace(t:Factory, id: Long) = {
+    descendancyTree(t, id).foreach(s => {
+      deleteSingleSpace(t, s.id)
+      domainEventSubscribers.foreach(_.onDomainRemoved(s.id))
+      //cachedSpacePaths.evict(path) - this invalidation is triggered by the onDomainRemoved event
+    })
+  }
+
+  def deleteDomain(path:String) = {
+    jooq.execute(t => {
+      deleteSpace(t, lookupSpaceId(t, path))
     })
   }
 
   def listSubspaces(parent:Long) = jooq.execute(descendancyTree(_, parent)).toSeq
 
 
-  private def deleteSpace(t:Factory, id:Long) = {
+  private def deleteSingleSpace(t:Factory, id:Long) = {
 
     t.delete(EXTERNAL_HTTP_CREDENTIALS).where(EXTERNAL_HTTP_CREDENTIALS.SPACE.equal(id)).execute()
     t.delete(USER_ITEM_VISIBILITY).where(USER_ITEM_VISIBILITY.SPACE.equal(id)).execute()
@@ -293,7 +324,8 @@ class JooqSystemConfigStore(jooq:JooqDatabaseFacade,
     }
   }
 
-  def doesDomainExist(path: String) = spacePathCache.doesDomainExist(path)
+  def doesDomainExist(path: String) = false // TODO implement //spacePathCache.doesDomainExist(path)
+  def doesSpaceExist(id: Long) = false // TODO implement
 
   def listDomains = listSpaces.map(_.name)
 

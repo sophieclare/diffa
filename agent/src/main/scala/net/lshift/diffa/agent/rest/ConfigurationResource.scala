@@ -22,7 +22,7 @@ import scala.collection.JavaConversions._
 import net.lshift.diffa.agent.rest.ResponseUtils._
 import net.lshift.diffa.kernel.frontend._
 import net.lshift.diffa.kernel.frontend.FrontendConversions._
-import net.lshift.diffa.kernel.config.{DiffaPairRef, BreakerHelper}
+import net.lshift.diffa.kernel.config.{PairRef, BreakerHelper}
 
 /**
  * This is a REST interface to the Configuration abstraction.
@@ -173,28 +173,28 @@ class ConfigurationResource(val config:Configuration,
   @PUT
   @Path("/pairs/{id}/breakers/escalations")
   def tripAllEscalations(@PathParam("id") id:String) = {
-    breakers.tripAllEscalations(DiffaPairRef(domain = domain, key = id))
+    breakers.tripAllEscalations(PairRef(domain = domain, key = id))
     resourceCreated("*", uri)
   }
 
   @DELETE
   @Path("/pairs/{id}/breakers/escalations")
   def resetAllEscalations(@PathParam("id") id:String) = {
-    breakers.clearAllEscalations(DiffaPairRef(domain = domain, key = id))
+    breakers.clearAllEscalations(PairRef(domain = domain, key = id))
     resourceDeleted()
   }
 
   @PUT
   @Path("/pairs/{id}/breakers/escalations/{name}")
   def tripAllEscalations(@PathParam("id") id:String, @PathParam("name") name:String) = {
-    breakers.tripEscalation(DiffaPairRef(domain = domain, key = id), name)
+    breakers.tripEscalation(PairRef(domain = domain, key = id), name)
     resourceCreated(name, uri)
   }
 
   @DELETE
   @Path("/pairs/{id}/breakers/escalations/{name}")
   def resetAllEscalations(@PathParam("id") id:String, @PathParam("name") name:String) = {
-    breakers.clearEscalation(DiffaPairRef(domain = domain, key = id), name)
+    breakers.clearEscalation(PairRef(domain = domain, key = id), name)
     resourceDeleted()
   }
 }

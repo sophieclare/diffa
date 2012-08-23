@@ -73,7 +73,7 @@ object InternalRestClientTest {
   def baseWithAuthPlusQuery = Example(
     "/?auth=dummy", Map("query" -> "value"), "/?auth=dummy&query=value")
 
-  val pair = new DiffaPairRef("some-domain", "some-pair")
+  val pair = new PairRef("some-domain", "some-pair")
   val domainCredentialsLookup = new FixedDomainCredentialsLookup(pair.domain, None)
   val limits = new PairServiceLimitsView {
     def getEffectiveLimitByNameForPair(domainName: String, pairKey: String, limit:ServiceLimit): Int = limit.defaultLimit

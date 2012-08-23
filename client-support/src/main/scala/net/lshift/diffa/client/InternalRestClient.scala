@@ -38,7 +38,7 @@ import org.apache.http.client.entity.UrlEncodedFormEntity
 /**
  * Abstract super class to create RESTful clients for usage within the agent.
  */
-abstract class InternalRestClient(pair: DiffaPairRef,
+abstract class InternalRestClient(pair: PairRef,
                                   url: String,
                                   serviceLimitsView: PairServiceLimitsView,
                                   credentialsLookup:DomainCredentialsLookup) {

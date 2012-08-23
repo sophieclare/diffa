@@ -27,14 +27,14 @@ import org.joda.time.DateTime
 import net.lshift.diffa.kernel.participants.CategoryFunction
 import java.net.{SocketTimeoutException, SocketException, ConnectException, URI}
 import net.lshift.diffa.kernel.differencing.ScanFailedException
-import net.lshift.diffa.kernel.config.DiffaPairRef
+import net.lshift.diffa.kernel.config.PairRef
 import net.lshift.diffa.kernel.config.QueryParameterCredentials
 import net.lshift.diffa.kernel.config.BasicAuthCredentials
 import net.lshift.diffa.kernel.participants.StringPrefixCategoryFunction
 
 class ScanParticipantRestClientTest {
   final val JSON = "application/json"
-  final val pair = DiffaPairRef("key", "domain")
+  final val pair = PairRef("key", "domain")
   final val scanUrl = "http://dummy/url"
 
   lazy val httpClient =  createMock(classOf[DiffaHttpClient])

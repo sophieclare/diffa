@@ -24,13 +24,13 @@ import org.junit.{Test, Before}
 import net.lshift.diffa.schema.servicelimits.{ScanReadTimeout, ScanConnectTimeout, ScanResponseSizeLimit}
 import scala.collection.JavaConversions._
 import net.lshift.diffa.kernel.differencing.ScanLimitBreachedException
-import net.lshift.diffa.kernel.config.DiffaPairRef
+import net.lshift.diffa.kernel.config.PairRef
 import net.lshift.diffa.kernel.config.Endpoint
 
 
 object ScanLimitsTest {
 
-  val pair = new DiffaPairRef("some-domain", "some-pair")
+  val pair = new PairRef("some-domain", "some-pair")
 
   val serverPort = 41557
 

@@ -29,7 +29,7 @@ class UsersScanningTest {
     def getEffectiveLimitByNameForPair(domainName: String, pairKey: String, limit:ServiceLimit): Int = limit.defaultLimit
   }
 
-  val pair = DiffaPairRef("foo","bar")
+  val pair = PairRef("foo","bar")
   val endpoint = Endpoint(name = "usersScanningTestEndpoint", scanUrl = agentURL + "/security/scan")
 
   val domainCredentialsLookup = new FixedDomainCredentialsLookup(pair.domain, Some(BasicAuthCredentials("guest", "guest")))

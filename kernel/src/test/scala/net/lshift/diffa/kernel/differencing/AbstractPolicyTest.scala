@@ -61,9 +61,9 @@ abstract class AbstractPolicyTest {
   val store = createMock("versionStore", classOf[VersionCorrelationStore])
 
   val stores = new VersionCorrelationStoreFactory {
-    def apply(pairKey: DiffaPairRef) = store
-    def remove(pairKey: DiffaPairRef) {}
-    def close(pairKey: DiffaPairRef) {}
+    def apply(pairKey: PairRef) = store
+    def remove(pairKey: PairRef) {}
+    def close(pairKey: PairRef) {}
     def close {}
   }
 

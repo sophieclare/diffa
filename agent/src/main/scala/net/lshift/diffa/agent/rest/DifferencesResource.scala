@@ -25,7 +25,7 @@ import org.joda.time.format.{ISODateTimeFormat, DateTimeFormat}
 import org.joda.time.{DateTime, Interval}
 import net.lshift.diffa.kernel.differencing.{EventOptions, DifferencesManager}
 import javax.servlet.http.HttpServletRequest
-import net.lshift.diffa.kernel.config.{DomainConfigStore, DiffaPairRef}
+import net.lshift.diffa.kernel.config.{DomainConfigStore, PairRef}
 
 class DifferencesResource(val differencesManager: DifferencesManager,
                           val domainConfigStore:DomainConfigStore,
@@ -83,7 +83,7 @@ class DifferencesResource(val differencesManager: DifferencesManager,
 
     val requestedAggregates = parseAggregates(servletRequest)
     val aggregates = domainConfigStore.listPairs(domain).map(p => {
-      p.key -> mapAsJavaMap(processAggregates(DiffaPairRef(domain = domain, key = p.key), requestedAggregates))
+      p.key -> mapAsJavaMap(processAggregates(PairRef(domain = domain, key = p.key), requestedAggregates))
     }).toMap
 
     Response.ok(mapAsJavaMap(aggregates)).tag(domainVsn).build()
@@ -96,7 +96,7 @@ class DifferencesResource(val differencesManager: DifferencesManager,
     val domainVsn = validateETag(request)
 
     val requestedAggregates = parseAggregates(servletRequest)
-    val aggregates = processAggregates(DiffaPairRef(domain = domain, key = pair), requestedAggregates)
+    val aggregates = processAggregates(PairRef(domain = domain, key = pair), requestedAggregates)
 
     Response.ok(mapAsJavaMap(aggregates)).tag(domainVsn).build()
   }
@@ -162,7 +162,7 @@ class DifferencesResource(val differencesManager: DifferencesManager,
     }.toMap
   }
 
-  def processAggregates(pairRef:DiffaPairRef, requests:Map[String, AggregateRequest]) =
+  def processAggregates(pairRef:PairRef, requests:Map[String, AggregateRequest]) =
     requests.map { case (name, details) =>
       val tiles = differencesManager.retrieveAggregates(pairRef, details.start, details.end, details.aggregation)
 

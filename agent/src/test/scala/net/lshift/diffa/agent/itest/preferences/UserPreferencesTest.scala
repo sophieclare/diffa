@@ -22,7 +22,7 @@ import org.junit.{Before, Test}
 import org.junit.Assert._
 import com.eaio.uuid.UUID
 import net.lshift.diffa.client.{RestClientParams, AccessDeniedException}
-import net.lshift.diffa.kernel.config.DiffaPairRef
+import net.lshift.diffa.kernel.config.PairRef
 import net.lshift.diffa.kernel.frontend.{DomainPairDef,UserDef,EndpointDef,DomainDef}
 
 class UserPreferencesTest {
@@ -107,7 +107,7 @@ class UserPreferencesTest {
   @Test
   def whenDefaultSystemUserAddsAnItemFilterToPairInDefaultDomainTheFilterShouldExist {
     // Given
-    val pairInDefaultDomain = DiffaPairRef(domain = defaultDomain, key = pair.getKey)
+    val pairInDefaultDomain = PairRef(domain = defaultDomain, key = pair.getKey)
 
     defaultDomainConfigClient.declareEndpoint(upstream)
     defaultDomainConfigClient.declareEndpoint(downstream)
