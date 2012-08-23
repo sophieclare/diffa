@@ -78,6 +78,7 @@ object JooqConfigStoreCompanion {
    * so we alias the UNIQUE_CATEGORY_NAMES.NAME and UNIQUE_CATEGORY_VIEW_NAMES.NAME fields to something other than NAME.
    */
   val UNIQUE_CATEGORY_ALIAS = "unique_category_alias"
+  val SPACE_NAME_ALIAS = "space_name_alias"
 
   def listEndpoints(jooq:DatabaseFacade, space:Option[Long] = None, endpoint:Option[String] = None) : java.util.List[DomainEndpointDef] = {
     jooq.execute(t => {
@@ -87,7 +88,7 @@ object JooqConfigStoreCompanion {
         select(RANGE_CATEGORIES.DATA_TYPE, RANGE_CATEGORIES.LOWER_BOUND, RANGE_CATEGORIES.UPPER_BOUND, RANGE_CATEGORIES.MAX_GRANULARITY).
         select(PREFIX_CATEGORIES.STEP, PREFIX_CATEGORIES.PREFIX_LENGTH, PREFIX_CATEGORIES.MAX_LENGTH).
         select(SET_CATEGORIES.VALUE).
-        select(SPACES.NAME).
+        select(SPACES.NAME.as(SPACE_NAME_ALIAS)).
         from(ENDPOINTS).
 
         join(SPACES).
@@ -128,11 +129,11 @@ object JooqConfigStoreCompanion {
         select(RANGE_CATEGORY_VIEWS.DATA_TYPE, RANGE_CATEGORY_VIEWS.LOWER_BOUND, RANGE_CATEGORY_VIEWS.UPPER_BOUND, RANGE_CATEGORY_VIEWS.MAX_GRANULARITY).
         select(PREFIX_CATEGORY_VIEWS.STEP, PREFIX_CATEGORY_VIEWS.PREFIX_LENGTH, PREFIX_CATEGORY_VIEWS.MAX_LENGTH).
         select(SET_CATEGORY_VIEWS.VALUE).
-        select(SPACES.NAME).
+        select(SPACES.NAME.as(SPACE_NAME_ALIAS)).
         from(ENDPOINT_VIEWS).
 
         join(SPACES).
-          on(SPACES.ID.equal(ENDPOINTS.SPACE)).
+          on(SPACES.ID.equal(ENDPOINT_VIEWS.SPACE)).
 
         join(ENDPOINTS).
           on(ENDPOINTS.SPACE.equal(ENDPOINT_VIEWS.SPACE)).
@@ -187,7 +188,7 @@ object JooqConfigStoreCompanion {
 
         val currentEndpoint = DomainEndpointDef(
           space = record.getValue(ENDPOINTS.SPACE),
-          domain = record.getValue(SPACES.NAME),
+          domain = record.getValue(SPACES.NAME.as(SPACE_NAME_ALIAS)),
           name = record.getValue(ENDPOINTS.NAME),
           scanUrl = record.getValue(ENDPOINTS.SCAN_URL),
           contentRetrievalUrl = record.getValue(ENDPOINTS.CONTENT_RETRIEVAL_URL),
