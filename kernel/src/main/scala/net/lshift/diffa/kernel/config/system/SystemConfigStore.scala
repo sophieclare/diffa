@@ -59,6 +59,9 @@ trait SystemConfigStore {
 
   def doesSpaceExist(space: Long): Boolean
 
+  // TODO Consider return the complete Space object, not just the key
+  def lookupSpaceByPath(path: String) : Long
+
   @Deprecated  def listDomains : Seq[String]
   def listSpaces : Seq[Space]
 

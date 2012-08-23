@@ -25,11 +25,11 @@ import scala.collection.JavaConversions._
 class UsersRestClient(rootUrl:String, username:String, params: RestClientParams = RestClientParams.default)
   extends ExternalRestClient(rootUrl, "/users/" + username, params) {
 
-  def removeFilter(pair:PairRef, itemType:FilteredItemType)
-    = delete("/" + pair.domain + "/" + pair.key + "/filter/"  + itemType.toString)
+  def removeFilter(spacePath:String, pair:String, itemType:FilteredItemType)
+    = delete("/" + spacePath + "/" + pair + "/filter/"  + itemType.toString)
 
-  def createFilter(pair:PairRef, itemType:FilteredItemType) = {
-    val path = resource.path("/" + pair.domain + "/" + pair.key + "/filter/"  + itemType.toString)
+  def createFilter(spacePath:String, pair:String, itemType:FilteredItemType) = {
+    val path = resource.path("/" + spacePath + "/" + pair + "/filter/"  + itemType.toString)
     val media = path.accept(MediaType.TEXT_PLAIN)
     val response = media.put(classOf[ClientResponse])
     val status = response.getClientResponseStatus

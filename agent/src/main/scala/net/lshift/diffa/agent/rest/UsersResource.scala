@@ -40,9 +40,9 @@ class UsersResource {
                  @PathParam("domain") domain:String,
                  @PathParam("itemType") itemType:String,
                  @Context request: Request) = {
-    checkDomain(domain)
+    val space = systemConfigStore.lookupSpaceByPath(domain)
     val filterType = getFilterType(itemType)
-    val filters = userPreferences.listFilteredItems(domain, user, filterType).toArray
+    val filters = userPreferences.listFilteredItems(space, user, filterType).toArray
 
     // This etag check doesn't prevent the call going through to the backend,
     // but that is not such a big deal since the result will be cached in any case.
@@ -64,9 +64,9 @@ class UsersResource {
                    @PathParam("domain") domain:String,
                    @PathParam("pair") pair:String,
                    @PathParam("itemType") itemType:String) {
-    checkDomain(domain)
+    val space = systemConfigStore.lookupSpaceByPath(domain)
     val filterType = getFilterType(itemType)
-    userPreferences.createFilteredItem(PairRef(pair,domain), user, filterType)
+    userPreferences.createFilteredItem(PairRef(pair,space), user, filterType)
   }
 
   @DELETE
@@ -75,9 +75,9 @@ class UsersResource {
                    @PathParam("domain") domain:String,
                    @PathParam("pair") pair:String,
                    @PathParam("itemType") itemType:String) {
-    checkDomain(domain)
+    val space = systemConfigStore.lookupSpaceByPath(domain)
     val filterType = getFilterType(itemType)
-    userPreferences.removeFilteredItem(PairRef(pair,domain), user, filterType)
+    userPreferences.removeFilteredItem(PairRef(pair,space), user, filterType)
   }
 
   private def getFilterType(unparsed:String) = {
@@ -89,11 +89,5 @@ class UsersResource {
         throw new InvalidEnumException("FilteredItemType", unparsed)
     }
   }
-
-  private def checkDomain[T](domain: String) =
-    if (!systemConfigStore.doesDomainExist(domain)) {
-      throw new NotFoundException("Invalid domain: " + domain)
-    }
-
 
 }

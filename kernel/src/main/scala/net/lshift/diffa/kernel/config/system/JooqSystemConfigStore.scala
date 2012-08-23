@@ -132,6 +132,11 @@ class JooqSystemConfigStore(jooq:JooqDatabaseFacade,
 
   }
 
+  def lookupSpaceByPath(path: String) = {
+    // TOOD Cache this
+    jooq.execute(lookupSpaceId(_, path))
+  }
+
   private def lookupSpaceId(t:Factory, path:String) : Long = {
 
     val spacePath = Factory.groupConcat(SPACES.NAME).orderBy(SPACES.ID).separator("/")

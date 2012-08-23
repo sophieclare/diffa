@@ -43,7 +43,7 @@ class SystemConfigResource {
   @Consumes(Array("application/json"))
   def createSpace(domain:DomainDef) = {
     val path = domain.name
-    path.split("/").foreach(ValidationUtil.ensurePathSegmentFormat("space",_)
+    path.split("/").foreach(ValidationUtil.ensurePathSegmentFormat("space",_))
     systemConfig.createOrUpdateSpace(path)
     resourceCreated(domain.name, uriInfo)
   }
@@ -56,7 +56,7 @@ class SystemConfigResource {
 
   @DELETE
   @Path("/spaces/{name}")
-  def deleteSpace(@PathParam("name") name:String) = systemConfig.deleteDomain(name)
+  def deleteSpace(@PathParam("name") name:String) = systemConfig.deleteSpace(name)
 
   @DELETE
   @Path("/domains/{name}")

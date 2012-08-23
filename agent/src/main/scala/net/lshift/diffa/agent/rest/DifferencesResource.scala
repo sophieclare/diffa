@@ -29,7 +29,7 @@ import net.lshift.diffa.kernel.config.{DomainConfigStore, PairRef}
 
 class DifferencesResource(val differencesManager: DifferencesManager,
                           val domainConfigStore:DomainConfigStore,
-                          val domain:String,
+                          val space:Long,
                           val uriInfo:UriInfo) {
 
   private val log: Logger = LoggerFactory.getLogger(getClass)
@@ -58,19 +58,19 @@ class DifferencesResource(val differencesManager: DifferencesManager,
       val reallyIncludeIgnored = if (includeIgnored != null) { includeIgnored.booleanValue() } else { false }
 
       val interval = new Interval(from,until)
-      val diffs = differencesManager.retrievePagedEvents(domain, pairKey, interval, offset, length,
+      val diffs = differencesManager.retrievePagedEvents(space, pairKey, interval, offset, length,
         EventOptions(includeIgnored = reallyIncludeIgnored))
 
       val responseObj = Map(
         "seqId" -> domainVsn.getValue,
         "diffs" -> diffs.toArray,
-        "total" -> differencesManager.countEvents(domain, pairKey, interval)
+        "total" -> differencesManager.countEvents(space, pairKey, interval)
       )
       Response.ok(mapAsJavaMap(responseObj)).tag(domainVsn).build
     }
     catch {
       case e:NoSuchElementException =>
-        log.error("Unsucessful query on domain = " + domain, e)
+        log.error("Unsucessful query on space = " + space, e)
         throw new WebApplicationException(404)
     }
   }
@@ -82,8 +82,8 @@ class DifferencesResource(val differencesManager: DifferencesManager,
     val domainVsn = validateETag(request)
 
     val requestedAggregates = parseAggregates(servletRequest)
-    val aggregates = domainConfigStore.listPairs(domain).map(p => {
-      p.key -> mapAsJavaMap(processAggregates(PairRef(domain = domain, key = p.key), requestedAggregates))
+    val aggregates = domainConfigStore.listPairs(space).map(p => {
+      p.key -> mapAsJavaMap(processAggregates(PairRef(space = space, name = p.key), requestedAggregates))
     }).toMap
 
     Response.ok(mapAsJavaMap(aggregates)).tag(domainVsn).build()
@@ -96,7 +96,7 @@ class DifferencesResource(val differencesManager: DifferencesManager,
     val domainVsn = validateETag(request)
 
     val requestedAggregates = parseAggregates(servletRequest)
-    val aggregates = processAggregates(PairRef(domain = domain, key = pair), requestedAggregates)
+    val aggregates = processAggregates(PairRef(space = space, name = pair), requestedAggregates)
 
     Response.ok(mapAsJavaMap(aggregates)).tag(domainVsn).build()
   }
@@ -106,13 +106,13 @@ class DifferencesResource(val differencesManager: DifferencesManager,
   @Produces(Array("text/plain"))
   def getDetail(@PathParam("evtSeqId") evtSeqId:String,
                 @PathParam("participant") participant:String) : String =
-    differencesManager.retrieveEventDetail(domain, evtSeqId, ParticipantType.withName(participant))
+    differencesManager.retrieveEventDetail(space, evtSeqId, ParticipantType.withName(participant))
 
   @DELETE
   @Path("/events/{evtSeqId}")
   @Produces(Array("application/json"))
   def ignoreDifference(@PathParam("evtSeqId") evtSeqId:String):Response = {
-    val ignored = differencesManager.ignoreDifference(domain, evtSeqId)
+    val ignored = differencesManager.ignoreDifference(space, evtSeqId)
 
     Response.ok(ignored).build
   }
@@ -121,14 +121,14 @@ class DifferencesResource(val differencesManager: DifferencesManager,
   @Path("/events/{evtSeqId}")
   @Produces(Array("application/json"))
   def unignoreDifference(@PathParam("evtSeqId") evtSeqId:String):Response = {
-    val restored = differencesManager.unignoreDifference(domain, evtSeqId)
+    val restored = differencesManager.unignoreDifference(space, evtSeqId)
 
     Response.ok(restored).build
   }
 
   def validateETag(request:Request) = {
-    val domainConfigVersion = domainConfigStore.getConfigVersion(domain)
-    val eventSequenceNumber = differencesManager.retrieveDomainSequenceNum(domain)
+    val domainConfigVersion = domainConfigStore.getConfigVersion(space)
+    val eventSequenceNumber = differencesManager.retrieveDomainSequenceNum(space)
 
     val domainVsn = new EntityTag(eventSequenceNumber + "@" + domainConfigVersion)
 

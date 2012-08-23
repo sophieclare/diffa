@@ -68,7 +68,7 @@ class ValidatingScanResultParserTest {
 class LengthCheckingParserTest { self =>
 
   lazy val serviceLimitsView = createMock(classOf[PairServiceLimitsView])
-  val pairRef = PairRef("key", "domain")
+  val pairRef = PairRef("key", 700L)
 
   lazy val canary = ScanResultEntry.forEntity("id1", "v1", new DateTime(2011, 6, 5, 15, 3, 0, 0, DateTimeZone.UTC), Map("a1" -> "a1v1"))
 
@@ -119,7 +119,7 @@ class LengthCheckingParserTest { self =>
 
   def withExpectedResponseSizeLimit(size: Int) {
     expect(serviceLimitsView.getEffectiveLimitByNameForPair(
-      pairRef.domain, pairRef.key, ScanResponseSizeLimit)).andReturn(size)
+      pairRef.space, pairRef.name, ScanResponseSizeLimit)).andReturn(size)
     replay(serviceLimitsView)
   }
 

@@ -153,9 +153,34 @@ case class DifferenceEvent(
 
   /** Proxy to the object id. Added to allow escalation rules like "id LIKE 'id123*'" to be applied. **/
   def id = objId.id
+
+  def toExternalFormat = ExternalDifferenceEvent(
+    seqId = seqId,
+    entityId = objId.id,
+    detectedAt = detectedAt,
+    state = state,
+    upstreamVsn = upstreamVsn,
+    downstreamVsn = downstreamVsn
+  )
 }
 
-abstract class DifferenceEventStatus
+
+
+/**
+ * This is a simplified representation of a difference event sent to clients.
+ */
+case class ExternalDifferenceEvent(
+    @BeanProperty var seqId:String = null,
+    @BeanProperty var entityId:String = null,
+    @BeanProperty var detectedAt:DateTime = null,
+    @BeanProperty var state:MatchState = null,
+    @BeanProperty var upstreamVsn:String = null,
+    @BeanProperty var downstreamVsn:String = null) {
+
+  def this() = this(seqId = null)
+}
+
+  abstract class DifferenceEventStatus
 case object NewUnmatchedEvent extends DifferenceEventStatus
 case object ReturnedUnmatchedEvent extends DifferenceEventStatus
 case object UpdatedUnmatchedEvent extends DifferenceEventStatus

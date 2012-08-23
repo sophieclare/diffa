@@ -26,7 +26,7 @@ import net.lshift.diffa.kernel.config.PairRef
  */
 class DiagnosticsResource(val diagnostics: DiagnosticsManager,
                           val config: Configuration,
-                          val domain:String) {
+                          val space:Long) {
 
 
   @GET
@@ -34,7 +34,7 @@ class DiagnosticsResource(val diagnostics: DiagnosticsManager,
   @Produces(Array("application/json"))
   def getPairStates(@PathParam("pairKey") pairKey: String, @QueryParam("maxItems") maxItems:java.lang.Integer): Response = {
     val actualMaxItems = if (maxItems == null) 20 else maxItems.intValue()
-    val pair = PairRef(pairKey,domain)
+    val pair = PairRef(pairKey,space)
     val events = diagnostics.queryEvents(pair, actualMaxItems)
     Response.ok(scala.collection.JavaConversions.seqAsJavaList(events)).build
   }

@@ -23,7 +23,7 @@ import net.lshift.diffa.kernel.client.{Actionable, ActionableRequest, ActionsCli
 import net.lshift.diffa.kernel.config.{PairRef, RepairAction}
 
 class ActionsResource(val proxy:ActionsClient,
-                      val domain:String,
+                      val space:Long,
                       val uriInfo:UriInfo) {
 
   @GET
@@ -31,9 +31,9 @@ class ActionsResource(val proxy:ActionsClient,
   @Produces(Array("application/json"))
   def listActions(@PathParam("pairId") pairId: String,
                   @QueryParam("scope") scope: String): Array[Actionable] = (scope match {
-    case RepairAction.ENTITY_SCOPE => proxy.listEntityScopedActions(PairRef(pairId,domain))
-    case RepairAction.PAIR_SCOPE => proxy.listPairScopedActions(PairRef(pairId,domain))
-    case _ => proxy.listActions(PairRef(pairId,domain))
+    case RepairAction.ENTITY_SCOPE => proxy.listEntityScopedActions(PairRef(pairId, space))
+    case RepairAction.PAIR_SCOPE => proxy.listPairScopedActions(PairRef(pairId, space))
+    case _ => proxy.listActions(PairRef(pairId,space))
   }).toArray
 
   @POST
@@ -41,7 +41,7 @@ class ActionsResource(val proxy:ActionsClient,
   @Produces(Array("application/json"))
   def invokeAction(@PathParam("pairId") pairId:String,
                    @PathParam("actionId") actionId:String)
-    = proxy.invoke(ActionableRequest(pairId, domain, actionId, null))
+    = proxy.invoke(ActionableRequest(pairId, space, actionId, null))
 
   @POST
   @Path("/{pairId}/{actionId}/{entityId}")
@@ -49,6 +49,6 @@ class ActionsResource(val proxy:ActionsClient,
   def invokeAction(@PathParam("pairId") pairId:String,
                    @PathParam("actionId") actionId:String,
                    @PathParam("entityId") entityId:String) : InvocationResult
-    = proxy.invoke(ActionableRequest(pairId, domain, actionId, entityId))
+    = proxy.invoke(ActionableRequest(pairId, space, actionId, entityId))
 
 }

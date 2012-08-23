@@ -63,7 +63,7 @@ class UserPreferencesTest {
     // This attempts to access a particular user's settings when authenticated as that particular user
 
     val nonRootUserPreferencesClient = new UsersRestClient(agentURL, nonRootUser.name, invokingCreds)
-    nonRootUserPreferencesClient.createFilter(pair.asRef, FilteredItemType.SWIM_LANE)
+    nonRootUserPreferencesClient.createFilter(pair.domain, pair.key, FilteredItemType.SWIM_LANE)
   }
 
   @Test(expected = classOf[AccessDeniedException])
@@ -79,7 +79,7 @@ class UserPreferencesTest {
     // but they are not a member of the target domain
 
     val nonRootUserPreferencesClient = new UsersRestClient(agentURL, nonRootUser.name, invokingCreds)
-    nonRootUserPreferencesClient.createFilter(pair.asRef, FilteredItemType.SWIM_LANE)
+    nonRootUserPreferencesClient.createFilter(pair.domain, pair.key, FilteredItemType.SWIM_LANE)
   }
 
 
@@ -101,25 +101,23 @@ class UserPreferencesTest {
     // who is a member of the same domain
 
     val nonRootUserPreferencesClient = new UsersRestClient(agentURL, otherNonRootUser.name, invokingCreds)
-    nonRootUserPreferencesClient.createFilter(pair.asRef, FilteredItemType.SWIM_LANE)
+    nonRootUserPreferencesClient.createFilter(pair.domain, pair.key, FilteredItemType.SWIM_LANE)
   }
 
   @Test
   def whenDefaultSystemUserAddsAnItemFilterToPairInDefaultDomainTheFilterShouldExist {
-    // Given
-    val pairInDefaultDomain = PairRef(domain = defaultDomain, key = pair.getKey)
 
     defaultDomainConfigClient.declareEndpoint(upstream)
     defaultDomainConfigClient.declareEndpoint(downstream)
     defaultDomainConfigClient.declarePair(pair.withoutDomain)
 
     // When
-    rootUserPreferencesClient.createFilter(pairInDefaultDomain, FilteredItemType.SWIM_LANE)
+    rootUserPreferencesClient.createFilter(defaultDomain, pair.getKey(), FilteredItemType.SWIM_LANE)
 
     // Then (assumes that no other filter items have been configured for the default system user.
     assertEquals(pair.getKey(), rootUserPreferencesClient.getFilteredItems(defaultDomain, FilteredItemType.SWIM_LANE).head)
 
     // Test-specific cleanup
-    rootUserPreferencesClient.removeFilter(pairInDefaultDomain, FilteredItemType.SWIM_LANE)
+    rootUserPreferencesClient.removeFilter(defaultDomain, pair.getKey(), FilteredItemType.SWIM_LANE)
   }
 }

@@ -30,17 +30,17 @@ import net.lshift.diffa.agent.rest.ResponseUtils._
  */
 class EscalationsResource(val config:Configuration,
                           val diffStore:DomainDifferenceStore,
-                          val domain:String) {
+                          val space:Long) {
 
   @GET
   @Path("/{pairId}")
   @Produces(Array("application/json"))
-  def listEscalations(@PathParam("pairId") pairId: String): Array[EscalationDef] = config.listEscalationForPair(domain, pairId).toArray
+  def listEscalations(@PathParam("pairId") pairId: String): Array[EscalationDef] = config.listEscalationForPair(space, pairId).toArray
 
   @DELETE
   @Path("/{pairId}")
   def unscheduleEscalations(@PathParam("pairId") pairId: String) = {
-    diffStore.unscheduleEscalations(PairRef(domain = domain, key = pairId))
+    diffStore.unscheduleEscalations(PairRef(space = space, name = pairId))
     resourceDeleted()
   }
 

@@ -34,7 +34,7 @@ import net.lshift.diffa.kernel.participants.StringPrefixCategoryFunction
 
 class ScanParticipantRestClientTest {
   final val JSON = "application/json"
-  final val pair = PairRef("key", "domain")
+  final val pair = PairRef("key", 702L)
   final val scanUrl = "http://dummy/url"
 
   lazy val httpClient =  createMock(classOf[DiffaHttpClient])
@@ -116,7 +116,7 @@ class ScanParticipantRestClientTest {
 
   @Test
   def shouldQueryForAuthMechanism {
-    expect(credentialsLookup.credentialsForUri(pair.domain, new URI(scanUrl))).andReturn(None)
+    expect(credentialsLookup.credentialsForUri(pair.space, new URI(scanUrl))).andReturn(None)
     expect(httpClient.get(anyObject(), anyObject())).andStubReturn(parserResult)
 
     replay(credentialsLookup, httpClient)
@@ -128,7 +128,7 @@ class ScanParticipantRestClientTest {
   @Test
   def itAddsQueryParameterCredentialsToTheRequest {
     val credentials = QueryParameterCredentials("fred",  "foobar")
-    expect(credentialsLookup.credentialsForUri(pair.domain, new URI(scanUrl))) andReturn(Some(credentials))
+    expect(credentialsLookup.credentialsForUri(pair.space, new URI(scanUrl))) andReturn(Some(credentials))
 
     val expectedQuery = scanQuery.withQuery(Map(credentials.name -> Seq(credentials.value)))
     expect(httpClient.get(expectedQuery, parser)) andReturn(parserResult)
@@ -141,7 +141,7 @@ class ScanParticipantRestClientTest {
   @Test
   def itAddsBasicAuthToTheRequest {
     val credentials = BasicAuthCredentials("fred",  "foobar")
-    expect(credentialsLookup.credentialsForUri(pair.domain, new URI(scanUrl))) andReturn(Some(credentials))
+    expect(credentialsLookup.credentialsForUri(pair.space, new URI(scanUrl))) andReturn(Some(credentials))
 
     val expectedQuery = scanQuery.withBasicAuth(credentials.username, credentials.password)
     expect(httpClient.get(expectedQuery, parser)) andReturn(parserResult)
@@ -157,7 +157,7 @@ class ScanParticipantRestClientTest {
   }
 
   private def expectingNullCredentials() {
-    expect(credentialsLookup.credentialsForUri(pair.domain, new URI(scanUrl))).andReturn(None)
+    expect(credentialsLookup.credentialsForUri(pair.space, new URI(scanUrl))).andReturn(None)
     replay(credentialsLookup)
   }
 }

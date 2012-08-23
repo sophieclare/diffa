@@ -32,7 +32,7 @@ trait LengthCheckingParser extends JsonScanResultParser {
 
   abstract override def parse(s: InputStream) = {
     val responseSizeLimit = serviceLimitsView.getEffectiveLimitByNameForPair(
-      pair.domain, pair.key, ScanResponseSizeLimit)
+      pair.space, pair.name, ScanResponseSizeLimit)
     try {
       super.parse(new LengthCheckingInputStream(s, responseSizeLimit))
     } catch {
@@ -48,7 +48,7 @@ trait LengthCheckingParser extends JsonScanResultParser {
 
       if (numBytes > sizeLimit) {
         val msg = "Scan response size for pair %s exceeded configured limit of %d bytes".format(
-          pair.key, sizeLimit)
+          pair.name, sizeLimit)
         throw new ScanLimitBreachedException(msg)
       } else {
         byte

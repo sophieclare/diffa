@@ -91,17 +91,22 @@ class DomainResource {
     case _                => null
   }
 
-  private def withValidSpace[T](space: String, resource: T) =
+  @Deprecated private def withValidSpace[T](space: String, resource: T) =
     if (config.doesDomainExist(space))
       resource
     else
       throw new NotFoundException("Invalid space")
 
-  private def withValidSpace[T](space: String, f: () => T) =
+  @Deprecated private def withValidSpace[T](space: String, f: () => T) =
     if (config.doesDomainExist(space))
       f()
     else
       throw new NotFoundException("Invalid space")
+
+  private def withSpace[T](path: String, f: Long => T) =  {
+    val space = systemConfigStore.lookupSpaceByPath(path)
+    f(space)
+  }
 
 
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -120,8 +125,8 @@ class DomainResource {
                        @PathParam("space") space:String,
                        @PathParam("id") id:String,
                        e: EscalationDef) = {
-    withValidSpace(space, () => {
-      config.createOrUpdateEscalation(space, id, e)
+    withSpace(space, (spaceId:Long) => {
+      config.createOrUpdateEscalation(spaceId, id, e)
       resourceCreated(e.name, uri)
     })
   }
@@ -131,8 +136,8 @@ class DomainResource {
   def deleteEscalation(@PathParam("space") space:String,
                        @PathParam("name") name: String,
                        @PathParam("pairKey") pairKey: String) = {
-    withValidSpace(space, () => {
-      config.deleteEscalation(space, name, pairKey)
+    withSpace(space, (id:Long) => {
+      config.deleteEscalation(id, name, pairKey)
     })
   }
 
@@ -143,50 +148,50 @@ class DomainResource {
   @Path("/{space:.+}/config")
   def getConfigResource(@Context uri:UriInfo,
                         @PathParam("space") space:String) =
-    withValidSpace(space, new ConfigurationResource(config, breakers, space, getCurrentUser(space), uri))
+    withSpace(space, (id:Long) => new ConfigurationResource(config, breakers, id, getCurrentUser(space), uri))
 
   @Path("/{space:.+}/credentials")
   def getCredentialsResource(@Context uri:UriInfo,
                              @PathParam("space") space:String) =
-    withValidSpace(space, new CredentialsResource(credentialsManager, space, uri))
+    withSpace(space, (id:Long) => new CredentialsResource(credentialsManager, id, uri))
 
   @Path("/{space:.+}/diffs")
   def getDifferencesResource(@Context uri:UriInfo,
                              @PathParam("space") space:String) =
-    withValidSpace(space, new DifferencesResource(differencesManager, domainConfigStore, space, uri))
+    withSpace(space, (id:Long) => new DifferencesResource(differencesManager, domainConfigStore, id, uri))
 
   @Path("/{space:.+}/escalations")
   def getEscalationsResource(@PathParam("space") space:String) =
-    withValidSpace(space, new EscalationsResource(config, diffStore, space))
+    withSpace(space, (id:Long) => new EscalationsResource(config, diffStore, id))
 
   @Path("/{space:.+}/actions")
   def getActionsResource(@Context uri:UriInfo,
                          @PathParam("space") space:String) =
-    withValidSpace(space, new ActionsResource(actionsClient, space, uri))
+    withSpace(space, (id:Long) => new ActionsResource(actionsClient, id, uri))
 
   @Path("/{space:.+}/reports")
   def getReportsResource(@Context uri:UriInfo,
                          @PathParam("space") space:String) =
-    withValidSpace(space, new ReportsResource(domainConfigStore, reports, space, uri))
+    withSpace(space, (id:Long) => new ReportsResource(domainConfigStore, reports, id, uri))
 
   @Path("/{space:.+}/diagnostics")
   def getDiagnosticsResource(@PathParam("space") space:String) =
-    withValidSpace(space, new DiagnosticsResource(diagnosticsManager, config, space))
+    withSpace(space, (id:Long) => new DiagnosticsResource(diagnosticsManager, config, id))
 
   @Path("/{space:.+}/scanning")
   def getScanningResource(@PathParam("space") space:String) =
-    withValidSpace(space, new ScanningResource(pairPolicyClient, config, domainConfigStore, diagnosticsManager, space, getCurrentUser(space)))
+    withSpace(space, (id:Long) => new ScanningResource(pairPolicyClient, config, domainConfigStore, diagnosticsManager, id, getCurrentUser(space)))
 
   @Path("/{space:.+}/changes")
   def getChangesResource(@PathParam("space") space:String) = {
-    withValidSpace(space, new ChangesResource(changes, space, changeEventRateLimiterFactory))
+    withSpace(space, (id:Long) => new ChangesResource(changes, id, changeEventRateLimiterFactory))
   }
 
   @Path("/{space:.+}/inventory")
   def getInventoryResource(@PathParam("space") space:String) =
-    withValidSpace(space, new InventoryResource(changes, domainConfigStore, space))
+    withSpace(space, (id:Long) => new InventoryResource(changes, domainConfigStore, id))
 
   @Path("/{space:.+}/limits")
   def getLimitsResource(@PathParam("space") space:String) =
-    withValidSpace(space, new DomainServiceLimitsResource(config, space))
+    withSpace(space, (id:Long) => new DomainServiceLimitsResource(config, id))
 }

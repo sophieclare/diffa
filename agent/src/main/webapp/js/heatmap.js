@@ -1185,8 +1185,7 @@ Diffa.Views.DiffListItem = Backbone.View.extend({
     var row = $(this.el)
         .append("<div class='date-col'>" + date + "</div>")
         .append("<div class='time-col'>" + time + "</div>")
-        .append("<div class='pairing-col wrappable'>" + this.model.get('objId').pair.key + "</div>")
-        .append("<div class='item-id-col wrappable'>" + this.model.get('objId').id + "</div>");
+        .append("<div class='item-id-col wrappable'>" + this.model.get('entityId') + "</div>");
 
     if (!this.model.get('upstreamVsn')) {
       row.append("<div class='difference-col last'>Missing from upstream</div>");

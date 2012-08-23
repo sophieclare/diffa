@@ -57,7 +57,7 @@ abstract class InternalRestClient(pair: PairRef,
   protected def maybeAuthenticate(prepareRequest:Option[QueryParameterCredentials] => HttpUriRequest) = {
     val httpClient = createHttpClient(new BasicHttpParams)
 
-    val request = credentialsLookup.credentialsForUri(pair.domain, uri) match {
+    val request = credentialsLookup.credentialsForUri(pair.space, uri) match {
       case None        => prepareRequest(None)
       case Some(creds) => creds match {
         case query:QueryParameterCredentials  => prepareRequest(Some(query))
@@ -113,7 +113,7 @@ abstract class InternalRestClient(pair: PairRef,
   }
 
   protected def zeroIfUnlimited(limit: ServiceLimit) = {
-    serviceLimitsView.getEffectiveLimitByNameForPair(pair.domain, pair.key, limit) match {
+    serviceLimitsView.getEffectiveLimitByNameForPair(pair.space, pair.name, limit) match {
       case Unlimited.value => 0
       case timeout         => timeout
     }

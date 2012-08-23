@@ -24,9 +24,9 @@ import net.lshift.diffa.client.{RestClientParams, BadRequestException}
 class ReportsRestClient(serverRootUrl:String, domain:String, params: RestClientParams = RestClientParams.default)
   extends DomainAwareRestClient(serverRootUrl, domain, "domains/{domain}/actions/", params) {
 
-  def listReports(pair:PairRef): Seq[PairReportDef] = {
+  def listReports(pair:String): Seq[PairReportDef] = {
     val t = classOf[Array[PairReportDef]]
-    rpc(pair.key, t)
+    rpc(pair, t)
   }
   
   def executeReport(pair:PairRef,  name:String) {

@@ -43,7 +43,7 @@ class ScanParticipantRestClient(pair: PairRef,
       withConstraints(constraints).
       withAggregations(aggregations)
 
-    val credentials = credentialsLookup.credentialsForUri(pair.domain, new URI(scanUrl))
+    val credentials = credentialsLookup.credentialsForUri(pair.space, new URI(scanUrl))
 
     val queryWithCredentials = credentials match {
       case None => query

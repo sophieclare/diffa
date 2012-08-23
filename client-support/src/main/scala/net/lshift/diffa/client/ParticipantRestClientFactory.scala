@@ -34,8 +34,8 @@ class ScanningParticipantRestClientFactory(credentialsLookup:DomainCredentialsLo
   def supports(endpoint: Endpoint) = supportsAddress(endpoint.scanUrl)
 
   def createParticipantRef(endpoint: Endpoint, pairRef:PairRef) = {
-    val connectTimeout = limits.getEffectiveLimitByNameForPair(pairRef.domain, pairRef.key, ScanConnectTimeout)
-    val readTimeout =limits.getEffectiveLimitByNameForPair(pairRef.domain, pairRef.key, ScanReadTimeout)
+    val connectTimeout = limits.getEffectiveLimitByNameForPair(pairRef.space, pairRef.name, ScanConnectTimeout)
+    val readTimeout =limits.getEffectiveLimitByNameForPair(pairRef.space, pairRef.name, ScanReadTimeout)
 
     val client = new ApacheHttpClient(connectTimeout, readTimeout)
     val validatorFactory = new CollationOrderEntityValidatorFactory(endpoint.lookupCollation)
