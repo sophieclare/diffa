@@ -115,10 +115,10 @@ class SpacePathTest {
 }
 
 object SpacePathTest {
-  private[SpacePathCacheTest] val env =
+  private[SpacePathTest] val env =
     TestDatabaseEnvironments.uniqueEnvironment("target/domainConfigStore")
 
-  private[SpacePathCacheTest] val storeReferences =
+  private[SpacePathTest] val storeReferences =
     StoreReferenceContainer.withCleanDatabaseEnvironment(env)
 
   @AfterClass

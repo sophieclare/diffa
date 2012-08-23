@@ -738,10 +738,10 @@ class Collector {
 
 object LuceneVersionCorrelationStoreTest {
 
-  val domainName = "domain"
-  val pair = PairRef(key="pair",domain=domainName)
-  val otherPair = PairRef(key="other-pair",domain=domainName)
-  val pairWithUnicodeOrder = PairRef(key="pair-with-unicode-ordering",domain=domainName)
+  val space = System.currentTimeMillis()
+  val pair = PairRef(name="pair", space = space)
+  val otherPair = PairRef(name="other-pair",space = space)
+  val pairWithUnicodeOrder = PairRef(name="pair-with-unicode-ordering",space = space)
 
   val dummyConfigStore = EasyMock.createMock(classOf[SystemConfigStore])
 
@@ -758,13 +758,13 @@ object LuceneVersionCorrelationStoreTest {
     EasyMock.expect(dummyDomainConfigStore.getPairDef(pair)
     ).andStubReturn(
       DomainPairDef(
-        key = pair.key,
-        domain = domainName,
-        upstreamName = "%s-dummyUpstream".format(pair.key),
-        downstreamName = "%s-dummyDownstream".format(pair.key))
+        key = pair.name,
+        space = space,
+        upstreamName = "%s-dummyUpstream".format(pair.name),
+        downstreamName = "%s-dummyDownstream".format(pair.name))
     )
     Seq( "dummyUpstream", "dummyDownstream").foreach { sideName: String =>
-      EasyMock.expect(dummyDomainConfigStore.getEndpoint(domainName, "%s-%s".format(pair.key, sideName))
+      EasyMock.expect(dummyDomainConfigStore.getEndpoint(space, "%s-%s".format(pair.name, sideName))
       ).andStubReturn(Endpoint(collation=collation))
     }
   }
