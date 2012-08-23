@@ -54,7 +54,7 @@ class CachedSystemConfigStoreTest {
   def shouldCacheDomainExistenceAndInvalidateOnRemoval {
     val domain = "a"
 
-    expect(jooq.execute(anyObject[Function1[Factory,Space]]())).andReturn(Space(id = persistentSequenceValue + 1)).once()
+    expect(jooq.execute(anyObject[Function1[Factory,Long]]())).andReturn(persistentSequenceValue + 1).once()
 
     E4.replay(jooq)
 
@@ -91,7 +91,7 @@ class CachedSystemConfigStoreTest {
 
     E4.reset(jooq)
 
-    expect(jooq.execute(anyObject[Function1[Factory,Space]]())).andReturn(Space(id = persistentSequenceValue + 2)).once()
+    expect(jooq.execute(anyObject[Function1[Factory,Long]]())).andReturn(persistentSequenceValue + 2).once()
 
     E4.replay(jooq)
 
