@@ -132,11 +132,6 @@ class JooqSystemConfigStore(jooq:JooqDatabaseFacade,
 
   }
 
-  def lookupSpaceByPath(path: String) = {
-    // TOOD Cache this
-    jooq.execute(lookupSpaceId(_, path))
-  }
-
   private def lookupSpaceId(t:Factory, path:String) : Long = {
 
     val spacePath = Factory.groupConcat(SPACES.NAME).orderBy(SPACES.ID).separator("/")
@@ -329,8 +324,32 @@ class JooqSystemConfigStore(jooq:JooqDatabaseFacade,
     }
   }
 
-  def doesDomainExist(path: String) = false // TODO implement //spacePathCache.doesDomainExist(path)
-  def doesSpaceExist(id: Long) = false // TODO implement
+  // TODO Cache this - very important
+  def lookupSpaceByPath(path: String) = {
+    jooq.execute(lookupSpaceId(_, path))
+  }
+
+  // TODO Cache this - very important
+  def doesDomainExist(path: String) = {
+    try {
+      lookupSpaceByPath(path)
+      true
+    }
+    catch {
+      case x: MissingObjectException => false
+    }
+  }
+
+  // TODO Cache this - very important, don't forget !!!
+  def doesSpaceExist(id: Long) = {
+    jooq.execute(t => {
+      t.selectCount().
+        from(SPACES).
+        where(SPACES.ID.equal(id)).
+        fetchOne().
+        getValueAsBigInteger(0).longValue() > 0
+    })
+  }
 
   def listDomains = listSpaces.map(_.name)
 
