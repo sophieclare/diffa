@@ -4,19 +4,12 @@ import net.lshift.diffa.schema.servicelimits.{ServiceLimit, Unlimited}
 import net.lshift.diffa.schema.environment.TestDatabaseEnvironments
 import net.lshift.diffa.kernel.StoreReferenceContainer
 import org.junit._
-
 import org.junit.Assert.assertEquals
-import net.lshift.diffa.kernel.frontend.{PairDef, EndpointDef}
 import org.junit.runner.RunWith
 import org.junit.experimental.theories.{DataPoint, Theories, Theory, DataPoints}
 import org.apache.commons.lang.RandomStringUtils
-import net.lshift.diffa.kernel.config.PairRef
 import net.lshift.diffa.kernel.frontend.EndpointDef
-import net.lshift.diffa.kernel.config.LimitEnforcementScenario
 import net.lshift.diffa.kernel.frontend.PairDef
-import scala.Some
-import net.lshift.diffa.kernel.config.Space
-import net.lshift.diffa.kernel.config.CascadingLimitScenario
 
 /**
  */

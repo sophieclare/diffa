@@ -38,7 +38,7 @@ import net.lshift.diffa.kernel.util.EasyMockScalaUtils._
 import java.util.concurrent.atomic.AtomicInteger
 import system.SystemConfigStore
 import java.util.concurrent.{TimeUnit, CountDownLatch}
-import org.junit.{Test, Ignore, Before, After}
+import org.junit.{Test, Before, After}
 import com.typesafe.config.ConfigFactory
 
 @RunWith(classOf[Theories])
@@ -167,7 +167,7 @@ class EscalationManagerTest {
     val schedulingCompletionMonitor = new CountDownLatch(1)
 
       // Don't let the breakers stop anything
-    expect(configStore.isBreakerTripped(EasyMock.eq(spaceId), EasyMock.eq("p1"), anyString)).andStubReturn(false)
+    expect(configStore.isBreakerTripped(EasyMock.eq(spaceId:java.lang.Long), EasyMock.eq("p1"), anyString)).andStubReturn(false)
 
     // Return our pair to have a corresponding actor started
     expect(systemConfig.listPairs).andReturn(
