@@ -279,7 +279,7 @@ class LocalDiagnosticsManagerTest {
       andStubReturn(pairs)
 
     pairs foreach { pairDef =>
-      expect(domainConfigStore.getPairDef(spaceId, pairDef.key)).
+      expect(domainConfigStore.getPairDef(pairDef.asRef)).
         andStubReturn(pairDef)
     }
     replayDomainConfig
