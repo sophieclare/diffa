@@ -137,260 +137,17 @@ class JooqSystemConfigStore(jooq:JooqDatabaseFacade,
 
   }
 
-  private def lookupSpaceId(t:Factory, path:String) : Space = {
-    /*
-    val spacePath = Factory.groupConcat(SPACES.NAME).orderBy(SPACES.ID).separator("/")
-
-    val space = t.select(SPACE_PATHS.as("d").DESCENDANT).select(spacePath.as("path")).
-                  from(SPACE_PATHS.as("d")).
-                  join(SPACE_PATHS.as("a")).
-                    on(SPACE_PATHS.as("a").DESCENDANT.equal(SPACE_PATHS.as("d").DESCENDANT)).
-                  join(SPACES).
-                    on(SPACES.ID.equal(SPACE_PATHS.as("a").ANCESTOR)).
-                  where(SPACE_PATHS.as("d").ANCESTOR.equal(0)).
-                    and(SPACE_PATHS.as("d").ANCESTOR.notEqual(SPACE_PATHS.as("d").DESCENDANT)).
-                  groupBy(SPACE_PATHS.as("d").DESCENDANT).
-                  having(spacePath.like(ROOT_SPACE.name + "/" + path)).
-                  fetchOne()
-    */
-
-    val space = resolveSpaceByPath(path, Some(t))
-
-    if (NON_EXISTENT_SPACE == space) {
-      throw new MissingObjectException(path)
-    }
-    else {
-      space
-    }
-  }
-
-  private def resolveSpaceByPath(path:String, factory:Option[Factory] = None) : Space = {
-    spacePathCache.readThrough(path,() => factory match {
-        case Some(t) => resolveSpaceByPath(t, path)
-        case None    => jooq.execute(resolveSpaceByPath(_,path))
-      }
-    )
-  }
-
-  private def resolveSpaceById(id:Long) = {
-    spaceIdCache.readThrough(id, () => jooq.execute(t => {
-      t.select().
-        from(SPACES).
-        where(SPACES.ID.equal(id)).
-        fetchOne() match {
-        case null   => NON_EXISTENT_SPACE
-        case record => recordToSpace(record)
-      }
-    }))
-  }
-
-  private def resolveSpaceByPath(t:Factory, path:String) : Space = {
-
-    val spacePath = Factory.groupConcat(SPACES.NAME).orderBy(SPACES.ID).separator("/")
-
-    val space = t.select(SPACE_PATHS.as("d").DESCENDANT).
-                  select(spacePath.as("path")).
-                  from(SPACE_PATHS.as("d")).
-                  join(SPACE_PATHS.as("a")).
-                    on(SPACE_PATHS.as("a").DESCENDANT.equal(SPACE_PATHS.as("d").DESCENDANT)).
-                  join(SPACES).
-                    on(SPACES.ID.equal(SPACE_PATHS.as("a").ANCESTOR)).
-                  where(SPACE_PATHS.as("d").ANCESTOR.equal(0)).
-                    and(SPACE_PATHS.as("d").ANCESTOR.notEqual(SPACE_PATHS.as("d").DESCENDANT)).
-                  groupBy(SPACE_PATHS.as("d").DESCENDANT).
-                  having(spacePath.like(ROOT_SPACE.name + "/" + path)).
-                  fetchOne()
-
-    if (null == space) {
-      NON_EXISTENT_SPACE
-    }
-    else {
-      Space(
-        id = space.getValue(SPACE_PATHS.as("d").DESCENDANT)
-      )
-    }
-  }
-
-  private def createSpace(t:Factory, name:String, parent:Long, fullPath:String) : Space =  {
-
-    val count = t.selectCount().
-                  from(SPACES).
-                  where(SPACES.NAME.equal(name)).
-                    and(SPACES.PARENT.equal(parent)).
-                  fetchOne().
-                  getValueAsBigInteger(0).longValue()
-
-    // There is small margin for error between the read and the write, but basically we want to prevent unnecessary
-    // sequence churn
-
-    if (count == 0) {
-
-      val sequence = sequenceProvider.nextSequenceValue(SequenceName.SPACES)
-
-      try {
-
-        val space = insertSpacePath(t, sequence, name, parent, fullPath)
-
-        //cachedSpacePaths.evict(space) - this invalidation is triggered by the onDomainRemoved event
-        domainEventSubscribers.foreach(_.onDomainUpdated(sequence))
-
-        space
-      }
-      catch {
-        case u:DataAccessException if u.getCause.isInstanceOf[SQLIntegrityConstraintViolationException] =>
-          logger.warn("Integrity constraint when trying to create space for path " + name)
-          throw u
-        case x => throw x
-      }
-
-    }
-
-    else {
-
-      // This is the U in CRUD, which currently is a NOOP
-
-      val record =  t.select().
-                      from(SPACES).
-                      where(SPACES.NAME.equal(name)).
-                        and(SPACES.PARENT.equal(parent)).
-                      fetchOne()
-
-      recordToSpace(record)
-    }
-
-  }
-
-  private def insertSpacePath(t:Factory, space:Long, name:String, parent:Long, fullPath:String) : Space = {
-
-    t.insertInto(SPACES).
-        set(SPACES.ID, space:LONG).
-        set(SPACES.PARENT, parent:LONG).
-        set(SPACES.NAME, name).
-        set(SPACES.CONFIG_VERSION, 0:INT).
-      execute()
-
-    val leaf = Factory.field(space.toString)
-    val zero = Factory.field("0")
-
-    t.insertInto(SPACE_PATHS, SPACE_PATHS.ANCESTOR, SPACE_PATHS.DESCENDANT, SPACE_PATHS.DEPTH).
-      select(
-        t.select(SPACE_PATHS.ANCESTOR).
-          select(leaf).
-          select(SPACE_PATHS.DEPTH.add(1)).
-          from(SPACE_PATHS).
-          where(SPACE_PATHS.DESCENDANT.equal(parent)).
-          unionAll(t.select(leaf, leaf, zero))
-      ).execute()
-
-    invalidateSpaceByPathCache(fullPath)
-    invalidateSpaceByIdCache(space)
-
-    Space(
-      id = space,
-      parent = parent,
-      name = name,
-      configVersion = 0
-    )
-  }
-
-
-  private def descendancyTree(t:Factory, parent:Long) = {
-    val hierarchy = t.select().
-                      from(SPACES).
-                      join(SPACE_PATHS).
-                        on(SPACE_PATHS.DESCENDANT.equal(SPACES.ID)).
-                      where(SPACE_PATHS.ANCESTOR.equal(parent)).
-                      orderBy(SPACE_PATHS.DEPTH.desc()).
-                      fetch()
-
-    if (hierarchy == null) {
-      throw new MissingObjectException(parent.toString)
-    }
-    else {
-      hierarchy.iterator().map(recordToSpace(_))
-    }
-  }
-
-  private def recordToSpace(record:Record) = {
-    Space(
-      id = record.getValue(SPACES.ID),
-      parent = record.getValue(SPACES.PARENT),
-      name = record.getValue(SPACES.NAME),
-      configVersion = record.getValue(SPACES.CONFIG_VERSION)
-    )
-  }
-
   def deleteSpace(id: Long) = {
     jooq.execute(t => {
       descendancyTree(t, id).foreach(s => {
         invalidateCaches(s.id)
         deleteSingleSpace(t, s.id)
         domainEventSubscribers.foreach(_.onDomainRemoved(s.id))
-        //cachedSpacePaths.evict(path) - this invalidation is triggered by the onDomainRemoved event
       })
     })
   }
 
-  /*
-  private def deleteSpace(t:Factory, id: Long) = {
-    descendancyTree(t, id).foreach(s => {
-      deleteSingleSpace(t, s.id)
-      domainEventSubscribers.foreach(_.onDomainRemoved(s.id))
-      //cachedSpacePaths.evict(path) - this invalidation is triggered by the onDomainRemoved event
-    })
-  }
-  */
-
-  /*
-  def deleteDomain(path:String) = {
-    jooq.execute(t => {
-      val space = lookupSpaceId(t, path)
-      deleteSpace(t, space.id)
-    })
-  }
-  */
-
   def listSubspaces(parent:Long) = jooq.execute(descendancyTree(_, parent)).toSeq
-
-
-  private def deleteSingleSpace(t:Factory, id:Long) = {
-
-    t.delete(EXTERNAL_HTTP_CREDENTIALS).where(EXTERNAL_HTTP_CREDENTIALS.SPACE.equal(id)).execute()
-    t.delete(USER_ITEM_VISIBILITY).where(USER_ITEM_VISIBILITY.SPACE.equal(id)).execute()
-    t.delete(PREFIX_CATEGORIES).where(PREFIX_CATEGORIES.SPACE.equal(id)).execute()
-    t.delete(PREFIX_CATEGORY_VIEWS).where(PREFIX_CATEGORY_VIEWS.SPACE.equal(id)).execute()
-    t.delete(SET_CATEGORIES).where(SET_CATEGORIES.SPACE.equal(id)).execute()
-    t.delete(SET_CATEGORY_VIEWS).where(SET_CATEGORY_VIEWS.SPACE.equal(id)).execute()
-    t.delete(RANGE_CATEGORIES).where(RANGE_CATEGORIES.SPACE.equal(id)).execute()
-    t.delete(RANGE_CATEGORY_VIEWS).where(RANGE_CATEGORY_VIEWS.SPACE.equal(id)).execute()
-    t.delete(UNIQUE_CATEGORY_NAMES).where(UNIQUE_CATEGORY_NAMES.SPACE.equal(id)).execute()
-    t.delete(UNIQUE_CATEGORY_VIEW_NAMES).where(UNIQUE_CATEGORY_VIEW_NAMES.SPACE.equal(id)).execute()
-    t.delete(ENDPOINT_VIEWS).where(ENDPOINT_VIEWS.SPACE.equal(id)).execute()
-    t.delete(PAIR_REPORTS).where(PAIR_REPORTS.SPACE.equal(id)).execute()
-    t.delete(ESCALATIONS).where(ESCALATIONS.SPACE.equal(id)).execute()
-    t.delete(REPAIR_ACTIONS).where(REPAIR_ACTIONS.SPACE.equal(id)).execute()
-    t.delete(PAIR_VIEWS).where(PAIR_VIEWS.SPACE.equal(id)).execute()
-    t.delete(BREAKERS).where(BREAKERS.SPACE.equal(id)).execute()
-    t.delete(PAIRS).where(PAIRS.SPACE.equal(id)).execute()
-    t.delete(ENDPOINTS).where(ENDPOINTS.SPACE.equal(id)).execute()
-    t.delete(CONFIG_OPTIONS).where(CONFIG_OPTIONS.SPACE.equal(id)).execute()
-    t.delete(MEMBERS).where(MEMBERS.SPACE.equal(id)).execute()
-    t.delete(STORE_CHECKPOINTS).where(STORE_CHECKPOINTS.SPACE.equal(id)).execute()
-    t.delete(PENDING_DIFFS).where(PENDING_DIFFS.SPACE.equal(id)).execute()
-    t.delete(DIFFS).where(DIFFS.SPACE.equal(id)).execute()
-
-    t.delete(SPACE_PATHS).
-      where(SPACE_PATHS.ANCESTOR.equal(id)).
-        or(SPACE_PATHS.DESCENDANT.equal(id)).
-      execute()
-
-    val deleted = t.delete(SPACES).where(SPACES.ID.equal(id)).execute()
-
-    if (deleted == 0) {
-      logger.error("%s: Attempt to delete non-existent space: %s".format(INVALID_DOMAIN, id))
-      throw new MissingObjectException(id + "")
-    }
-  }
 
   def lookupSpaceByPath(path: String) = {
     jooq.execute(lookupSpaceId(_, path))
@@ -554,6 +311,213 @@ class JooqSystemConfigStore(jooq:JooqDatabaseFacade,
       where(SYSTEM_CONFIG_OPTIONS.OPT_KEY.equal(key)).
       execute()
   })
+
+  private def deleteSingleSpace(t:Factory, id:Long) = {
+
+    t.delete(EXTERNAL_HTTP_CREDENTIALS).where(EXTERNAL_HTTP_CREDENTIALS.SPACE.equal(id)).execute()
+    t.delete(USER_ITEM_VISIBILITY).where(USER_ITEM_VISIBILITY.SPACE.equal(id)).execute()
+    t.delete(PREFIX_CATEGORIES).where(PREFIX_CATEGORIES.SPACE.equal(id)).execute()
+    t.delete(PREFIX_CATEGORY_VIEWS).where(PREFIX_CATEGORY_VIEWS.SPACE.equal(id)).execute()
+    t.delete(SET_CATEGORIES).where(SET_CATEGORIES.SPACE.equal(id)).execute()
+    t.delete(SET_CATEGORY_VIEWS).where(SET_CATEGORY_VIEWS.SPACE.equal(id)).execute()
+    t.delete(RANGE_CATEGORIES).where(RANGE_CATEGORIES.SPACE.equal(id)).execute()
+    t.delete(RANGE_CATEGORY_VIEWS).where(RANGE_CATEGORY_VIEWS.SPACE.equal(id)).execute()
+    t.delete(UNIQUE_CATEGORY_NAMES).where(UNIQUE_CATEGORY_NAMES.SPACE.equal(id)).execute()
+    t.delete(UNIQUE_CATEGORY_VIEW_NAMES).where(UNIQUE_CATEGORY_VIEW_NAMES.SPACE.equal(id)).execute()
+    t.delete(ENDPOINT_VIEWS).where(ENDPOINT_VIEWS.SPACE.equal(id)).execute()
+    t.delete(PAIR_REPORTS).where(PAIR_REPORTS.SPACE.equal(id)).execute()
+    t.delete(ESCALATIONS).where(ESCALATIONS.SPACE.equal(id)).execute()
+    t.delete(REPAIR_ACTIONS).where(REPAIR_ACTIONS.SPACE.equal(id)).execute()
+    t.delete(PAIR_VIEWS).where(PAIR_VIEWS.SPACE.equal(id)).execute()
+    t.delete(BREAKERS).where(BREAKERS.SPACE.equal(id)).execute()
+    t.delete(PAIRS).where(PAIRS.SPACE.equal(id)).execute()
+    t.delete(ENDPOINTS).where(ENDPOINTS.SPACE.equal(id)).execute()
+    t.delete(CONFIG_OPTIONS).where(CONFIG_OPTIONS.SPACE.equal(id)).execute()
+    t.delete(MEMBERS).where(MEMBERS.SPACE.equal(id)).execute()
+    t.delete(STORE_CHECKPOINTS).where(STORE_CHECKPOINTS.SPACE.equal(id)).execute()
+    t.delete(PENDING_DIFFS).where(PENDING_DIFFS.SPACE.equal(id)).execute()
+    t.delete(DIFFS).where(DIFFS.SPACE.equal(id)).execute()
+
+    t.delete(SPACE_PATHS).
+      where(SPACE_PATHS.ANCESTOR.equal(id)).
+      or(SPACE_PATHS.DESCENDANT.equal(id)).
+      execute()
+
+    val deleted = t.delete(SPACES).where(SPACES.ID.equal(id)).execute()
+
+    if (deleted == 0) {
+      logger.error("%s: Attempt to delete non-existent space: %s".format(INVALID_DOMAIN, id))
+      throw new MissingObjectException(id + "")
+    }
+  }
+
+  private def lookupSpaceId(t:Factory, path:String) : Space = {
+
+    val space = resolveSpaceByPath(path, Some(t))
+
+    if (NON_EXISTENT_SPACE == space) {
+      throw new MissingObjectException(path)
+    }
+    else {
+      space
+    }
+  }
+
+  private def resolveSpaceByPath(path:String, factory:Option[Factory] = None) : Space = {
+    spacePathCache.readThrough(path,() => factory match {
+      case Some(t) => resolveSpaceByPath(t, path)
+      case None    => jooq.execute(resolveSpaceByPath(_,path))
+    }
+    )
+  }
+
+  private def resolveSpaceById(id:Long) = {
+    spaceIdCache.readThrough(id, () => jooq.execute(t => {
+      t.select().
+        from(SPACES).
+        where(SPACES.ID.equal(id)).
+        fetchOne() match {
+        case null   => NON_EXISTENT_SPACE
+        case record => recordToSpace(record)
+      }
+    }))
+  }
+
+  private def resolveSpaceByPath(t:Factory, path:String) : Space = {
+
+    val spacePath = Factory.groupConcat(SPACES.NAME).orderBy(SPACES.ID).separator("/")
+
+    val space = t.select(SPACE_PATHS.as("d").DESCENDANT).
+                  select(spacePath.as("path")).
+                  from(SPACE_PATHS.as("d")).
+                  join(SPACE_PATHS.as("a")).
+                    on(SPACE_PATHS.as("a").DESCENDANT.equal(SPACE_PATHS.as("d").DESCENDANT)).
+                  join(SPACES).
+                    on(SPACES.ID.equal(SPACE_PATHS.as("a").ANCESTOR)).
+                  where(SPACE_PATHS.as("d").ANCESTOR.equal(0)).
+                    and(SPACE_PATHS.as("d").ANCESTOR.notEqual(SPACE_PATHS.as("d").DESCENDANT)).
+                  groupBy(SPACE_PATHS.as("d").DESCENDANT).
+                  having(spacePath.like(ROOT_SPACE.name + "/" + path)).
+                  fetchOne()
+
+    if (null == space) {
+      NON_EXISTENT_SPACE
+    }
+    else {
+      Space(
+        // TODO This is quite ropey really, because I can't figure out how to formulate the query
+        // to return all attributes of the SPACES table and still keep the GROUP BY sweet
+        // probably some DB guy will tell me it is pretty easy really
+        id = space.getValue(SPACE_PATHS.as("d").DESCENDANT)
+      )
+    }
+  }
+
+  private def createSpace(t:Factory, name:String, parent:Long, fullPath:String) : Space =  {
+
+    val count = t.selectCount().
+      from(SPACES).
+      where(SPACES.NAME.equal(name)).
+        and(SPACES.PARENT.equal(parent)).
+      fetchOne().
+      getValueAsBigInteger(0).longValue()
+
+    // There is small margin for error between the read and the write, but basically we want to prevent unnecessary
+    // sequence churn
+
+    if (count == 0) {
+
+      val sequence = sequenceProvider.nextSequenceValue(SequenceName.SPACES)
+
+      try {
+
+        val space = insertSpacePath(t, sequence, name, parent, fullPath)
+        domainEventSubscribers.foreach(_.onDomainUpdated(sequence))
+        space
+      }
+      catch {
+        case u:DataAccessException if u.getCause.isInstanceOf[SQLIntegrityConstraintViolationException] =>
+          logger.warn("Integrity constraint when trying to create space for path " + name)
+          throw u
+        case x => throw x
+      }
+
+    }
+
+    else {
+
+      // This is the U in CRUD, which currently is a NOOP
+
+      val record =  t.select().
+        from(SPACES).
+        where(SPACES.NAME.equal(name)).
+        and(SPACES.PARENT.equal(parent)).
+        fetchOne()
+
+      recordToSpace(record)
+    }
+
+  }
+
+  private def insertSpacePath(t:Factory, space:Long, name:String, parent:Long, fullPath:String) : Space = {
+
+    t.insertInto(SPACES).
+      set(SPACES.ID, space:LONG).
+      set(SPACES.PARENT, parent:LONG).
+      set(SPACES.NAME, name).
+      set(SPACES.CONFIG_VERSION, 0:INT).
+      execute()
+
+    val leaf = Factory.field(space.toString)
+    val zero = Factory.field("0")
+
+    t.insertInto(SPACE_PATHS, SPACE_PATHS.ANCESTOR, SPACE_PATHS.DESCENDANT, SPACE_PATHS.DEPTH).
+      select(
+      t.select(SPACE_PATHS.ANCESTOR).
+        select(leaf).
+        select(SPACE_PATHS.DEPTH.add(1)).
+        from(SPACE_PATHS).
+        where(SPACE_PATHS.DESCENDANT.equal(parent)).
+        unionAll(t.select(leaf, leaf, zero))
+    ).execute()
+
+    invalidateSpaceByPathCache(fullPath)
+    invalidateSpaceByIdCache(space)
+
+    Space(
+      id = space,
+      parent = parent,
+      name = name,
+      configVersion = 0
+    )
+  }
+
+
+  private def descendancyTree(t:Factory, parent:Long) = {
+    val hierarchy = t.select().
+      from(SPACES).
+      join(SPACE_PATHS).
+        on(SPACE_PATHS.DESCENDANT.equal(SPACES.ID)).
+      where(SPACE_PATHS.ANCESTOR.equal(parent)).
+      orderBy(SPACE_PATHS.DEPTH.desc()).
+      fetch()
+
+    if (hierarchy == null) {
+      throw new MissingObjectException(parent.toString)
+    }
+    else {
+      hierarchy.iterator().map(recordToSpace(_))
+    }
+  }
+
+  private def recordToSpace(record:Record) = {
+    Space(
+      id = record.getValue(SPACES.ID),
+      parent = record.getValue(SPACES.PARENT),
+      name = record.getValue(SPACES.NAME),
+      configVersion = record.getValue(SPACES.CONFIG_VERSION)
+    )
+  }
 
   private def initializeExistingSequences() = {
     val persistentValue = jooq.execute { t =>
