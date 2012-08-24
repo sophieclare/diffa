@@ -103,7 +103,6 @@ class LazyCleanStoreReferenceContainer(val applicationEnvironment: DatabaseEnvir
   }
 
   private lazy val jooqDatabaseFacade = new DatabaseFacade(ds, applicationEnvironment.jooqDialect)
-  private lazy val _spacePathCache = new SpacePathCache(jooqDatabaseFacade, cacheProvider)
 
   private def makeStore[T](consFn: SessionFactory => T, className: String): T = _sessionFactory match {
     case Some(sf) =>
@@ -144,7 +143,6 @@ class LazyCleanStoreReferenceContainer(val applicationEnvironment: DatabaseEnvir
   def domainDifferenceStore: JooqDomainDifferenceStore = _domainDifferenceStore
   def userPreferencesStore: JooqUserPreferencesStore = _userPreferencesStore
   def scanActivityStore: JooqScanActivityStore = _scanActivityStore
-  def spacePathCache: SpacePathCache = _spacePathCache
 
   def prepareEnvironmentForStores {
     performCleanerAction(cleaner => cleaner.clean)

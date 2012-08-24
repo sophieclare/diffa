@@ -52,7 +52,6 @@ class ConfigurationTest {
   private val systemConfigStore = storeReferences.systemConfigStore
   private val domainConfigStore = storeReferences.domainConfigStore
   private val serviceLimitsStore = storeReferences.serviceLimitsStore
-  private val spacePathCache = storeReferences.spacePathCache
 
   private val configuration = new Configuration(domainConfigStore,
                                                 systemConfigStore,
@@ -134,9 +133,6 @@ class ConfigurationTest {
   @Test
   def shouldApplyConfigurationToEmptySystem() {
 
-    // Get the sugrrogate key from the cache
-    val space = spacePathCache.resolveSpacePathOrDie(domainName)
-
     // Create users that have membership references in the domain config
 
     val user1 = User(name = "abc", email = "dev_null1@lshift.net", passwordEnc = "TEST")
@@ -206,9 +202,6 @@ class ConfigurationTest {
     // Apply the configuration used in the empty state test
     shouldApplyConfigurationToEmptySystem
     resetAll
-
-    // Get the surrogate key from the cache
-    val space = spacePathCache.resolveSpacePathOrDie(domainName)
 
       // upstream1 is kept but changed
     val ep1 = DomainEndpointDef(space = space.id, name = "upstream1", scanUrl = "http://localhost:6543/scan",

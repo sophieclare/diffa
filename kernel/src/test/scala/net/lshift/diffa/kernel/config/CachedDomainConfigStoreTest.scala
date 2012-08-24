@@ -28,8 +28,6 @@ import scala.collection.JavaConversions._
 import net.lshift.diffa.kernel.frontend.DomainPairDef
 import scala.Some
 import net.lshift.diffa.kernel.frontend.EndpointDef
-import net.lshift.diffa.kernel.frontend.EscalationDef
-import net.lshift.diffa.kernel.frontend.PairReportDef
 import net.lshift.diffa.kernel.util.MissingObjectException
 
 class CachedDomainConfigStoreTest {
@@ -37,8 +35,6 @@ class CachedDomainConfigStoreTest {
   val jooq = E4.createStrictMock(classOf[JooqDatabaseFacade])
   val hm = E4.createNiceMock(classOf[HookManager])
   val ml = createStrictMock(classOf[DomainMembershipAware])
-
-  val sc = E4.createNiceMock(classOf[SpacePathCache])
 
   val cp = new HazelcastCacheProvider
 

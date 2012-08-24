@@ -17,7 +17,7 @@ package net.lshift.diffa.kernel.preferences
 
 import scala.collection.JavaConversions._
 import net.lshift.diffa.schema.jooq.DatabaseFacade
-import net.lshift.diffa.kernel.config.{PairRef, SpacePathCache}
+import net.lshift.diffa.kernel.config.PairRef
 import net.lshift.diffa.schema.tables.UserItemVisibility.USER_ITEM_VISIBILITY
 import net.lshift.diffa.kernel.lifecycle.{DomainLifecycleAware, PairLifecycleAware}
 import net.lshift.diffa.kernel.util.cache.{KeyPredicate, CacheProvider}
