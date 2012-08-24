@@ -29,14 +29,11 @@ import net.lshift.diffa.kernel.frontend.DomainPairDef
  */
 class LocalEventMatchingManagerTest {
 
-  val domainName = "domain"
-  val domain = Domain(name=domainName)
-
   val spaceId = System.currentTimeMillis()
 
-  val pair1 = new DomainPairDef(key = "pair1", domain = domainName, matchingTimeout = 10)
-  val pair2 = new DomainPairDef(key = "pair2", domain = domainName, matchingTimeout = 5)
-  val pair3 = new DomainPairDef(key = "pair3", domain = domainName, matchingTimeout = 2)
+  val pair1 = new DomainPairDef(key = "pair1", space = spaceId, matchingTimeout = 10)
+  val pair2 = new DomainPairDef(key = "pair2", space = spaceId, matchingTimeout = 5)
+  val pair3 = new DomainPairDef(key = "pair3", space = spaceId, matchingTimeout = 2)
 
   val invalid = new DomainPairDef(key = "invalid", space = spaceId, matchingTimeout = 5)
 
