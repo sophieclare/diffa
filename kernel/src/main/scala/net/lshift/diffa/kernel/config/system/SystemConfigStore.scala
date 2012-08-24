@@ -53,14 +53,13 @@ trait SystemConfigStore {
 
   @Deprecated def createOrUpdateDomain(domain: String)
 
-  def deleteDomain(name: String)
+  //def deleteDomain(name: String)
   def deleteSpace(id: Long)
   def doesDomainExist(name: String): Boolean
 
   def doesSpaceExist(space: Long): Boolean
 
-  // TODO Consider return the complete Space object, not just the key
-  def lookupSpaceByPath(path: String) : Long
+  def lookupSpaceByPath(path: String) : Space
 
   @Deprecated  def listDomains : Seq[String]
   def listSpaces : Seq[Space]

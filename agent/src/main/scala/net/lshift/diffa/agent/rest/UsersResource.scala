@@ -42,7 +42,7 @@ class UsersResource {
                  @Context request: Request) = {
     val space = systemConfigStore.lookupSpaceByPath(domain)
     val filterType = getFilterType(itemType)
-    val filters = userPreferences.listFilteredItems(space, user, filterType).toArray
+    val filters = userPreferences.listFilteredItems(space.id, user, filterType).toArray
 
     // This etag check doesn't prevent the call going through to the backend,
     // but that is not such a big deal since the result will be cached in any case.
@@ -66,7 +66,7 @@ class UsersResource {
                    @PathParam("itemType") itemType:String) {
     val space = systemConfigStore.lookupSpaceByPath(domain)
     val filterType = getFilterType(itemType)
-    userPreferences.createFilteredItem(PairRef(pair,space), user, filterType)
+    userPreferences.createFilteredItem(PairRef(pair,space.id), user, filterType)
   }
 
   @DELETE
@@ -77,7 +77,7 @@ class UsersResource {
                    @PathParam("itemType") itemType:String) {
     val space = systemConfigStore.lookupSpaceByPath(domain)
     val filterType = getFilterType(itemType)
-    userPreferences.removeFilteredItem(PairRef(pair,space), user, filterType)
+    userPreferences.removeFilteredItem(PairRef(pair,space.id), user, filterType)
   }
 
   private def getFilterType(unparsed:String) = {

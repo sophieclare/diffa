@@ -156,7 +156,7 @@ class JooqDomainConfigStoreTest {
     assertFalse(domainConfigStore.listPairs(space.id).isEmpty)
     assertFalse(domainConfigStore.allConfigOptions(space.id).isEmpty)
 
-    systemConfigStore.deleteDomain(domainName)
+    systemConfigStore.deleteSpace(space.id)
 
     // TODO I find this behavior a bit strange - should these methods not be throwing MissingObjectExceptions
     // for a non-existent space?
@@ -250,7 +250,7 @@ class JooqDomainConfigStoreTest {
     domainConfigStore.makeDomainMember(space.id, user.name)
     userPreferencesStore.createFilteredItem(pair, user.name, FilteredItemType.SWIM_LANE)
 
-    systemConfigStore.deleteDomain(domainName)
+    systemConfigStore.deleteSpace(space.id)
 
   }
 

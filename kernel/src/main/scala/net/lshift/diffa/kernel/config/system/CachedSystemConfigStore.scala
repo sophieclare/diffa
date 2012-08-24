@@ -57,7 +57,7 @@ class CachedSystemConfigStore(underlying:SystemConfigStore, cacheProvider:CacheP
   def lookupSpaceByPath(path: String) = underlying.lookupSpaceByPath(path)
 
   def createOrUpdateDomain(domain:String) = underlying.createOrUpdateDomain(domain)
-  def deleteDomain(domain:String) = underlying.deleteDomain(domain)
+  //def deleteDomain(domain:String) = underlying.deleteDomain(domain)
   def deleteSpace(id:Long) = underlying.deleteSpace(id)
   def doesDomainExist(name: String) = underlying.doesDomainExist(name)
   def doesSpaceExist(id:Long) = underlying.doesSpaceExist(id)

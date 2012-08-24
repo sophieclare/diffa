@@ -18,7 +18,8 @@ package net.lshift.diffa.kernel.config.system
 
 import scala.collection.JavaConversions._
 import org.slf4j.LoggerFactory
-import net.lshift.diffa.kernel.util.{AlertCodes, MissingObjectException}
+import net.lshift.diffa.kernel.util.AlertCodes._
+import net.lshift.diffa.kernel.util.MissingObjectException
 import org.apache.commons.lang.RandomStringUtils
 import net.lshift.diffa.kernel.config._
 import net.lshift.diffa.schema.jooq.{DatabaseFacade => JooqDatabaseFacade}
@@ -63,7 +64,7 @@ import scala.Some
 import net.lshift.diffa.kernel.config.Member
 import net.lshift.diffa.kernel.config.User
 import net.lshift.diffa.kernel.frontend.DomainEndpointDef
-import net.lshift.diffa.kernel.naming.SequenceName
+import net.lshift.diffa.kernel.naming.{CacheName, SequenceName}
 import org.jooq.impl.Factory
 
 class JooqSystemConfigStore(jooq:JooqDatabaseFacade,
@@ -74,12 +75,39 @@ class JooqSystemConfigStore(jooq:JooqDatabaseFacade,
   val logger = LoggerFactory.getLogger(getClass)
 
   val ROOT_SPACE = Space(id = 0L, parent = 0L, name = "diffa")
+  val NON_EXISTENT_SPACE = Space(id = -1L, parent = -1L, name = "does_not_exist")
+
+  private val spacePathCache = cacheProvider.getCachedMap[String,Space](CacheName.SPACE_PATHS)
+  private val spaceIdCache = cacheProvider.getCachedMap[java.lang.Long,Space](CacheName.SPACE_IDS)
 
   initializeExistingSequences()
 
   private val domainEventSubscribers = new ListBuffer[DomainLifecycleAware]
 
   def registerDomainEventListener(d:DomainLifecycleAware) = domainEventSubscribers += d
+
+  private def invalidateSpaceByIdCache(id:Long) = {
+    spaceIdCache.evict(id)
+  }
+
+  private def invalidateSpaceByPathCache(path:String) = {
+    spacePathCache.evict(path)
+  }
+
+  private def invalidateSpaceByPathCache(id:Long) = {
+    // TODO For now, we'll ignore the id, but this might have an effect on performance
+    spacePathCache.evictAll()
+  }
+
+  private def invalidateCaches(id:Long) = {
+    invalidateSpaceByIdCache(id)
+    invalidateSpaceByPathCache(id)
+  }
+
+  def reset {
+    spaceIdCache.evictAll()
+    spacePathCache.evictAll()
+  }
 
   def createOrUpdateDomain(path:String) = createOrUpdateSpace(path)
 
@@ -95,45 +123,22 @@ class JooqSystemConfigStore(jooq:JooqDatabaseFacade,
       ValidationUtil.ensurePathSegmentFormat("spaces", childPath)
 
       jooq.execute(t => {
-        /*
-        val spacePath = Factory.groupConcat(SPACES.NAME).orderBy(SPACES.ID).separator("/")
-
-        val parent =  t.select(SPACE_PATHS.as("d").DESCENDANT).select(spacePath.as("path")).
-                        from(SPACE_PATHS.as("d")).
-                        join(SPACE_PATHS.as("a")).
-                          on(SPACE_PATHS.as("a").DESCENDANT.equal(SPACE_PATHS.as("d").DESCENDANT)).
-                        join(SPACES).
-                          on(SPACES.ID.equal(SPACE_PATHS.as("a").ANCESTOR)).
-                        where(SPACE_PATHS.as("d").ANCESTOR.equal(0)).
-                          and(SPACE_PATHS.as("d").ANCESTOR.notEqual(SPACE_PATHS.as("d").DESCENDANT)).
-                        groupBy(SPACE_PATHS.as("d").DESCENDANT).
-                        having(spacePath.like(ROOT_SPACE.name + "/" + parentPath + "%")).
-                        fetchOne()
-
-        if (null == parent) {
-          throw new MissingObjectException(parentPath)
-        }
-        else {
-          val parentId = parent.getValueAsBigInteger(SPACE_PATHS.as("d").DESCENDANT).longValue()
-          createSpace(t, childPath, parentId)
-        }
-        */
-        val parentId = lookupSpaceId(t, parentPath + "%")
-        createSpace(t, childPath, parentId)
+        val parent = lookupSpaceId(t, parentPath + "%")
+        createSpace(t, childPath, parent.id, path)
       })
     }
 
     else {
 
       ValidationUtil.ensurePathSegmentFormat("spaces", path)
-      jooq.execute(createSpace(_, path, ROOT_SPACE.id))
+      jooq.execute(createSpace(_, path, ROOT_SPACE.id, path))
 
     }
 
   }
 
-  private def lookupSpaceId(t:Factory, path:String) : Long = {
-
+  private def lookupSpaceId(t:Factory, path:String) : Space = {
+    /*
     val spacePath = Factory.groupConcat(SPACES.NAME).orderBy(SPACES.ID).separator("/")
 
     val space = t.select(SPACE_PATHS.as("d").DESCENDANT).select(spacePath.as("path")).
@@ -147,16 +152,66 @@ class JooqSystemConfigStore(jooq:JooqDatabaseFacade,
                   groupBy(SPACE_PATHS.as("d").DESCENDANT).
                   having(spacePath.like(ROOT_SPACE.name + "/" + path)).
                   fetchOne()
+    */
 
-    if (null == space) {
+    val space = resolveSpaceByPath(path, Some(t))
+
+    if (NON_EXISTENT_SPACE == space) {
       throw new MissingObjectException(path)
     }
     else {
-      space.getValueAsBigInteger(SPACE_PATHS.as("d").DESCENDANT).longValue()
+      space
     }
   }
 
-  private def createSpace(t:Factory, name:String, parent:Long) : Space =  {
+  private def resolveSpaceByPath(path:String, factory:Option[Factory] = None) : Space = {
+    spacePathCache.readThrough(path,() => factory match {
+        case Some(t) => resolveSpaceByPath(t, path)
+        case None    => jooq.execute(resolveSpaceByPath(_,path))
+      }
+    )
+  }
+
+  private def resolveSpaceById(id:Long) = {
+    spaceIdCache.readThrough(id, () => jooq.execute(t => {
+      t.select().
+        from(SPACES).
+        where(SPACES.ID.equal(id)).
+        fetchOne() match {
+        case null   => NON_EXISTENT_SPACE
+        case record => recordToSpace(record)
+      }
+    }))
+  }
+
+  private def resolveSpaceByPath(t:Factory, path:String) : Space = {
+
+    val spacePath = Factory.groupConcat(SPACES.NAME).orderBy(SPACES.ID).separator("/")
+
+    val space = t.select(SPACE_PATHS.as("d").DESCENDANT).
+                  select(spacePath.as("path")).
+                  from(SPACE_PATHS.as("d")).
+                  join(SPACE_PATHS.as("a")).
+                    on(SPACE_PATHS.as("a").DESCENDANT.equal(SPACE_PATHS.as("d").DESCENDANT)).
+                  join(SPACES).
+                    on(SPACES.ID.equal(SPACE_PATHS.as("a").ANCESTOR)).
+                  where(SPACE_PATHS.as("d").ANCESTOR.equal(0)).
+                    and(SPACE_PATHS.as("d").ANCESTOR.notEqual(SPACE_PATHS.as("d").DESCENDANT)).
+                  groupBy(SPACE_PATHS.as("d").DESCENDANT).
+                  having(spacePath.like(ROOT_SPACE.name + "/" + path)).
+                  fetchOne()
+
+    if (null == space) {
+      NON_EXISTENT_SPACE
+    }
+    else {
+      Space(
+        id = space.getValue(SPACE_PATHS.as("d").DESCENDANT)
+      )
+    }
+  }
+
+  private def createSpace(t:Factory, name:String, parent:Long, fullPath:String) : Space =  {
 
     val count = t.selectCount().
                   from(SPACES).
@@ -174,7 +229,7 @@ class JooqSystemConfigStore(jooq:JooqDatabaseFacade,
 
       try {
 
-        val space = insertSpacePath(t, sequence, name, parent)
+        val space = insertSpacePath(t, sequence, name, parent, fullPath)
 
         //cachedSpacePaths.evict(space) - this invalidation is triggered by the onDomainRemoved event
         domainEventSubscribers.foreach(_.onDomainUpdated(sequence))
@@ -205,7 +260,7 @@ class JooqSystemConfigStore(jooq:JooqDatabaseFacade,
 
   }
 
-  private def insertSpacePath(t:Factory, space:Long, name:String, parent:Long) : Space = {
+  private def insertSpacePath(t:Factory, space:Long, name:String, parent:Long, fullPath:String) : Space = {
 
     t.insertInto(SPACES).
         set(SPACES.ID, space:LONG).
@@ -226,6 +281,9 @@ class JooqSystemConfigStore(jooq:JooqDatabaseFacade,
           where(SPACE_PATHS.DESCENDANT.equal(parent)).
           unionAll(t.select(leaf, leaf, zero))
       ).execute()
+
+    invalidateSpaceByPathCache(fullPath)
+    invalidateSpaceByIdCache(space)
 
     Space(
       id = space,
@@ -264,10 +322,16 @@ class JooqSystemConfigStore(jooq:JooqDatabaseFacade,
 
   def deleteSpace(id: Long) = {
     jooq.execute(t => {
-      deleteSpace(t, id)
+      descendancyTree(t, id).foreach(s => {
+        invalidateCaches(s.id)
+        deleteSingleSpace(t, s.id)
+        domainEventSubscribers.foreach(_.onDomainRemoved(s.id))
+        //cachedSpacePaths.evict(path) - this invalidation is triggered by the onDomainRemoved event
+      })
     })
   }
 
+  /*
   private def deleteSpace(t:Factory, id: Long) = {
     descendancyTree(t, id).foreach(s => {
       deleteSingleSpace(t, s.id)
@@ -275,12 +339,16 @@ class JooqSystemConfigStore(jooq:JooqDatabaseFacade,
       //cachedSpacePaths.evict(path) - this invalidation is triggered by the onDomainRemoved event
     })
   }
+  */
 
+  /*
   def deleteDomain(path:String) = {
     jooq.execute(t => {
-      deleteSpace(t, lookupSpaceId(t, path))
+      val space = lookupSpaceId(t, path)
+      deleteSpace(t, space.id)
     })
   }
+  */
 
   def listSubspaces(parent:Long) = jooq.execute(descendancyTree(_, parent)).toSeq
 
@@ -319,36 +387,23 @@ class JooqSystemConfigStore(jooq:JooqDatabaseFacade,
     val deleted = t.delete(SPACES).where(SPACES.ID.equal(id)).execute()
 
     if (deleted == 0) {
-      logger.error("%s: Attempt to delete non-existent space: %s".format(AlertCodes.INVALID_DOMAIN, id))
+      logger.error("%s: Attempt to delete non-existent space: %s".format(INVALID_DOMAIN, id))
       throw new MissingObjectException(id + "")
     }
   }
 
-  // TODO Cache this - very important
   def lookupSpaceByPath(path: String) = {
     jooq.execute(lookupSpaceId(_, path))
   }
 
-  // TODO Cache this - very important
-  def doesDomainExist(path: String) = {
-    try {
-      lookupSpaceByPath(path)
-      true
-    }
-    catch {
-      case x: MissingObjectException => false
-    }
+  def doesDomainExist(path: String) = resolveSpaceByPath(path) match {
+    case NON_EXISTENT_SPACE => false
+    case _                  => true
   }
 
-  // TODO Cache this - very important, don't forget !!!
-  def doesSpaceExist(id: Long) = {
-    jooq.execute(t => {
-      t.selectCount().
-        from(SPACES).
-        where(SPACES.ID.equal(id)).
-        fetchOne().
-        getValueAsBigInteger(0).longValue() > 0
-    })
+  def doesSpaceExist(id: Long) = resolveSpaceById(id) match {
+    case NON_EXISTENT_SPACE => false
+    case _                  => true
   }
 
   def listDomains = listSpaces.map(_.name)

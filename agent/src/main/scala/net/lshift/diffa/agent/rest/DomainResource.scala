@@ -105,7 +105,7 @@ class DomainResource {
 
   private def withSpace[T](path: String, f: Long => T) =  {
     val space = systemConfigStore.lookupSpaceByPath(path)
-    f(space)
+    f(space.id)
   }
 
 
