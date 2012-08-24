@@ -201,44 +201,7 @@ case class EndpointView(
 
   override def hashCode = 31 * (31 + name.hashCode) + categories.hashCode
 }
-/*
-case class DiffaPair(
-  @BeanProperty var key: String = null,
-  @BeanProperty var domain: Domain = null,
-  @BeanProperty var upstream: String = null,
-  @BeanProperty var downstream: String = null,
-  @BeanProperty var versionPolicyName: String = null,
-  @BeanProperty var matchingTimeout: Int = DiffaPair.NO_MATCHING,
-  @BeanProperty var scanCronSpec: String = null,
-  @BeanProperty var scanCronEnabled: Boolean = true,
-  @BeanProperty var allowManualScans: java.lang.Boolean = null,
-  @BeanProperty var views:java.util.Set[PairView] = new java.util.HashSet[PairView]) {
 
-  def this() = this(key = null)
-
-  def identifier = asRef.identifier
-
-  def asRef = PairRef(key, domain.name)
-
-  override def equals(that:Any) = that match {
-    case p:DiffaPair => p.key == key && p.domain == domain
-    case _           => false
-  }
-
-  // TODO This looks a bit strange
-  override def hashCode = 31 * (31 + key.hashCode) + domain.hashCode
-
-  def whichSide(endpoint:EndpointDef):EndpointSide = {
-    if (upstream == endpoint.name) {
-      UpstreamEndpoint
-    } else if (downstream == endpoint.name) {
-      DownstreamEndpoint
-    } else {
-      throw new IllegalArgumentException(endpoint.name + " is not a member of pair " + this.asRef)
-    }
-  }
-}
-*/
 case class PairView(
   @BeanProperty var name:String = null,
   @BeanProperty var scanCronSpec:String = null,
@@ -309,16 +272,6 @@ case class DiffaPairRef(@BeanProperty var key: String = null,
   // TODO This looks a bit strange
   override def hashCode = 31 * (31 + key.hashCode) + domain.hashCode
 }
-
-/*
-object DiffaPair {
-  val NO_MATCHING = null.asInstanceOf[Int]
-  def fromIdentifier(id:String) = {
-    val Array(domain,key) = id.split("/")
-    (domain,key)
-  }
-}
-*/
 
 case class Domain (
   @BeanProperty var name: String = null,

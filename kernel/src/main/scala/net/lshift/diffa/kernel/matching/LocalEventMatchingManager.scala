@@ -43,9 +43,10 @@ class LocalEventMatchingManager(systemConfigStore: SystemConfigStore,
 
     val pair = domainConfigStore.getPairDef(pairRef)
 
-    pair.matchingTimeout match {
-      case x:Int if x == null => removeMatcher(pairRef)
-      case timeout            => updateMatcher(pair)
+    if (pair.matchingTimeout < 0)  {
+      removeMatcher(pairRef)
+    } else {
+      updateMatcher(pair)
     }
   }
 
