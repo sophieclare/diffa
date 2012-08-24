@@ -19,7 +19,7 @@ import net.lshift.diffa.kernel.frontend.{OutboundExternalHttpCredentialsDef, Inb
 import org.junit.Assert._
 import net.lshift.diffa.kernel.StoreReferenceContainer
 import net.lshift.diffa.schema.environment.TestDatabaseEnvironments
-import org.junit.{Before, AfterClass, Test}
+import org.junit.{After, Before, AfterClass, Test}
 
 class JooqDomainCredentialsStoreTest {
 
@@ -34,13 +34,15 @@ class JooqDomainCredentialsStoreTest {
   @Before
   def setUp = {
     space = systemConfigStore.createOrUpdateSpace(domainName)
+  }
+
+  @After
+  def clearUp = {
     storeReferences.clearConfiguration(space.id)
   }
 
   @Test
   def externalHttpCredentialsShouldBeWriteOnly() {
-
-    systemConfigStore.createOrUpdateDomain(domainName)
 
     val basicAuthIn = InboundExternalHttpCredentialsDef(url = "https://acme.com/foo", key = "scott", value = "tiger", `type` = "basic_auth")
     val queryParamIn = InboundExternalHttpCredentialsDef(url = "https://acme.com/bar", key = "authToken", value = "a987bg6", `type` = "query_parameter")
