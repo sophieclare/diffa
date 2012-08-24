@@ -8,7 +8,7 @@ import net.lshift.diffa.kernel.events.VersionID
 import org.joda.time.DateTime
 import org.junit.Assert._
 import net.lshift.diffa.kernel.StoreReferenceContainer
-import org.junit.{AfterClass, Before, Test}
+import org.junit.{After, AfterClass, Before, Test}
 import net.lshift.diffa.kernel.config.{Space, PairRef, Domain}
 import net.lshift.diffa.schema.environment.TestDatabaseEnvironments
 import scala.collection.JavaConversions._
@@ -35,11 +35,16 @@ class ReportManagerTest {
     space = systemConfigStore.createOrUpdateSpace(domainName)
     pair = PairRef(name = "p1", space = space.id)
 
-    storeReferences.clearConfiguration(space.id)
+
     domainDiffStore.clearAllDifferences
 
     domainConfigStore.createOrUpdateEndpoint(space.id, EndpointDef("e1"))
     domainConfigStore.createOrUpdateEndpoint(space.id, EndpointDef("e2"))
+  }
+
+  @After
+  def clearUp {
+    storeReferences.clearConfiguration(space.id)
   }
 
   @Test
