@@ -101,14 +101,14 @@ class EscalationManagerTest {
     }
   }
 
-  def expectIgnore(latch: CountDownLatch) {
+  def expectIgnore(space:Long, latch: CountDownLatch) {
     val answer = new IAnswer[DifferenceEvent] {
       def answer = {
         latch.countDown()
         DifferenceEvent()
       }
     }
-    expect(diffs.ignoreEvent(System.currentTimeMillis(), "123")).andAnswer(answer).once()
+    expect(diffs.ignoreEvent(space, "123")).andAnswer(answer).once()
   }
 
   def expectReportManager(count:Int) {
@@ -191,7 +191,7 @@ class EscalationManagerTest {
             e.copy(actionType = EscalationActionType.REPAIR, action = "some-action")
         })))).atLeastOnce()
     if (s.actionType == EscalationActionType.REPAIR) expectActionsClient(1, actionCompletionMonitor)
-    if (s.actionType == EscalationActionType.IGNORE) expectIgnore(actionCompletionMonitor)
+    if (s.actionType == EscalationActionType.IGNORE) expectIgnore(spaceId, actionCompletionMonitor)
     expect(diffs.scheduleEscalation(EasyMock.eq(event), anyString, anyTimestamp)).andAnswer(new IAnswer[Unit] {
       def answer() {
         schedulingCompletionMonitor.countDown()
