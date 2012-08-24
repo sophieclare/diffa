@@ -92,7 +92,7 @@ class Configuration(val configStore: DomainConfigStore,
   @Deprecated def doesDomainExist(domain: String) = systemConfigStore.doesDomainExist(domain)
   def doesSpaceExist(space: Long) = systemConfigStore.doesSpaceExist(space)
 
-  def lookupSpacePath(path:String) = Space(id = -1L)
+  def lookupSpacePath(path:String) = systemConfigStore.lookupSpaceByPath(path)
 
   def retrieveConfiguration(space:Long) : Option[DiffaConfig] =
     if (doesSpaceExist(space))
