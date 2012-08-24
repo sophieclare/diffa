@@ -44,7 +44,7 @@ class QuartzScanSchedulerTest {
   def shouldAllowScheduleCreation() {
     val mb = createExecuteListenerQueue
 
-    val pair = DomainPairDef(key = "PairA", domain="domain", scanCronSpec = generateNowishCronSpec)
+    val pair = DomainPairDef(key = "PairA", space = System.currentTimeMillis(), scanCronSpec = generateNowishCronSpec)
 
     expect(systemConfig.listPairs).andReturn(Seq())
     expect(domainConfig.getPairDef(pair.asRef)).andStubReturn(pair)
@@ -67,7 +67,7 @@ class QuartzScanSchedulerTest {
   def shouldAllowScheduleCreationForViews() {
     val mb = createExecuteListenerQueue
 
-    val pair = DomainPairDef(key = "PairA", domain="domain", scanCronSpec = null,
+    val pair = DomainPairDef(key = "PairA", space = System.currentTimeMillis(), scanCronSpec = null,
       views = List(buildView(pairKey = "PairA", name = "someview", scanCronSpec = generateNowishCronSpec)))
 
     expect(systemConfig.listPairs).andReturn(Seq())
@@ -91,7 +91,7 @@ class QuartzScanSchedulerTest {
   def shouldRestoreSchedulesOnStartup() {
     val mb = createExecuteListenerQueue
 
-    val pair = DomainPairDef(key = "PairB", domain="domain", scanCronSpec = generateNowishCronSpec)
+    val pair = DomainPairDef(key = "PairB", space = System.currentTimeMillis(), scanCronSpec = generateNowishCronSpec)
 
     expect(systemConfig.listPairs).andReturn(Seq(pair))
     expect(domainConfig.getPairDef(pair.asRef)).andReturn(pair)
@@ -112,7 +112,7 @@ class QuartzScanSchedulerTest {
   def shouldAllowSchedulesToBeDeleted() {
     val mb = createExecuteListenerQueue
 
-    val pair = DomainPairDef(key = "PairC", domain="domain", scanCronSpec = generateNowishCronSpec)
+    val pair = DomainPairDef(key = "PairC", space = System.currentTimeMillis(), scanCronSpec = generateNowishCronSpec)
 
     expect(systemConfig.listPairs).andReturn(Seq(pair))
     expect(domainConfig.getPairDef(pair.asRef)).andStubReturn(pair)
@@ -133,8 +133,8 @@ class QuartzScanSchedulerTest {
   def shouldAllowSchedulesToBeUpdated() {
     val mb = createExecuteListenerQueue
 
-    val p1 = DomainPairDef(key = "PairD", domain="domain", scanCronSpec = generateOldCronSpec)
-    val p2 = DomainPairDef(key = "PairD", domain="domain", scanCronSpec = generateNowishCronSpec)
+    val p1 = DomainPairDef(key = "PairD", space = System.currentTimeMillis(), scanCronSpec = generateOldCronSpec)
+    val p2 = DomainPairDef(key = "PairD", space = System.currentTimeMillis(), scanCronSpec = generateNowishCronSpec)
 
     expect(systemConfig.listPairs).andReturn(Seq())
     expect(domainConfig.getPairDef(p1.asRef)).andReturn(p1).once()
@@ -163,9 +163,9 @@ class QuartzScanSchedulerTest {
     val oldView = buildView("PairF", "someview", generateOldCronSpec)
     val newView = buildView("PairF", "someview2", generateNowishCronSpec)
 
-    val p1 = DomainPairDef(key = "PairF", domain="domain", scanCronSpec = generateOldCronSpec,
+    val p1 = DomainPairDef(key = "PairF", space = System.currentTimeMillis(), scanCronSpec = generateOldCronSpec,
       views = List(oldView))
-    val p2 = DomainPairDef(key = "PairF", domain="domain", scanCronSpec = null,
+    val p2 = DomainPairDef(key = "PairF", space = System.currentTimeMillis(), scanCronSpec = null,
       views = List(oldView, newView))
 
     expect(systemConfig.listPairs).andReturn(Seq())
@@ -196,9 +196,9 @@ class QuartzScanSchedulerTest {
   def shouldRemoveUnusedPairAndViewSchedules() {
     val mb = createExecuteListenerQueue
 
-    val p1 = DomainPairDef(key = "PairE", domain="domain", scanCronSpec = generateNowishCronSpec,
+    val p1 = DomainPairDef(key = "PairE", space = 888L, scanCronSpec = generateNowishCronSpec,
       views = List(buildView("PairE", "someview", generateNowishCronSpec)))
-    val p2 = DomainPairDef(key = "PairE", domain="domain", scanCronSpec = null,
+    val p2 = DomainPairDef(key = "PairE", space = 888L, scanCronSpec = null,
       views = List(buildView("PairE", "someview2", generateOldCronSpec)))
 
     expect(systemConfig.listPairs).andReturn(Seq())
@@ -224,7 +224,7 @@ class QuartzScanSchedulerTest {
   def shouldAllowPairScanSchedulesToBeDisabled {
     val mb = createExecuteListenerQueue
 
-    val p1 = DomainPairDef(key="PairG", domain="domain", scanCronSpec=generateNowishCronSpec)
+    val p1 = DomainPairDef(key="PairG", space = System.currentTimeMillis(), scanCronSpec=generateNowishCronSpec)
     val p2 = p1.copy(scanCronEnabled = false)
 
     expect(systemConfig.listPairs).andReturn(Seq())
@@ -248,7 +248,7 @@ class QuartzScanSchedulerTest {
   def shouldAllowPairScanSchedulesToBeReEnabled {
     val mb = createExecuteListenerQueue
 
-    val p1 = DomainPairDef(key="PairH", domain="domain", scanCronSpec=generateNowishCronSpec, scanCronEnabled=false)
+    val p1 = DomainPairDef(key="PairH", space = System.currentTimeMillis(), scanCronSpec=generateNowishCronSpec, scanCronEnabled=false)
     val p2 = p1.copy(scanCronEnabled = true)
 
     expect(systemConfig.listPairs).andReturn(Seq())
@@ -274,7 +274,7 @@ class QuartzScanSchedulerTest {
   def shouldAllowViewScanSchedulesToBeDisabled {
     val mb = createExecuteListenerQueue
 
-    val p1 = DomainPairDef(key="PairI", domain="domain", views=List(buildView("PairI", "someview", generateNowishCronSpec)))
+    val p1 = DomainPairDef(key="PairI", space = System.currentTimeMillis(), views=List(buildView("PairI", "someview", generateNowishCronSpec)))
     val p2 = p1.copy(views=List(buildView("PairI", "someview", generateNowishCronSpec, scanCronEnabled=false)))
 
     expect(systemConfig.listPairs).andReturn(Seq())
@@ -298,7 +298,7 @@ class QuartzScanSchedulerTest {
   def shouldAllowViewScanSchedulesToBeReEnabled {
     val mb = createExecuteListenerQueue
 
-    val p1 = DomainPairDef(key="PairJ", domain="domain", views=List(buildView("PairJ", "someview", generateNowishCronSpec, false)))
+    val p1 = DomainPairDef(key="PairJ", space = System.currentTimeMillis(), views=List(buildView("PairJ", "someview", generateNowishCronSpec, false)))
     val p2 = p1.copy(views=List(buildView("PairJ", "someview", generateNowishCronSpec, true)))
 
     expect(systemConfig.listPairs).andReturn(Seq())
