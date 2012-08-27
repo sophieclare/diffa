@@ -18,8 +18,9 @@ package net.lshift.diffa.agent.rest
 
 import org.springframework.stereotype.Component
 import org.springframework.beans.factory.annotation.Autowired
-import javax.ws.rs.core.{UriInfo, Context}
 import javax.ws.rs._
+import core.{UriInfo, Context, Response}
+import core.Response.Status
 import net.lshift.diffa.kernel.client.ActionsClient
 import net.lshift.diffa.kernel.diag.DiagnosticsManager
 import net.lshift.diffa.kernel.actors.PairPolicyClient
@@ -37,6 +38,7 @@ import net.lshift.diffa.agent.rest.ResponseUtils._
 import net.lshift.diffa.kernel.frontend.EscalationDef
 import net.lshift.diffa.kernel.differencing.{DomainDifferenceStore, DifferencesManager}
 import net.lshift.diffa.kernel.config.{BreakerHelper, DomainCredentialsManager, User, DomainConfigStore}
+import org.springframework.security.access.PermissionEvaluator
 
 /**
  * The policy is that we will publish spaces as the replacement term for domains
@@ -57,7 +59,6 @@ import net.lshift.diffa.kernel.config.{BreakerHelper, DomainCredentialsManager, 
  */
 @Path("/spaces/")
 @Component
-@PreAuthorize("hasPermission(#space, 'domain-user')")
 class DomainResource {
 
   val log = LoggerFactory.getLogger(getClass)
@@ -77,6 +78,7 @@ class DomainResource {
   @Autowired var reports:ReportManager = null
   @Autowired var diffStore:DomainDifferenceStore = null
   @Autowired var breakers:BreakerHelper = null
+  @Autowired var permissionEvaluator:PermissionEvaluator = null
 
   private def getCurrentUser(space:String) : String = SecurityContextHolder.getContext.getAuthentication.getPrincipal match {
     case user:UserDetails => user.getUsername
@@ -91,21 +93,16 @@ class DomainResource {
     case _                => null
   }
 
-  @Deprecated private def withValidSpace[T](space: String, resource: T) =
-    if (config.doesDomainExist(space))
-      resource
-    else
-      throw new NotFoundException("Invalid space")
-
-  @Deprecated private def withValidSpace[T](space: String, f: () => T) =
-    if (config.doesDomainExist(space))
-      f()
-    else
-      throw new NotFoundException("Invalid space")
-
   private def withSpace[T](path: String, f: Long => T) =  {
-    val space = systemConfigStore.lookupSpaceByPath(path)
-    f(space.id)
+    val authentication = SecurityContextHolder.getContext.getAuthentication
+    val hasPermission = permissionEvaluator.hasPermission(authentication, path, "domain-user")
+    if (hasPermission) {
+      val space = systemConfigStore.lookupSpaceByPath(path)
+      f(space.id)
+    }
+    else {
+      throw new WebApplicationException(403)
+    }
   }
 
 
