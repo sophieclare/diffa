@@ -19,15 +19,12 @@ package net.lshift.diffa.agent.rest
 import org.springframework.stereotype.Component
 import org.springframework.beans.factory.annotation.Autowired
 import javax.ws.rs._
-import core.{UriInfo, Context, Response}
-import core.Response.Status
+import core.{UriInfo, Context}
 import net.lshift.diffa.kernel.client.ActionsClient
 import net.lshift.diffa.kernel.diag.DiagnosticsManager
 import net.lshift.diffa.kernel.actors.PairPolicyClient
 import net.lshift.diffa.kernel.frontend.{Changes, Configuration}
-import org.springframework.security.access.prepost.PreAuthorize
 import net.lshift.diffa.kernel.reporting.ReportManager
-import com.sun.jersey.api.NotFoundException
 import org.springframework.security.core.context.SecurityContextHolder
 import org.springframework.security.core.userdetails.UserDetails
 import org.slf4j.LoggerFactory
