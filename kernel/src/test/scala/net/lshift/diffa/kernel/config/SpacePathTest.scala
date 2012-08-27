@@ -86,13 +86,13 @@ class SpacePathTest {
     assertTrue(systemConfigStore.doesDomainExist(secondParent.name))
 
     val child = systemConfigStore.createOrUpdateSpace(childSpace)
-
-    // TODO This doesn't work yet
-    //assertTrue(systemConfigStore.doesDomainExist(childSpace))
+    assertTrue(systemConfigStore.doesDomainExist(childSpace))
 
     val grandChild = systemConfigStore.createOrUpdateSpace(grandChildSpace)
+    assertTrue(systemConfigStore.doesDomainExist(grandChildSpace))
 
     val greatGrandChild = systemConfigStore.createOrUpdateSpace(greatGrandChildSpace)
+    assertTrue(systemConfigStore.doesDomainExist(greatGrandChildSpace))
 
     // Verify the reported hierarchy
 
@@ -100,6 +100,40 @@ class SpacePathTest {
 
     assertEquals(Seq(greatGrandChild, grandChild, child, firstParent), hierarchy)
     assertFalse(hierarchy.contains(secondParent))
+  }
+
+  @Test
+  def shouldBeAbleToDeleteAncestorsRecursively {
+
+    // Set up a lineage with 4 generations
+
+    val parentSpace = RandomStringUtils.randomAlphanumeric(10)
+    val childSpace = parentSpace + "/" + RandomStringUtils.randomAlphanumeric(10)
+    val grandChildSpace = childSpace + "/" + RandomStringUtils.randomAlphanumeric(10)
+    val greatGrandChildSpace = grandChildSpace + "/" + RandomStringUtils.randomAlphanumeric(10)
+
+    Seq(parentSpace, childSpace, grandChildSpace, greatGrandChildSpace).foreach(s => {
+      systemConfigStore.createOrUpdateSpace(s)
+      systemConfigStore.doesDomainExist(s)
+    })
+
+    // Just delete from the third level down
+
+    val grandChild = systemConfigStore.lookupSpaceByPath(grandChildSpace)
+    systemConfigStore.deleteSpace(grandChild.id)
+
+    // Only levels 3 and 4 should have been deleted
+
+    Seq(grandChildSpace, greatGrandChildSpace).foreach(s => {
+      assertFalse(systemConfigStore.doesDomainExist(s))
+    })
+
+    // Levels 1 and 2 should still exist
+
+    Seq(parentSpace, childSpace).foreach(s => {
+      assertTrue(systemConfigStore.doesDomainExist(s))
+    })
+
   }
 
   @Test(expected = classOf[MissingObjectException])
