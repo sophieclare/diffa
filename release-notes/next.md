@@ -11,6 +11,7 @@
 ## General Maintenance
 
 * [254] - The database is now keyed on spaces with a surrogate key.
+* [255] - Introduce sub spaces.
 
 ## Library Upgrades
 
