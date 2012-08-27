@@ -59,7 +59,7 @@ class DifferencesResource(val differencesManager: DifferencesManager,
 
       val interval = new Interval(from,until)
       val diffs = differencesManager.retrievePagedEvents(space, pairKey, interval, offset, length,
-        EventOptions(includeIgnored = reallyIncludeIgnored))
+        EventOptions(includeIgnored = reallyIncludeIgnored)).map(_.toExternalFormat)
 
       val responseObj = Map(
         "seqId" -> domainVsn.getValue,
