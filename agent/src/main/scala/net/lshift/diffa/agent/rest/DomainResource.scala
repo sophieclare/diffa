@@ -46,14 +46,19 @@ import org.springframework.security.access.PermissionEvaluator
  * the path specification from /domains to /spaces and implement a redirect.
  */
 
-/**
+/*
  * NOTE TO MAINTENANCE ENGINEER:
  *
  * In the version of Jersey that this resource was coded against (1.13), you cannot seem to specify
  * Path("/spaces/{space:.+}") on the class resource - this just results in a non-match and the framework
- * returns a 405 to the client. However, if you specify the {space:.+} regex on a method level, Jersey matches
- * this just fine and in addition, the PreAuthorize binding, which is specified on the class level, seems to
- * work as well.
+ * returns a 405 to the client. However, if you specify the {space:.+} regex on a method level,
+ *
+ * I have also tried some less greedy regexes (such as Path("/spaces/{space:(([^/]+/)+)} ),
+ * but these don't seem to play well with the URI consuming rules in Jersey,
+ *
+ * Furthermore, the Spring PreAuthorize only seems to get woven in properly at a class level. At a method
+ * level it is woven in, but for some strange reason it cannot access the method parameters using SpEL,
+ * so I opted to invoke the authorization programmatically, which is reasonably terse.
  *
  * For the sake of clarity, it might be an idea to see whether Jersey 2.0 can handle this better.
  */
