@@ -277,16 +277,9 @@ class JooqDomainConfigStore(jooq:JooqDatabaseFacade,
 
   def listEndpoints(space:Long): Seq[EndpointDef] = {
 
-    //if (spacePathCache.doesDomainExist(domain)) {
+    val endpoints = cachedEndpoints.readThrough(space, () => JooqConfigStoreCompanion.listEndpoints(jooq, Some(space)))
+    endpoints.map(_.withoutDomain())
 
-      val endpoints = cachedEndpoints.readThrough(space, () => JooqConfigStoreCompanion.listEndpoints(jooq, Some(space)))
-      endpoints.map(_.withoutDomain())
-
-    //} else {
-
-      //Seq[EndpointDef]()
-
-    //}
   }
 
   def createOrUpdatePair(space:Long, pair: PairDef) = {
