@@ -112,7 +112,7 @@ class DifferencesResource(val differencesManager: DifferencesManager,
   @Path("/events/{evtSeqId}")
   @Produces(Array("application/json"))
   def ignoreDifference(@PathParam("evtSeqId") evtSeqId:String):Response = {
-    val ignored = differencesManager.ignoreDifference(space, evtSeqId)
+    val ignored = differencesManager.ignoreDifference(space, evtSeqId).toExternalFormat
 
     Response.ok(ignored).build
   }
@@ -121,7 +121,7 @@ class DifferencesResource(val differencesManager: DifferencesManager,
   @Path("/events/{evtSeqId}")
   @Produces(Array("application/json"))
   def unignoreDifference(@PathParam("evtSeqId") evtSeqId:String):Response = {
-    val restored = differencesManager.unignoreDifference(space, evtSeqId)
+    val restored = differencesManager.unignoreDifference(space, evtSeqId).toExternalFormat
 
     Response.ok(restored).build
   }

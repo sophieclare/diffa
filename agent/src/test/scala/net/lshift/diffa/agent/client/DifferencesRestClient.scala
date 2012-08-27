@@ -114,7 +114,7 @@ class DifferencesRestClient(serverRootUrl:String, domain:String, params: RestCli
   def ignore(seqId: String) = {
     val response = delete("events/" + seqId)
 
-    response.getEntity(classOf[DifferenceEvent])
+    response.getEntity(classOf[ExternalDifferenceEvent])
   }
 
   def unignore(seqId: String) = {
