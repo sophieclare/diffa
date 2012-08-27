@@ -52,10 +52,12 @@ class ConfigurationTest {
   private val systemConfigStore = storeReferences.systemConfigStore
   private val domainConfigStore = storeReferences.domainConfigStore
   private val serviceLimitsStore = storeReferences.serviceLimitsStore
+  private val userPreferencesStore = storeReferences.userPreferencesStore
 
   private val configuration = new Configuration(domainConfigStore,
                                                 systemConfigStore,
                                                 serviceLimitsStore,
+                                                userPreferencesStore,
                                                 matchingManager,
                                                 versionCorrelationStoreFactory,
                                                 List(pairManager),

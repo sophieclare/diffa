@@ -29,10 +29,12 @@ import net.lshift.diffa.kernel.actors.{PairPolicyClient, ActivePairManager}
 import org.joda.time.{Interval, DateTime, Period}
 import net.lshift.diffa.kernel.util.{CategoryUtil, MissingObjectException}
 import scala.collection.JavaConversions._
+import net.lshift.diffa.kernel.preferences.UserPreferencesStore
 
 class Configuration(val configStore: DomainConfigStore,
                     val systemConfigStore: SystemConfigStore,
                     val serviceLimitsStore: ServiceLimitsStore,
+                    val preferencesStore:UserPreferencesStore,
                     val matchingManager: MatchingManager,
                     val versionCorrelationStoreFactory: VersionCorrelationStoreFactory,
                     val supervisors:java.util.List[ActivePairManager],
@@ -66,8 +68,10 @@ class Configuration(val configStore: DomainConfigStore,
     removedMembers.foreach(m => {
       val userToRemove = m.user
       callingUser match {
-        case Some(currentUser) if userToRemove == currentUser => // don't this guy kill himself
-        case _                                                => configStore.removeDomainMembership(space, userToRemove)
+        case Some(currentUser) if userToRemove == currentUser => // don't let this guy kill himself
+        case _                                                =>
+          preferencesStore.removeAllFilteredItemsForDomain(space, userToRemove)
+          configStore.removeDomainMembership(space, userToRemove)
       }
     })
 

@@ -289,6 +289,7 @@
     <constructor-arg ref="domainConfigStore"/>
     <constructor-arg ref="systemConfigStore"/>
     <constructor-arg ref="serviceLimitsStore"/>
+    <constructor-arg ref="userPreferencesStore"/>
     <constructor-arg ref="matchingManager"/>
     <constructor-arg ref="versionCorrelationStoreFactory"/>
     <constructor-arg>
