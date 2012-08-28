@@ -385,31 +385,37 @@ class JooqSystemConfigStore(jooq:JooqDatabaseFacade,
 
   private def resolveSpaceByPath(t:Factory, path:String) : Space = {
 
-    val spacePath = Factory.groupConcat(SPACES.NAME).orderBy(SPACES.ID).separator("/")
-
-    val space = t.select(SPACE_PATHS.as("d").DESCENDANT).
-                  select(spacePath.as("path")).
-                  from(SPACE_PATHS.as("d")).
-                  join(SPACE_PATHS.as("a")).
-                    on(SPACE_PATHS.as("a").DESCENDANT.equal(SPACE_PATHS.as("d").DESCENDANT)).
-                  join(SPACES).
-                    on(SPACES.ID.equal(SPACE_PATHS.as("a").ANCESTOR)).
-                  where(SPACE_PATHS.as("d").ANCESTOR.equal(0)).
-                    and(SPACE_PATHS.as("d").ANCESTOR.notEqual(SPACE_PATHS.as("d").DESCENDANT)).
-                  groupBy(SPACE_PATHS.as("d").DESCENDANT).
-                  having(spacePath.like(ROOT_SPACE.name + "/" + path)).
-                  fetchOne()
-
-    if (null == space) {
-      NON_EXISTENT_SPACE
+    if (path == ROOT_SPACE.name) {
+      ROOT_SPACE
     }
     else {
-      Space(
-        // TODO This is quite ropey really, because I can't figure out how to formulate the query
-        // to return all attributes of the SPACES table and still keep the GROUP BY sweet
-        // probably some DB guy will tell me it is pretty easy really
-        id = space.getValue(SPACE_PATHS.as("d").DESCENDANT)
-      )
+
+      val spacePath = Factory.groupConcat(SPACES.NAME).orderBy(SPACES.ID).separator("/")
+
+      val space = t.select(SPACE_PATHS.as("d").DESCENDANT).
+                    select(spacePath.as("path")).
+                    from(SPACE_PATHS.as("d")).
+                    join(SPACE_PATHS.as("a")).
+                      on(SPACE_PATHS.as("a").DESCENDANT.equal(SPACE_PATHS.as("d").DESCENDANT)).
+                    join(SPACES).
+                      on(SPACES.ID.equal(SPACE_PATHS.as("a").ANCESTOR)).
+                    where(SPACE_PATHS.as("d").ANCESTOR.equal(0)).
+                      and(SPACE_PATHS.as("d").ANCESTOR.notEqual(SPACE_PATHS.as("d").DESCENDANT)).
+                    groupBy(SPACE_PATHS.as("d").DESCENDANT).
+                    having(spacePath.like(ROOT_SPACE.name + "/" + path)).
+                    fetchOne()
+
+      if (null == space) {
+        NON_EXISTENT_SPACE
+      }
+      else {
+        Space(
+          // TODO This is quite ropey really, because I can't figure out how to formulate the query
+          // to return all attributes of the SPACES table and still keep the GROUP BY sweet
+          // probably some DB guy will tell me it is pretty easy really
+          id = space.getValue(SPACE_PATHS.as("d").DESCENDANT)
+        )
+      }
     }
   }
 
