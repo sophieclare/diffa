@@ -271,7 +271,7 @@ Diffa.Models.Diff = Backbone.Model.extend({
 
     // Only retrieve the pair info if we don't already have it
     if (!self.get('upstreamName') || !self.get('downstreamName')) {
-      $.get("/domains/" + self.collection.domain.id + "/config/pairs/" + this.get('objId').pair.key, function(data, status, xhr) {
+      $.get("/domains/" + self.collection.domain.id + "/config/pairs/" + this.get('pair'), function(data, status, xhr) {
         self.set({upstreamName: data.upstreamName, downstreamName: data.downstreamName});
       });
     }
@@ -1274,7 +1274,7 @@ Diffa.Views.DiffDetail = Backbone.View.extend({
       return;
     }
 
-    var itemID = event.get('objId').id,
+    var itemID = event.get('entityId'),
         upstreamLabel = event.get('upstreamName') || "upstream",
         upstreamVersion = event.get('upstreamVsn') || "no version",
         downstreamLabel = event.get("downstreamName") || "downstream",
@@ -1303,8 +1303,8 @@ Diffa.Views.DiffDetail = Backbone.View.extend({
     var event = this.model.selectedEvent;
     var self = this;
 
-    var pairKey = event.get('objId').pair.key;
-    var itemID = event.get('objId').id;
+    var pairKey = event.get('pair');
+    var itemID = event.get('entityId');
     var actionListContainer = this.$(".actionlist").empty();
     var actionListCallback = function(actionList, status, xhr) {
       if (!actionList) {
@@ -1355,7 +1355,7 @@ Diffa.Views.DiffInspector = Backbone.View.extend({
     var event = this.model;
     var self = this;
 
-    var itemID = event.get('objId').id,
+    var itemID = event.get('entityId'),
         upstreamLabel = event.get('upstreamName') || "upstream",
         upstreamVersion = event.get('upstreamVsn') || "no version",
         downstreamLabel = event.get("downstreamName") || "downstream",

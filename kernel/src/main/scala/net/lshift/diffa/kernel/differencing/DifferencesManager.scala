@@ -156,6 +156,7 @@ case class DifferenceEvent(
 
   def toExternalFormat = ExternalDifferenceEvent(
     seqId = seqId,
+    pair = objId.pair.name,
     entityId = objId.id,
     detectedAt = detectedAt,
     state = state,
@@ -171,6 +172,7 @@ case class DifferenceEvent(
  */
 case class ExternalDifferenceEvent(
     @BeanProperty var seqId:String = null,
+    @BeanProperty var pair:String = null,
     @BeanProperty var entityId:String = null,
     @BeanProperty var detectedAt:DateTime = null,
     @BeanProperty var state:MatchState = null,
