@@ -16,7 +16,6 @@
 package net.lshift.diffa.kernel.frontend
 
 import net.lshift.diffa.kernel.config._
-import net.lshift.diffa.kernel.config.DiffaPair
 import reflect.BeanProperty
 import org.quartz.CronExpression
 import java.util.HashMap
@@ -120,6 +119,7 @@ case class EndpointDef (
  * get replaced with this more useful definition.
  */
 case class DomainEndpointDef(
+  @BeanProperty var space: Long = -1L,
   @BeanProperty var domain: String = null,
   @BeanProperty var name: String = null,
   @BeanProperty var scanUrl: String = null,
@@ -198,7 +198,7 @@ case class PairDef(
 
   def this() = this(key = null)
 
-  def asRef(domain:String) = DiffaPairRef(key, domain)
+  def asRef(space:Long) = PairRef(key, space)
 
   def asDomainPairDef(domainName:String) = DomainPairDef(
     domain = domainName,
@@ -316,6 +316,7 @@ case class PairViewDef(
  */
 case class DomainPairDef(
   @BeanProperty var domain: String = null,
+  @BeanProperty var space: java.lang.Long = null,
   @BeanProperty var key: String = null,
   @BeanProperty var versionPolicyName: String = null,
   @BeanProperty var matchingTimeout: Int = 0,
@@ -332,7 +333,7 @@ case class DomainPairDef(
 
   def this() = this(domain = null)
 
-  def asRef = DiffaPairRef(key, domain)
+  def asRef = PairRef(space = space, name = key)
 
   def withoutDomain = PairDef(
     key = key,

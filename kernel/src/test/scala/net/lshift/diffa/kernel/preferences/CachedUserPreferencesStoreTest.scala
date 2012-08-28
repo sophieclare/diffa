@@ -24,7 +24,7 @@ import org.easymock.EasyMock._
 import org.easymock.classextension.{EasyMock => E4}
 import org.jooq.impl.Factory
 import scala.collection.JavaConversions._
-import net.lshift.diffa.kernel.config.DiffaPairRef
+import net.lshift.diffa.kernel.config.{Space, PairRef}
 
 class CachedUserPreferencesStoreTest {
 
@@ -47,10 +47,10 @@ class CachedUserPreferencesStoreTest {
 
     E4.replay(jooq)
 
-    val firstCall = preferencesStore.listFilteredItems("domain", "user", FilteredItemType.SWIM_LANE)
+    val firstCall = preferencesStore.listFilteredItems(100L, "user", FilteredItemType.SWIM_LANE)
     assertEquals(pairs.toList, firstCall.toList)
 
-    val secondCall = preferencesStore.listFilteredItems("domain", "user", FilteredItemType.SWIM_LANE)
+    val secondCall = preferencesStore.listFilteredItems(100L, "user", FilteredItemType.SWIM_LANE)
     assertEquals(pairs.toList, secondCall.toList)
 
     E4.verify(jooq)
@@ -76,12 +76,12 @@ class CachedUserPreferencesStoreTest {
 
     E4.replay(jooq)
 
-    val firstCall = preferencesStore.listFilteredItems("domain", "user", FilteredItemType.SWIM_LANE)
+    val firstCall = preferencesStore.listFilteredItems(100L, "user", FilteredItemType.SWIM_LANE)
     assertEquals(firstPairSet.toList, firstCall.toList)
 
-    preferencesStore.createFilteredItem(DiffaPairRef("p2","domain"), "user", FilteredItemType.SWIM_LANE)
+    preferencesStore.createFilteredItem(PairRef("p2",100L), "user", FilteredItemType.SWIM_LANE)
 
-    val secondCall = preferencesStore.listFilteredItems("domain", "user", FilteredItemType.SWIM_LANE)
+    val secondCall = preferencesStore.listFilteredItems(100L, "user", FilteredItemType.SWIM_LANE)
     assertEquals(secondPairSet.toList, secondCall.toList)
 
     E4.verify(jooq)

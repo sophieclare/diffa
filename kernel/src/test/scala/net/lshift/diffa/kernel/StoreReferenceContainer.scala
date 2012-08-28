@@ -1,7 +1,9 @@
 package net.lshift.diffa.kernel
 
 import config._
+import config.Member
 import config.system.JooqSystemConfigStore
+import config.User
 import differencing.JooqDomainDifferenceStore
 import hooks.HookManager
 import org.hibernate.dialect.Dialect
@@ -19,6 +21,7 @@ import net.lshift.diffa.schema.migrations.HibernateConfigStorePreparationStep
 import collection.JavaConversions._
 import com.jolbox.bonecp.BoneCPDataSource
 import net.lshift.diffa.schema.jooq.DatabaseFacade
+import scala.Some
 
 object StoreReferenceContainer {
   def withCleanDatabaseEnvironment(env: DatabaseEnvironment) = {
@@ -48,15 +51,15 @@ trait StoreReferenceContainer {
 
   def clearUserConfig {}
   
-  def clearConfiguration(domainName: String = defaultDomain) {
+  def clearConfiguration(space: Long) {
     try {
-      serviceLimitsStore.deletePairLimitsByDomain(domainName)
-      domainDifferenceStore.removeDomain(domainName)
-      serviceLimitsStore.deleteDomainLimits(domainName)
-      systemConfigStore.deleteDomain(domainName)
+      serviceLimitsStore.deletePairLimitsByDomain(space)
+      domainDifferenceStore.removeDomain(space)
+      serviceLimitsStore.deleteDomainLimits(space)
+      systemConfigStore.deleteSpace(space)
     }  catch {
       case e: MissingObjectException => {
-        logger.warn("Could not clear configuration for domain " + domainName)
+        logger.warn("Could not clear configuration for domain " + space)
       }
     }
   }
@@ -116,7 +119,7 @@ class LazyCleanStoreReferenceContainer(val applicationEnvironment: DatabaseEnvir
 
   private lazy val _systemConfigStore =
     makeStore(sf => {
-      val store = new JooqSystemConfigStore(jooqDatabaseFacade, cacheProvider)
+      val store = new JooqSystemConfigStore(jooqDatabaseFacade, cacheProvider, sequenceProvider)
       store.registerDomainEventListener(_domainConfigStore)
       store
     }, "SystemConfigStore")

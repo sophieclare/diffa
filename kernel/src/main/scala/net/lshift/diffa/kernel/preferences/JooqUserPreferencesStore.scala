@@ -17,11 +17,12 @@ package net.lshift.diffa.kernel.preferences
 
 import scala.collection.JavaConversions._
 import net.lshift.diffa.schema.jooq.DatabaseFacade
-import net.lshift.diffa.kernel.config.DiffaPairRef
+import net.lshift.diffa.kernel.config.PairRef
 import net.lshift.diffa.schema.tables.UserItemVisibility.USER_ITEM_VISIBILITY
 import net.lshift.diffa.kernel.lifecycle.{DomainLifecycleAware, PairLifecycleAware}
 import net.lshift.diffa.kernel.util.cache.{KeyPredicate, CacheProvider}
 import reflect.BeanProperty
+import java.lang.{Long => LONG}
 
 class JooqUserPreferencesStore(db:DatabaseFacade, cacheProvider:CacheProvider)
   extends UserPreferencesStore
@@ -34,11 +35,12 @@ class JooqUserPreferencesStore(db:DatabaseFacade, cacheProvider:CacheProvider)
     cachedFilteredItems.evictAll()
   }
 
-  def createFilteredItem(pair:DiffaPairRef, username: String, itemType: FilteredItemType) = {
+  def createFilteredItem(pair:PairRef, username: String, itemType: FilteredItemType) = {
+
     db.execute(t => {
       t.insertInto(USER_ITEM_VISIBILITY).
-          set(USER_ITEM_VISIBILITY.DOMAIN, pair.domain).
-          set(USER_ITEM_VISIBILITY.PAIR, pair.key).
+          set(USER_ITEM_VISIBILITY.SPACE, pair.space:LONG).
+          set(USER_ITEM_VISIBILITY.PAIR, pair.name).
           set(USER_ITEM_VISIBILITY.USERNAME, username).
           set(USER_ITEM_VISIBILITY.ITEM_TYPE, itemType.toString).
         onDuplicateKeyIgnore().
@@ -49,34 +51,39 @@ class JooqUserPreferencesStore(db:DatabaseFacade, cacheProvider:CacheProvider)
     // but we'd need to lock the the update, so let's just invalidate it for now and
     // let the reader pull the data through
 
-    val key = DomainUserTypeKey(pair.domain, username, itemType.toString)
+    val key = DomainUserTypeKey(pair.space, username, itemType.toString)
     cachedFilteredItems.evict(key)
   }
 
-  def removeFilteredItem(pair:DiffaPairRef, username: String, itemType: FilteredItemType) = {
-    cachedFilteredItems.evict(DomainUserTypeKey(pair.domain, username, itemType.toString))
+  def removeFilteredItem(pair:PairRef, username: String, itemType: FilteredItemType) = {
+
+    cachedFilteredItems.evict(DomainUserTypeKey(pair.space, username, itemType.toString))
     db.execute(t => {
       t.delete(USER_ITEM_VISIBILITY).
-        where(USER_ITEM_VISIBILITY.DOMAIN.equal(pair.domain)).
-        and(USER_ITEM_VISIBILITY.PAIR.equal(pair.key)).
-        and(USER_ITEM_VISIBILITY.USERNAME.equal(username)).
-        and(USER_ITEM_VISIBILITY.ITEM_TYPE.equal(itemType.toString)).
+        where(USER_ITEM_VISIBILITY.SPACE.equal(pair.space)).
+          and(USER_ITEM_VISIBILITY.PAIR.equal(pair.name)).
+          and(USER_ITEM_VISIBILITY.USERNAME.equal(username)).
+          and(USER_ITEM_VISIBILITY.ITEM_TYPE.equal(itemType.toString)).
         execute()
     })
   }
 
-  def removeAllFilteredItemsForDomain(domain:String, username: String) = {
-    cachedFilteredItems.keySubset(FilterByDomainAndUserPredicate(domain, username)).evictAll()
+  def removeAllFilteredItemsForDomain(space:Long, username: String) = {
+
+    cachedFilteredItems.keySubset(FilterByDomainAndUserPredicate(space, username)).evictAll()
+
     db.execute(t => {
       t.delete(USER_ITEM_VISIBILITY).
-        where(USER_ITEM_VISIBILITY.DOMAIN.equal(domain)).
-        and(USER_ITEM_VISIBILITY.USERNAME.equal(username)).
+        where(USER_ITEM_VISIBILITY.SPACE.equal(space)).
+          and(USER_ITEM_VISIBILITY.USERNAME.equal(username)).
         execute()
     })
   }
 
   def removeAllFilteredItemsForUser(username: String) = {
+
     cachedFilteredItems.keySubset(FilterByUserPredicate(username)).evictAll()
+
     db.execute(t => {
       t.delete(USER_ITEM_VISIBILITY).
         where(USER_ITEM_VISIBILITY.USERNAME.equal(username)).
@@ -84,14 +91,15 @@ class JooqUserPreferencesStore(db:DatabaseFacade, cacheProvider:CacheProvider)
     })
   }
 
-  def listFilteredItems(domain: String, username: String, itemType: FilteredItemType) : Set[String] = {
-    cachedFilteredItems.readThrough(DomainUserTypeKey(domain,username,itemType.toString), () => {
+  def listFilteredItems(space:Long, username: String, itemType: FilteredItemType) : Set[String] = {
+
+    cachedFilteredItems.readThrough(DomainUserTypeKey(space, username, itemType.toString), () => {
       db.execute(t => {
         val result =
           t.select().from(USER_ITEM_VISIBILITY).
-            where(USER_ITEM_VISIBILITY.DOMAIN.equal(domain)).
-            and(USER_ITEM_VISIBILITY.USERNAME.equal(username)).
-            and(USER_ITEM_VISIBILITY.ITEM_TYPE.equal(itemType.toString)).
+            where(USER_ITEM_VISIBILITY.SPACE.equal(space)).
+              and(USER_ITEM_VISIBILITY.USERNAME.equal(username)).
+              and(USER_ITEM_VISIBILITY.ITEM_TYPE.equal(itemType.toString)).
           fetch()
 
         val items = new java.util.HashSet[String]()
@@ -105,43 +113,54 @@ class JooqUserPreferencesStore(db:DatabaseFacade, cacheProvider:CacheProvider)
     })
   }.toSet
 
-  def onPairUpdated(pair: DiffaPairRef) {
+  def onPairUpdated(pair: PairRef) {
     // This is probably too coarse grained, i.e. it invalidates everything
-    invalidCacheForDomain(pair.domain)
+    maybeInvalidateCacheForSpace(pair.space)
   }
-  def onPairDeleted(pair: DiffaPairRef) {
+  def onPairDeleted(pair: PairRef) {
     // This is probably too coarse grained, i.e. it invalidates everything
-    invalidCacheForDomain(pair.domain)
+    maybeInvalidateCacheForSpace(pair.space)
   }
-  def onDomainUpdated(domain: String) = invalidCacheForDomain(domain)
-  def onDomainRemoved(domain: String) = invalidCacheForDomain(domain)
 
-  private def invalidCacheForDomain(domain:String) = {
-    cachedFilteredItems.keySubset(FilterByUserPredicate(domain)).evictAll()
+  private def maybeInvalidateCacheForSpace(space:Long) {
+    try {
+      invalidCacheForDomain(space)
+    }
+    catch {
+      case _ => // ignore
+    }
+
+  }
+
+  def onDomainUpdated(space: Long) = invalidCacheForDomain(space)
+  def onDomainRemoved(space: Long) = invalidCacheForDomain(space)
+
+  private def invalidCacheForDomain(space:Long) = {
+    cachedFilteredItems.keySubset(FilterByDomainPredicate(space)).evictAll()
   }
 }
 
 case class DomainUserTypeKey(
-  @BeanProperty var domain: String = null,
+  @BeanProperty var space: Long,
   @BeanProperty var username: String = null,
   @BeanProperty var itemType: String = null) {
 
-  def this() = this(domain = null)
+  def this() = this(space = -1)
 
 }
 
-case class FilterByUserPredicate(@BeanProperty user:String = null) extends KeyPredicate[DomainUserTypeKey] {
+case class FilterByUserPredicate(@BeanProperty var user:String = null) extends KeyPredicate[DomainUserTypeKey] {
   def this() = this(user = null)
   def constrain(key: DomainUserTypeKey) = key.username == user
 }
 
-case class FilterByDomainPredicate(@BeanProperty domain:String = null) extends KeyPredicate[DomainUserTypeKey] {
-  def this() = this(domain = null)
-  def constrain(key: DomainUserTypeKey) = key.domain == domain
+case class FilterByDomainPredicate(@BeanProperty var space:Long) extends KeyPredicate[DomainUserTypeKey] {
+  def this() = this(space = -1)
+  def constrain(key: DomainUserTypeKey) = key.space == space
 }
 
-case class FilterByDomainAndUserPredicate(@BeanProperty domain:String = null,
-                                          @BeanProperty user:String = null) extends KeyPredicate[DomainUserTypeKey] {
-  def this() = this(domain = null)
-  def constrain(key: DomainUserTypeKey) = key.domain == domain && key.username == user
+case class FilterByDomainAndUserPredicate(@BeanProperty var space:Long,
+                                          @BeanProperty var user:String = null) extends KeyPredicate[DomainUserTypeKey] {
+  def this() = this(space = -1)
+  def constrain(key: DomainUserTypeKey) = key.space == space && key.username == user
 }

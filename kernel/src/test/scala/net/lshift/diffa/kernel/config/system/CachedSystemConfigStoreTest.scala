@@ -23,7 +23,7 @@ import org.junit.{Before, Test}
 import net.lshift.diffa.kernel.util.MissingObjectException
 import org.junit.runner.RunWith
 import org.junit.experimental.theories.{DataPoint, Theories, Theory}
-import net.lshift.diffa.kernel.config.{DomainMembershipAware, Domain, Member, User}
+import net.lshift.diffa.kernel.config.{DomainMembershipAware, Member, User}
 
 @RunWith(classOf[Theories])
 class CachedSystemConfigStoreTest {
@@ -132,7 +132,7 @@ object CachedSystemConfigStoreTest {
     token = "6f4g4b3c"
   )
 
-  val members = Seq(Member("username", "domain"))
+  val members = Seq(Member("username", 0L))
 
   @DataPoint def shouldCacheUserToken = SimpleCacheScenario(
     user,
