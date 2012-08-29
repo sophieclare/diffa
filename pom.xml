@@ -33,7 +33,7 @@
     <spring.version>3.1.0.RELEASE</spring.version>
     <spring.security.version>3.1.2.RELEASE</spring.security.version>
     <hibernate.version>3.6.10.Final</hibernate.version>
-    <hsqldb.version>2.2.8</hsqldb.version>
+    <hsqldb.version>2.2.9</hsqldb.version>
     <postgresql.version>9.1-901.jdbc4</postgresql.version>
     <bonecp.version>0.7.1.RELEASE</bonecp.version>
     <jetty.version>7.3.0.v20110203</jetty.version>

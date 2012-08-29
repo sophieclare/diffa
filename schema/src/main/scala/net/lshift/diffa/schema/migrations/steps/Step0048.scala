@@ -106,11 +106,16 @@ object Step0048 extends VerifiedMigrationStep {
     migration.alterTable("endpoint_views").
       addForeignKey("fk_epvw_edpt", Array("space", "endpoint"), "endpoints", Array("space", "name"))
 
+    migration.createTable("extents").
+      column("id", Types.BIGINT, false).
+      pk("id")
+
     migration.createTable("pairs").
       column("space", Types.BIGINT, false).
       column("name", Types.VARCHAR, 50, false).
       column("upstream", Types.VARCHAR, 50, false).
       column("downstream", Types.VARCHAR, 50, false).
+      column("extent", Types.BIGINT, false).
       column("version_policy_name", Types.VARCHAR, 50, true).
       column("matching_timeout", Types.INTEGER, true).
       column("scan_cron_spec", Types.VARCHAR, 50, true).
@@ -120,10 +125,15 @@ object Step0048 extends VerifiedMigrationStep {
 
     migration.alterTable("pairs").
       addForeignKey("fk_pair_spcs", "space", "spaces", "id").
+      addForeignKey("fk_pair_exts", "extent", "extents", "id").
       addForeignKey("fk_pair_upstream_edpt", Array("space", "upstream"), "endpoints", Array("space", "name")).
       addForeignKey("fk_pair_downstream_edpt", Array("space", "downstream"), "endpoints", Array("space", "name"))
 
+    migration.alterTable("pairs")
+      .addUniqueConstraint("uk_pair_exts", "extent")
+
     migration.createTable("escalations").
+      column("id", Types.BIGINT, false).
       column("space", Types.BIGINT, false).
       column("pair", Types.VARCHAR, 50, false).
       column("name", Types.VARCHAR, 50, false).
@@ -131,14 +141,13 @@ object Step0048 extends VerifiedMigrationStep {
       column("action_type", Types.VARCHAR, 255, false).
       column("delay", Types.INTEGER, 11, false, 0).
       column("rule", Types.VARCHAR, 1024, true, null).
-      pk("space", "pair", "name")
+      pk("id")
 
     migration.alterTable("escalations").
       addForeignKey("fk_escl_pair", Array("space", "pair"), "pairs", Array("space", "name"))
 
-    val diffsTable = migration.createTable("diffs").
-      column("space", Types.BIGINT, false).
-      column("pair", Types.VARCHAR, 50, false).
+    migration.createTable("diffs").
+      column("extent", Types.BIGINT, false).
       column("seq_id", Types.BIGINT, false).
       column("entity_id", Types.VARCHAR, 255, false).
       column("is_match", Types.BIT, false).
@@ -147,30 +156,18 @@ object Step0048 extends VerifiedMigrationStep {
       column("upstream_vsn", Types.VARCHAR, 255, true).
       column("downstream_vsn", Types.VARCHAR, 255, true).
       column("ignored", Types.BIT, false).
-      column("next_escalation", Types.VARCHAR, 50, true, null).
+      column("next_escalation", Types.BIGINT, true, null).
       column("next_escalation_time", Types.TIMESTAMP, true, null).
-      pk("space", "pair", "seq_id")
-
-    if (migration.canUseListPartitioning) {
-      diffsTable.virtualColumn("partition_name", Types.VARCHAR, 512, "space || '_' || pair").
-        listPartitioned("partition_name").
-        listPartition("part_dummy_default", "default")
-
-      DefinePartitionInformationTable.applyPartitionVersion(migration, "diffs", versionId)
-
-      // Do not execute the proc to partition the old diffs table, since the DB has ben sunset
-      // but keep this reference for posterity
-      // migration.executeDatabaseScript("sync_pair_diff_partitions", "net.lshift.diffa.schema.procedures")
-    }
+      pk("seq_id")
 
     migration.alterTable("diffs")
-      .addForeignKey("fk_diff_pair", Array("space", "pair"), "pairs", Array("space", "name"))
+      .addForeignKey("fk_diff_ext", "extent", "extents", "id")
 
     migration.alterTable("diffs").
-      addForeignKey("fk_next_esc", Array("space", "pair", "next_escalation"), "escalations", Array("space", "pair", "name"))
+      addForeignKey("fk_next_esc", "next_escalation", "escalations", "id")
 
     migration.alterTable("diffs")
-      .addUniqueConstraint("uk_diffs", "entity_id", "space", "pair")
+      .addUniqueConstraint("uk_diffs", "extent", "entity_id")
 
     migration.createIndex("diff_last_seen", "diffs", "last_seen")
     migration.createIndex("diff_detection", "diffs", "detected_at")
@@ -494,15 +491,20 @@ object Step0048 extends VerifiedMigrationStep {
     createEndpoint(migration, spaceId, downstream)
     createEndpointView(migration, spaceId, downstream, downstreamView)
 
+    val extent = randomInt()
+
+    createExtent(migration, extent)
+
     val pair = randomString()
 
-    createPair(migration, spaceId, pair, upstream, downstream)
+    createPair(migration, spaceId, pair, extent, upstream, downstream)
     createPairView(migration, spaceId, pair)
 
-    val escalation = randomString()
+    val escalationId = randomInt()
+    val escalationName = randomString()
 
-    createEscalation(migration, spaceId, pair, escalation)
-    createDiff(migration, spaceId, pair, escalation)
+    createEscalation(migration, spaceId, pair, escalationId, escalationName)
+    createDiff(migration, spaceId, pair, extent, escalationId)
     createPendingDiff(migration, spaceId, pair)
 
     createPairReport(migration, spaceId, pair)
@@ -766,25 +768,25 @@ object Step0048 extends VerifiedMigrationStep {
     ))
   }
 
-  def createDiff(migration:MigrationBuilder, spaceId:String, pair:String, escalation:String) {
+  def createDiff(migration:MigrationBuilder, spaceId:String, pair:String, extent:String, escalationId:String) {
     migration.insert("diffs").values(Map(
-      "space" -> spaceId,
-      "pair" -> pair,
       "seq_id" -> randomInt(),
       "entity_id" -> randomString(),
+      "extent" -> extent,
       "upstream_vsn" -> randomString(),
       "downstream_vsn" -> randomString(),
       "detected_at" -> randomTimestamp(),
       "last_seen" -> randomTimestamp(),
       "is_match" -> "0",
       "ignored" -> "0",
-      "next_escalation" -> escalation,
+      "next_escalation" -> escalationId,
       "next_escalation_time" -> randomTimestamp()
     ))
   }
 
-  def createEscalation(migration:MigrationBuilder, spaceId:String, pair:String, name:String) {
+  def createEscalation(migration:MigrationBuilder, spaceId:String, pair:String, escalationId:String, name:String) {
     migration.insert("escalations").values(Map(
+      "id" -> escalationId,
       "space" -> spaceId,
       "pair" -> pair,
       "name" -> name,
@@ -805,10 +807,11 @@ object Step0048 extends VerifiedMigrationStep {
     ))
   }
 
-  def createPair(migration:MigrationBuilder, spaceId:String, name:String, upstream:String, downstream:String) {
+  def createPair(migration:MigrationBuilder, spaceId:String, name:String, extent:String, upstream:String, downstream:String) {
     migration.insert("pairs").values(Map(
       "space" -> spaceId,
       "name" -> name,
+      "extent" -> extent,
       "upstream" -> upstream,
       "downstream" -> downstream,
       "version_policy_name" -> "same",
@@ -844,6 +847,12 @@ object Step0048 extends VerifiedMigrationStep {
       "space" -> spaceId,
       "opt_key" -> randomString(),
       "opt_val" -> randomString()
+    ))
+  }
+
+  def createExtent(migration:MigrationBuilder, id:String) {
+    migration.insert("extents").values(Map(
+      "id" -> id
     ))
   }
 
