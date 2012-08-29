@@ -30,6 +30,6 @@ public enum CacheName {
   SPACE_ROLE_PERMISSIONS,
   
   SPACE_PATHS,
-  REVERSE_SPACE_PATHS
+  SPACE_IDS
 
 }

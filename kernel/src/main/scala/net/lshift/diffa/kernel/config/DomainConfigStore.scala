@@ -33,88 +33,89 @@ import system.RoleKey
 
 trait DomainConfigStore {
 
-  def createOrUpdateEndpoint(domain:String, endpoint: EndpointDef) : DomainEndpointDef
-  def deleteEndpoint(domain:String, name: String) : Unit
-  def listEndpoints(domain:String) : Seq[EndpointDef]
+  def createOrUpdateEndpoint(space:Long, endpoint: EndpointDef) : DomainEndpointDef
+  def deleteEndpoint(space:Long, name: String) : Unit
+  def listEndpoints(space:Long) : Seq[EndpointDef]
 
-  def createOrUpdatePair(domain:String, pairDef: PairDef) : Unit
-  def deletePair(domain:String, key: String)
-  def deletePair(ref:DiffaPairRef) : Unit = deletePair(ref.domain, ref.key)
-  def listPairs(domain:String) : Seq[DomainPairDef]
-  def listPairsForEndpoint(domain:String, endpoint:String) : Seq[DomainPairDef]
+  def createOrUpdatePair(space:Long, pairDef: PairDef) : Unit
+  def deletePair(space:Long, key: String)
+  def deletePair(ref:PairRef) : Unit = deletePair(ref.space, ref.name)
+  def listPairs(space:Long) : Seq[DomainPairDef]
+  def listPairsForEndpoint(space:Long, endpoint:String) : Seq[DomainPairDef]
 
-  def getPairDef(domain:String, key: String) : DomainPairDef
-  def getPairDef(ref:DiffaPairRef) : DomainPairDef = getPairDef(ref.domain, ref.key)
+  def getPairDef(space:Long, key: String) : DomainPairDef
+  def getPairDef(ref:PairRef) : DomainPairDef = getPairDef(ref.space, ref.name)
 
-  def getEndpointDef(domain:String, name: String) : EndpointDef
-  @Deprecated def getEndpoint(domain:String, name: String) : Endpoint
+  def getEndpointDef(space:Long, name: String) : EndpointDef
+  @Deprecated def getEndpoint(space:Long, name: String) : Endpoint
 
-  def getConfigVersion(domain:String) : Int
+  def getConfigVersion(space:Long) : Int
 
   /**
    * Retrieves all (domain-specific, non-internal) agent configuration options.
    */
-  def allConfigOptions(domain:String) : Map[String, String]
+  def allConfigOptions(space:Long) : Map[String, String]
 
   /**
    * Retrieves an agent configuration option, returning the None if it is unset.
    */
-  def maybeConfigOption(domain:String, key:String) : Option[String]
+  def maybeConfigOption(space:Long, key:String) : Option[String]
 
   /**
    * Retrieves an agent configuration option, returning the provided default value if it is unset.
    */
-  def configOptionOrDefault(domain:String, key:String, defaultVal:String) : String
+  def configOptionOrDefault(space:Long, key:String, defaultVal:String) : String
 
   /**
    * Sets the given configuration option to the given value.
    *   properties to be prevented from being shown in the user-visible system configuration views.
    */
-  def setConfigOption(domain:String, key:String, value:String)
+  def setConfigOption(space:Long, key:String, value:String)
 
   /**
    * Removes the setting for the given configuration option.
    */
-  def clearConfigOption(domain:String, key:String)
+  def clearConfigOption(space:Long, key:String)
 
   /**
-   * Looks up the key for a role based upon its name and domain.
+   * Looks up the key for a role based upon its name and space.
    */
-  def lookupRole(domain:String, role:String):RoleKey
+  def lookupRole(space:Long, role:String):RoleKey
 
   /**
    * Make the given user a member of this domain.
    */
-  def makeDomainMember(domain:String, userName:String, role:RoleKey) : Member
+  def makeDomainMember(space:Long, userName:String, role:RoleKey) : Member
 
   /**
    * Remove the given user from the given role in this domain.
    */
-  def removeDomainMembership(domain:String, userName:String, role:String) : Unit
+  def removeDomainMembership(space:Long, userName:String, role:String) : Unit
 
   /**
    * Lists all of the members of the given domain
    */
-  def listDomainMembers(domain:String) : Seq[Member]
+  def listDomainMembers(space:Long) : Seq[Member]
 
   /**
    * Determines whether a breaker has been tripped (ie, the feature disabled) for the given named item.
    */
-  def isBreakerTripped(domain:String, pair:String, name:String):Boolean
+  def isBreakerTripped(space:Long, pair:String, name:String):Boolean
 
   /**
    * Disables the feature controlled by the given breaker.
    */
-  def tripBreaker(domain:String, pair:String, name:String)
+  def tripBreaker(space:Long, pair:String, name:String)
 
   /**
    * Enables the feature controlled by the given breaker.
    */
-  def clearBreaker(domain:String, pair:String, name:String)
+  def clearBreaker(space:Long, pair:String, name:String)
 }
 
 case class Space (
   @BeanProperty var id: java.lang.Long = null,
+  @BeanProperty var parent: java.lang.Long = null,
   @BeanProperty var name: String = null,
   @BeanProperty var configVersion: java.lang.Integer = null) {
 
@@ -206,65 +207,28 @@ case class EndpointView(
   override def hashCode = 31 * (31 + name.hashCode) + categories.hashCode
 }
 
-case class DiffaPair(
-  @BeanProperty var key: String = null,
-  @BeanProperty var domain: Domain = null,
-  @BeanProperty var upstream: String = null,
-  @BeanProperty var downstream: String = null,
-  @BeanProperty var versionPolicyName: String = null,
-  @BeanProperty var matchingTimeout: Int = DiffaPair.NO_MATCHING,
-  @BeanProperty var scanCronSpec: String = null,
-  @BeanProperty var scanCronEnabled: Boolean = true,
-  @BeanProperty var allowManualScans: java.lang.Boolean = null,
-  @BeanProperty var views:java.util.Set[PairView] = new java.util.HashSet[PairView]) {
-
-  def this() = this(key = null)
-
-  def identifier = asRef.identifier
-
-  def asRef = DiffaPairRef(key, domain.name)
-
-  override def equals(that:Any) = that match {
-    case p:DiffaPair => p.key == key && p.domain == domain
-    case _           => false
-  }
-
-  // TODO This looks a bit strange
-  override def hashCode = 31 * (31 + key.hashCode) + domain.hashCode
-
-  def whichSide(endpoint:EndpointDef):EndpointSide = {
-    if (upstream == endpoint.name) {
-      UpstreamEndpoint
-    } else if (downstream == endpoint.name) {
-      DownstreamEndpoint
-    } else {
-      throw new IllegalArgumentException(endpoint.name + " is not a member of pair " + this.asRef)
-    }
-  }
-}
-
 case class PairView(
   @BeanProperty var name:String = null,
   @BeanProperty var scanCronSpec:String = null,
   @BeanProperty var scanCronEnabled:Boolean = true
 ) {
   // Not wanted in equals, hashCode or toString
-  @BeanProperty var pair:DiffaPair = null
+  @BeanProperty var pair:PairRef = null
 
   def this() = this(name = null)
 
   override def equals(that:Any) = that match {
-    case p:PairView => p.name == name && p.pair.key == pair.key && p.pair.domain.name == pair.domain.name
+    case p:PairView => p.name == name && p.pair.name == pair.name && p.pair.space == pair.space
     case _          => false
   }
 
   // TODO This looks a bit strange
-  override def hashCode = 31 * (31 * (31 + pair.key.hashCode) + name.hashCode) + pair.domain.name.hashCode
+  override def hashCode = 31 * (31 * (31 + pair.name.hashCode) + name.hashCode) + pair.space.hashCode
 }
 
 case class PairReport(
   @BeanProperty var name:String = null,
-  @BeanProperty var pair: DiffaPair = null,
+  @BeanProperty var pair: PairRef = null,
   @BeanProperty var reportType:String = null,
   @BeanProperty var target:String = null
 ) {
@@ -280,9 +244,17 @@ object PairReportType {
 
 case class PairRef(@BeanProperty var name: String = null,
                    @BeanProperty var space: Long = -1L) {
+
   def this() = this(name = null)
 
   def identifier = "%s/%s".format(space,name)
+
+  override def equals(that:Any) = that match {
+    case p:PairRef => p.name == name && p.space == space
+    case _         => false
+  }
+
+  override def hashCode = 31 * (31 + name.hashCode) + space.hashCode
 }
 
 /**
@@ -295,7 +267,7 @@ case class DiffaPairRef(@BeanProperty var key: String = null,
 
   def identifier = "%s/%s".format(domain,key)
 
-  def toInternalFormat = DiffaPair(key = key, domain = Domain(name = domain))
+  //def toInternalFormat = DiffaPair(key = key, domain = Domain(name = domain))
 
   override def equals(that:Any) = that match {
     case p:DiffaPairRef => p.key == key && p.domain == domain
@@ -304,14 +276,6 @@ case class DiffaPairRef(@BeanProperty var key: String = null,
 
   // TODO This looks a bit strange
   override def hashCode = 31 * (31 + key.hashCode) + domain.hashCode
-}
-
-object DiffaPair {
-  val NO_MATCHING = null.asInstanceOf[Int]
-  def fromIdentifier(id:String) = {
-    val Array(domain,key) = id.split("/")
-    (domain,key)
-  }
 }
 
 case class Domain (
@@ -337,7 +301,7 @@ case class RepairAction(
   @BeanProperty var name: String = null,
   @BeanProperty var url: String = null,
   @BeanProperty var scope: String = null,
-  @BeanProperty var pair: DiffaPair = null
+  @BeanProperty var pair: PairRef = null
 ) {
   import RepairAction._
 
@@ -345,7 +309,7 @@ case class RepairAction(
 
   def validate(path:String = null) {
     val actionPath = ValidationUtil.buildPath(
-      ValidationUtil.buildPath(path, "pair", Map("key" -> pair.key)),
+      ValidationUtil.buildPath(path, "pair", Map("name" -> pair.name)),
       "repair-action", Map("name" -> name))
 
     // Ensure that the scope is supported
@@ -402,7 +366,7 @@ case class User(@BeanProperty var name: String = null,
 }
 
 case class ExternalHttpCredentials(
-  domain: String,
+  space: Long,
   url: String,
   key: String,
   value: String,
@@ -411,11 +375,11 @@ case class ExternalHttpCredentials(
 
   override def equals(that:Any) = that match {
     case e:ExternalHttpCredentials =>
-      e.domain == domain && e.url == url && e.credentialType == credentialType
+      e.space == space && e.url == url && e.credentialType == credentialType
     case _                         => false
   }
 
-  override def hashCode = 31 * (31 * (31 + domain.hashCode) + url.hashCode) + credentialType.hashCode
+  override def hashCode = 31 * (31 * (31 + space.hashCode) + url.hashCode) + credentialType.hashCode
 }
 
 object ExternalHttpCredentials {
@@ -470,15 +434,6 @@ case class DomainScopedName(@BeanProperty var name:String = null,
  */
 case class EndpointScopedName(@BeanProperty var name:String = null,
                             @BeanProperty var endpoint:Endpoint = null) extends java.io.Serializable
-{
-  def this() = this(name = null)
-}
-
-/**
- * Provides a Pair Scoped name for an entity.
- */
-case class PairScopedName(@BeanProperty var name:String = null,
-                          @BeanProperty var pair:DiffaPair = null) extends java.io.Serializable
 {
   def this() = this(name = null)
 }

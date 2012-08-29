@@ -1,66 +1,53 @@
+/**
+ * Copyright (C) 2010-2012 LShift Ltd.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *         http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package net.lshift.diffa.schema.migrations.steps
 
-import net.lshift.diffa.schema.migrations.VerifiedMigrationStep
 import org.hibernate.cfg.Configuration
+import net.lshift.diffa.schema.migrations.VerifiedMigrationStep
 import net.lshift.hibernate.migrations.MigrationBuilder
 import java.sql.Types
-import Step0048.{createSpace,createUser}
 import scala.collection.JavaConversions._
-import org.hibernate.mapping.Column
-
-/**
- * Database step adding user roles.
- */
 
 object Step0049 extends VerifiedMigrationStep {
 
   def versionId = 49
-  def name = "User roles"
+  def name = "Introduce sub spaces"
 
   def createMigration(config: Configuration) = {
     val migration = new MigrationBuilder(config)
 
-    // NOTE: When hierarchical spaces are implemented, we'll want a slightly stronger uniqueness check to ensure that
-    //       the same name isn't re-used in a space hierarchy. This may, however, not be achievable in the database
-    //       layer.
-    migration.createTable("member_roles").
-      column("space", Types.BIGINT, false).
-      column("name", Types.VARCHAR, 50, false).
-      pk("space", "name")
-    migration.alterTable("member_roles").
-      addForeignKey("fk_role_spcs", "space", "spaces", "id")
+    migration.alterTable("spaces").
+      addColumn("parent", Types.BIGINT, false, 0)
 
-    migration.createTable("role_permissions").
-      column("space", Types.BIGINT, false).
-      column("role", Types.VARCHAR, 50, false).
-      column("permission", Types.VARCHAR, 50, false).
-      pk("space", "role", "permission")
+    migration.alterTable("spaces").addForeignKey("fk_uniq_chld", "parent", "spaces", "id")
 
-    migration.insert("member_roles").values(Map(
-      "space" -> "0",
-      "name" -> "user"
+    migration.createTable("space_paths").
+      column("ancestor", Types.BIGINT, false).
+      column("descendant", Types.BIGINT, false).
+      column("depth", Types.INTEGER, false).
+      pk("ancestor", "descendant")
+
+    migration.alterTable("space_paths").addForeignKey("fk_space_par", "ancestor", "spaces", "id")
+    migration.alterTable("space_paths").addForeignKey("fk_space_chd", "descendant", "spaces", "id")
+
+    migration.insert("space_paths").values(Map(
+      "ancestor"    -> "0",
+      "descendant"  -> "0",
+      "depth"       -> "0"
     ))
-    migration.insert("role_permissions").values(Map(
-      "space" -> "0",
-      "role" -> "Admin",
-      "permission" -> "domain-user"
-    ))
-
-    // We can no longer create a foreign key based purely upon the user being a member of the space. Instead, just
-    // ensure the user exists.
-    migration.alterTable("user_item_visibility").
-      dropForeignKey("fk_uiv_mmbs").
-      addForeignKey("fk_uiv_user", Array("username"), "users", Array("name"))
-
-    // NOTE: When hierarchical spaces are implemented, this membership may also need to reference the space where
-    //       the role was defined. This will allow a role to be defined at a high level, and then be used in applied
-    //       to specific child spaces (ie, define a top level "Admin" role, but then only apply it to a specific subspace).
-    migration.alterTable("members").
-      addColumn("role", Types.VARCHAR, 50, false, "Admin").
-      addColumn("role_space", Types.BIGINT, Column.DEFAULT_LENGTH, false, 0).
-      dropPrimaryKey().
-      addPrimaryKey("space", "username", "role_space", "role").
-      addForeignKey("fk_mmbs_role", Array("role_space", "role"), "member_roles", Array("space", "name"))
 
     migration
   }
@@ -68,44 +55,42 @@ object Step0049 extends VerifiedMigrationStep {
   def applyVerification(config: Configuration) = {
     val migration = new MigrationBuilder(config)
 
-    val spaceName = randomString()
-    val spaceId = randomInt()
+    val parentId = randomInt()
+    val childId = randomInt()
+    val parentName = randomString()
+    val childName = randomString()
 
-    createSpace(migration, spaceId, spaceName)
+    migration.insert("spaces").values(Map(
+      "id"                -> parentId,
+      "name"              -> parentName,
+      "parent"            -> "0",
+      "config_version"    -> "0"
+    ))
 
-    val user = randomString()
-    val role = randomString()
-    val permission1 = randomString()
-    val permission2 = randomString()
+    migration.insert("space_paths").values(Map(
+      "ancestor"  -> parentId,
+      "descendant"   -> parentId,
+      "depth"   -> "0"
+    ))
 
-    createUser(migration, user)
-    createRole(migration, spaceId, role, permission1, permission2)
-    createMember(migration, spaceId, user, spaceId, role)
+    migration.insert("spaces").values(Map(
+      "id"                -> childId,
+      "name"              -> childName,
+      "config_version"    -> "0"
+    ))
+
+    migration.insert("space_paths").values(Map(
+      "ancestor"  -> childId,
+      "descendant"   -> childId,
+      "depth"   -> "0"
+    ))
+
+    migration.insert("space_paths").values(Map(
+      "ancestor"  -> parentId,
+      "descendant"   -> childId,
+      "depth"   -> "1"
+    ))
 
     migration
-  }
-
-  def createRole(migration:MigrationBuilder, spaceId:String, name:String, permissions:String*) {
-    migration.insert("member_roles").values(Map(
-      "space" -> spaceId,
-      "name" -> name
-    ))
-
-    permissions.foreach(p =>
-      migration.insert("role_permissions").values(Map(
-        "space" -> spaceId,
-        "role" -> name,
-        "permission" -> p
-      ))
-    )
-  }
-
-  def createMember(migration:MigrationBuilder, spaceId:String, user:String, roleSpaceId:String, role:String) {
-    migration.insert("members").values(Map(
-      "space" -> spaceId,
-      "username" -> user,
-      "role_space" -> roleSpaceId,
-      "role" -> role
-    ))
   }
 }
