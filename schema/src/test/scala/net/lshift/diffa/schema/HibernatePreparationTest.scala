@@ -40,7 +40,7 @@ class HibernatePreparationTest {
   
   @Test
   def migrationStepsShouldBeOrderedCorrectly = {
-    val steps = HibernateConfigStorePreparationStep.migrationSteps.toArray
+    val steps = HibernateConfigStorePreparationStep.migrationSteps.toList
     for (i <- 0 until steps.length) {
       val msg = "Attempting to verify version id of step [%s]".format(steps(i).name)
       assertEquals(msg, i + startingVersion, steps(i).versionId)
