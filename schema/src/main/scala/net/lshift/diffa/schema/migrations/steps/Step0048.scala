@@ -147,8 +147,8 @@ object Step0048 extends VerifiedMigrationStep {
       addForeignKey("fk_escl_pair", Array("space", "pair"), "pairs", Array("space", "name"))
 
     migration.createTable("diffs").
-      column("extent", Types.BIGINT, false).
       column("seq_id", Types.BIGINT, false).
+      column("extent", Types.BIGINT, false).
       column("entity_id", Types.VARCHAR, 255, false).
       column("is_match", Types.BIT, false).
       column("detected_at", Types.TIMESTAMP, false).

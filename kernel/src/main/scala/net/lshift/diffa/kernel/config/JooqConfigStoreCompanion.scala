@@ -279,7 +279,14 @@ object JooqConfigStoreCompanion {
   }
 
   def listPairs(jooq:DatabaseFacade,
-                space:Long, key:Option[String] = None, endpoint:Option[String] = None) : Seq[DomainPairDef] = jooq.execute(t => {
+                space:Long,
+                key:Option[String] = None,
+                endpoint:Option[String] = None) : Seq[DomainPairDef] = jooq.execute(t => listPairsInCurrentTx(t, space, key, endpoint))
+
+  def listPairsInCurrentTx(t:Factory,
+                           space:Long,
+                           key:Option[String] = None,
+                           endpoint:Option[String] = None) : Seq[DomainPairDef] = {
 
     val baseQuery = t.select(PAIRS.getFields).
       select(PAIR_VIEWS.NAME, PAIR_VIEWS.SCAN_CRON_SPEC, PAIR_VIEWS.SCAN_CRON_ENABLED).
@@ -374,7 +381,7 @@ object JooqConfigStoreCompanion {
     })
 
     compressed.values.toList
-  })
+  }
 
   def mapResultsToList[T](results:Result[Record], rowMapper:Record => T) = {
     val escalations = new java.util.ArrayList[T]()

@@ -336,7 +336,6 @@ class JooqSystemConfigStore(jooq:JooqDatabaseFacade,
     t.delete(MEMBERS).where(MEMBERS.SPACE.equal(id)).execute()
     t.delete(STORE_CHECKPOINTS).where(STORE_CHECKPOINTS.SPACE.equal(id)).execute()
     t.delete(PENDING_DIFFS).where(PENDING_DIFFS.SPACE.equal(id)).execute()
-    t.delete(DIFFS).where(DIFFS.SPACE.equal(id)).execute()
 
     t.delete(SPACE_PATHS).
       where(SPACE_PATHS.ANCESTOR.equal(id)).
