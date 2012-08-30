@@ -32,6 +32,7 @@ import com.eaio.uuid.UUID
 import java.sql.SQLIntegrityConstraintViolationException
 import org.jooq.exception.DataAccessException
 import org.apache.commons.lang.RandomStringUtils
+import system.PolicyKey
 
 class JooqDomainConfigStoreTest {
   private val log = LoggerFactory.getLogger(getClass)
@@ -235,7 +236,7 @@ class JooqDomainConfigStoreTest {
     declareAll()
 
     systemConfigStore.createOrUpdateUser(user)
-    domainConfigStore.makeDomainMember(space.id, user.name)
+    domainConfigStore.makeDomainMember(space.id, user.name, PolicyKey(0L, "User"))
     userPreferencesStore.createFilteredItem(pair, user.name, FilteredItemType.SWIM_LANE)
 
     domainConfigStore.deletePair(pair)
@@ -247,7 +248,7 @@ class JooqDomainConfigStoreTest {
     declareAll()
 
     systemConfigStore.createOrUpdateUser(user)
-    domainConfigStore.makeDomainMember(space.id, user.name)
+    domainConfigStore.makeDomainMember(space.id, user.name, PolicyKey(0L, "User"))
     userPreferencesStore.createFilteredItem(pair, user.name, FilteredItemType.SWIM_LANE)
 
     systemConfigStore.deleteSpace(space.id)
@@ -696,10 +697,10 @@ class JooqDomainConfigStoreTest {
 
     systemConfigStore.createOrUpdateUser(user)
 
-    val member = domainConfigStore.makeDomainMember(space.id, user.name)
+    val member = domainConfigStore.makeDomainMember(space.id, user.name, PolicyKey(0L, "User"))
     assertIsDomainMember(member, true)
 
-    domainConfigStore.removeDomainMembership(space.id, user.name)
+    domainConfigStore.removeDomainMembership(space.id, user.name, "User")
     assertIsDomainMember(member, false)
   }
 

@@ -25,7 +25,7 @@ import net.lshift.diffa.kernel.util.{EndpointSide, UpstreamEndpoint, DownstreamE
 import net.lshift.diffa.participant.scanning.{AggregationBuilder, ConstraintsBuilder, SetConstraint, ScanConstraint}
 import java.util.HashMap
 import net.lshift.diffa.kernel.participants._
-import system.RoleKey
+import system.PolicyKey
 
 /**
  * Provides general configuration options within the scope of a particular domain.
@@ -78,19 +78,19 @@ trait DomainConfigStore {
   def clearConfigOption(space:Long, key:String)
 
   /**
-   * Looks up the key for a role based upon its name and space.
+   * Looks up the key for a policy based upon its name and space.
    */
-  def lookupRole(space:Long, role:String):RoleKey
+  def lookupPolicy(space:Long, role:String):PolicyKey
 
   /**
    * Make the given user a member of this domain.
    */
-  def makeDomainMember(space:Long, userName:String, role:RoleKey) : Member
+  def makeDomainMember(space:Long, userName:String, role:PolicyKey) : Member
 
   /**
-   * Remove the given user from the given role in this domain.
+   * Remove the given user from the given policy in this domain.
    */
-  def removeDomainMembership(space:Long, userName:String, role:String) : Unit
+  def removeDomainMembership(space:Long, userName:String, policy:String) : Unit
 
   /**
    * Lists all of the members of the given domain
@@ -392,8 +392,8 @@ object ExternalHttpCredentials {
  */
 case class Member(@BeanProperty var user:String = null,
                   @BeanProperty var space:Long = -1L,
-                  @BeanProperty var roleSpace:Long = -1L,     // The space that the role belongs to
-                  @BeanProperty var role:String = null,
+                  @BeanProperty var policySpace:Long = -1L,     // The space that the policy belongs to
+                  @BeanProperty var policy:String = null,
                   @Deprecated @BeanProperty var domain:String = null) {
 
   def this() = this(user = null)

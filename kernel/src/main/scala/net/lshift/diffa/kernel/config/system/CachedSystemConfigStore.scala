@@ -28,12 +28,13 @@ class CachedSystemConfigStore(underlying:SystemConfigStore, cacheProvider:CacheP
   val userTokenCache = cacheProvider.getCachedMap[String, User]("user.tokens")
   val usersCache = cacheProvider.getCachedMap[String, User]("users")
   val membershipCache = cacheProvider.getCachedMap[String, java.util.List[Member]]("user.domain.memberships")
-  val roleCache = cacheProvider.getCachedMap[RoleKey, java.util.List[String]](CacheName.SPACE_ROLE_PERMISSIONS)
+  val policyCache = cacheProvider.getCachedMap[PolicyKey, java.util.List[PolicyStatement]](CacheName.SPACE_POLICY_STATEMENTS)
 
   def reset {
     usersCache.evictAll()
     userTokenCache.evictAll()
     membershipCache.evictAll()
+    policyCache.evictAll()
   }
 
   def onMembershipCreated(member: Member) = {
@@ -91,9 +92,9 @@ class CachedSystemConfigStore(underlying:SystemConfigStore, cacheProvider:CacheP
       () => underlying.listDomainMemberships(username).toList)
   }
 
-  def lookupPermissions(role:RoleKey) = {
-    roleCache.readThrough(role,
-      () => underlying.lookupPermissions(role))
+  def lookupPolicyStatements(policy:PolicyKey) = {
+    policyCache.readThrough(policy,
+      () => underlying.lookupPolicyStatements(policy).toList)
   }
 
   def getUser(username: String) = {

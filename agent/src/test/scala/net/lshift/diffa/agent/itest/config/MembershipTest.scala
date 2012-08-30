@@ -21,11 +21,11 @@ import org.junit.Assert._
 import net.lshift.diffa.agent.itest.support.TestConstants._
 import com.eaio.uuid.UUID
 import net.lshift.diffa.agent.client.{ConfigurationRestClient, SecurityRestClient, SystemConfigRestClient}
-import net.lshift.diffa.kernel.frontend.{UserDef, DomainDef}
 import net.lshift.diffa.client.{RestClientParams, AccessDeniedException}
 import com.sun.jersey.api.client.UniformInterfaceException
 import net.lshift.diffa.agent.itest.IsolatedDomainTest
 import org.apache.commons.lang3.RandomStringUtils
+import net.lshift.diffa.kernel.frontend.{PolicyMember, UserDef, DomainDef}
 
 /**
  * Tests whether domain membership admin is accessible via the REST API
@@ -44,31 +44,31 @@ class MembershipTest extends IsolatedDomainTest {
   @Test
   def shouldBeAbleToManageDomainMembership = {
 
-    def assertIsDomainMember(username:String, expectation:Boolean) = {
+    def assertIsDomainMember(username:String, policy:String, expectation:Boolean) = {
       val members = configClient.listDomainMembers
-      val isMember = members.toSeq.find(m => m == username).isDefined
+      val isMember = members.toSeq.find(m => m == PolicyMember(username, policy)).isDefined
       assertEquals(expectation, isMember)
     }
 
     securityClient.declareUser(UserDef(username,email,false,password))
 
-    configClient.makeDomainMember(username)
+    configClient.makeDomainMember(username, "User")
 
-    assertIsDomainMember(username, true)
+    assertIsDomainMember(username, "User", true)
 
-    configClient.removeDomainMembership(username)
-    assertIsDomainMember(username, false)
+    configClient.removeDomainMembership(username, "User")
+    assertIsDomainMember(username, "User", false)
   }
 
   @Test
   def shouldBeAbleToListDomainsUserIsAMemberOf() = {
 
     securityClient.declareUser(UserDef(username, email, false, password))
-    configClient.makeDomainMember(username)
+    configClient.makeDomainMember(username, "User")
 
     assertEquals(List(isolatedDomain), securityClient.getMembershipDomains(username).map(d => d.name).toList)
 
-    configClient.removeDomainMembership(username)
+    configClient.removeDomainMembership(username, "User")
 
     assertEquals(List(), securityClient.getMembershipDomains(username).toList)
   }
@@ -77,7 +77,7 @@ class MembershipTest extends IsolatedDomainTest {
   def shouldNotBeAbleToAccessDomainConfigurationWhenNotADomainMember() {
 
     securityClient.declareUser(UserDef(username,email,false,password))
-    configClient.removeDomainMembership(username)   // Ensure the user isn't a domain member
+    configClient.removeDomainMembership(username, "User")   // Ensure the user isn't a domain member
     userConfigClient.listDomainMembers
   }
 
@@ -85,7 +85,7 @@ class MembershipTest extends IsolatedDomainTest {
   def shouldBeAbleToAccessDomainConfigurationWhenDomainMember() {
 
     securityClient.declareUser(UserDef(username,email,false,password))
-    configClient.makeDomainMember(username)
+    configClient.makeDomainMember(username, "User")
     userConfigClient.listDomainMembers
   }
 

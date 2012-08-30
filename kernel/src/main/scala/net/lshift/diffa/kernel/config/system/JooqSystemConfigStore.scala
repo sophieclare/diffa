@@ -43,7 +43,7 @@ import net.lshift.diffa.schema.tables.EndpointViews.ENDPOINT_VIEWS
 import net.lshift.diffa.schema.tables.Endpoints.ENDPOINTS
 import net.lshift.diffa.schema.tables.ConfigOptions.CONFIG_OPTIONS
 import net.lshift.diffa.schema.tables.Members.MEMBERS
-import net.lshift.diffa.schema.tables.RolePermissions.ROLE_PERMISSIONS
+import net.lshift.diffa.schema.tables.PolicyStatements.POLICY_STATEMENTS
 import net.lshift.diffa.schema.tables.StoreCheckpoints.STORE_CHECKPOINTS
 import net.lshift.diffa.schema.tables.PendingDiffs.PENDING_DIFFS
 import net.lshift.diffa.schema.tables.Diffs.DIFFS
@@ -251,7 +251,7 @@ class JooqSystemConfigStore(jooq:JooqDatabaseFacade,
 
   def listDomainMemberships(username: String) : Seq[Member] = {
     jooq.execute(t => {
-      val results = t.select(MEMBERS.SPACE, MEMBERS.ROLE, MEMBERS.ROLE_SPACE, SPACES.NAME).
+      val results = t.select(MEMBERS.SPACE, MEMBERS.POLICY, MEMBERS.POLICY_SPACE, SPACES.NAME).
                       from(MEMBERS).
                       join(SPACES).on(SPACES.ID.equal(MEMBERS.SPACE)).
                       where(MEMBERS.USERNAME.equal(username)).
@@ -259,8 +259,8 @@ class JooqSystemConfigStore(jooq:JooqDatabaseFacade,
       results.iterator().map(r => Member(
         user = username,
         space = r.getValue(MEMBERS.SPACE),
-        roleSpace = r.getValue(MEMBERS.ROLE_SPACE),
-        role = r.getValue(MEMBERS.ROLE),
+        policySpace = r.getValue(MEMBERS.POLICY_SPACE),
+        policy = r.getValue(MEMBERS.POLICY),
 
         // TODO Ideally we shouldn't need to do this join, since the domain field is deprecated
         // and consumers of this call should be able to deal with the surrogate space id, but
@@ -271,14 +271,14 @@ class JooqSystemConfigStore(jooq:JooqDatabaseFacade,
     }).toSeq
   }
 
-  def lookupPermissions(role:RoleKey) = {
+  def lookupPolicyStatements(policy:PolicyKey) = {
     jooq.execute(t => {
-      val results = t.select(ROLE_PERMISSIONS.PERMISSION).
-                      from(ROLE_PERMISSIONS).
-                      where(ROLE_PERMISSIONS.SPACE.equal(role.space).and(ROLE_PERMISSIONS.ROLE.equal(role.name))).
+      val results = t.select().
+                      from(POLICY_STATEMENTS).
+                      where(POLICY_STATEMENTS.SPACE.equal(policy.space).and(POLICY_STATEMENTS.POLICY.equal(policy.name))).
                       fetch()
 
-      results.iterator().map(_.getValue(ROLE_PERMISSIONS.PERMISSION)).toSeq
+      results.iterator().map(recordToPolicyStatement(_)).toSeq
     })
   }
 
@@ -579,6 +579,13 @@ class JooqSystemConfigStore(jooq:JooqDatabaseFacade,
       token = record.getValue(USERS.TOKEN),
       superuser = record.getValue(USERS.SUPERUSER),
       passwordEnc = record.getValue(USERS.PASSWORD_ENC)
+    )
+  }
+
+  private def recordToPolicyStatement(record:Record) = {
+    PolicyStatement(
+      privilege = record.getValue(POLICY_STATEMENTS.PRIVILEGE),
+      target = record.getValue(POLICY_STATEMENTS.TARGET)
     )
   }
 }

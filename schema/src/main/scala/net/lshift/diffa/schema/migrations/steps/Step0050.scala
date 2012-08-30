@@ -9,42 +9,46 @@ import scala.collection.JavaConversions._
 import org.hibernate.mapping.Column
 
 /**
- * Database step adding user roles.
+ * Database step adding access control policies.
  */
 
 object Step0050 extends VerifiedMigrationStep {
 
   def versionId = 50
-  def name = "User roles"
+  def name = "Access control policies"
 
   def createMigration(config: Configuration) = {
     val migration = new MigrationBuilder(config)
 
-    // NOTE: When hierarchical spaces are implemented, we'll want a slightly stronger uniqueness check to ensure that
-    //       the same name isn't re-used in a space hierarchy. This may, however, not be achievable in the database
-    //       layer.
-    migration.createTable("member_roles").
+    migration.createTable("privileges").
+      column("name", Types.VARCHAR, 50, false).
+      pk("name")
+
+    migration.createTable("policies").
       column("space", Types.BIGINT, false).
       column("name", Types.VARCHAR, 50, false).
       pk("space", "name")
-    migration.alterTable("member_roles").
-      addForeignKey("fk_role_spcs", "space", "spaces", "id")
+    migration.alterTable("policies").
+      addForeignKey("fk_plcy_spcs", "space", "spaces", "id")
 
-    migration.createTable("role_permissions").
+    migration.createTable("policy_statements").
       column("space", Types.BIGINT, false).
-      column("role", Types.VARCHAR, 50, false).
-      column("permission", Types.VARCHAR, 50, false).
-      pk("space", "role", "permission")
+      column("policy", Types.VARCHAR, 50, false).
+      column("privilege", Types.VARCHAR, 50, false).
+      column("target", Types.VARCHAR, 50, true).
+      pk("space", "policy", "privilege")
+    migration.alterTable("policy_statements").
+      addForeignKey("fk_plcy_stmts_plcy", "space", "spaces", "id").
+      addForeignKey("fk_plcy_stmts_priv", "privilege", "privileges", "name")
 
-    migration.insert("member_roles").values(Map(
-      "space" -> "0",
-      "name" -> "user"
-    ))
-    migration.insert("role_permissions").values(Map(
-      "space" -> "0",
-      "role" -> "Admin",
-      "permission" -> "domain-user"
-    ))
+    definePrivileges(migration, "domain-user")
+
+    // Replacement policy for indicating a domain user
+    createPolicy(migration, "0", "User", "domain-user")
+
+    // Full-access admin policy
+      // TODO: Add all privileges against this policy
+    createPolicy(migration, "0", "Admin")
 
     // We can no longer create a foreign key based purely upon the user being a member of the space. Instead, just
     // ensure the user exists.
@@ -52,15 +56,15 @@ object Step0050 extends VerifiedMigrationStep {
       dropForeignKey("fk_uiv_mmbs").
       addForeignKey("fk_uiv_user", Array("username"), "users", Array("name"))
 
-    // NOTE: When hierarchical spaces are implemented, this membership may also need to reference the space where
-    //       the role was defined. This will allow a role to be defined at a high level, and then be used in applied
-    //       to specific child spaces (ie, define a top level "Admin" role, but then only apply it to a specific subspace).
+    // NOTE: A membership also needs to reference the space where the policy was defined.
+    //       This allow a policy to be defined at a high level, and then be used in applied
+    //       to specific child spaces (ie, define a top level "Admin" policy, but then only apply it to a specific subspace).
     migration.alterTable("members").
-      addColumn("role", Types.VARCHAR, 50, false, "Admin").
-      addColumn("role_space", Types.BIGINT, Column.DEFAULT_LENGTH, false, 0).
+      addColumn("policy", Types.VARCHAR, 50, false, "Admin").
+      addColumn("policy_space", Types.BIGINT, Column.DEFAULT_LENGTH, false, 0).
       dropPrimaryKey().
-      addPrimaryKey("space", "username", "role_space", "role").
-      addForeignKey("fk_mmbs_role", Array("role_space", "role"), "member_roles", Array("space", "name"))
+      addPrimaryKey("space", "username", "policy_space", "policy").
+      addForeignKey("fk_mmbs_plcy", Array("policy_space", "policy"), "policies", Array("space", "name"))
 
     migration
   }
@@ -74,38 +78,47 @@ object Step0050 extends VerifiedMigrationStep {
     createSpace(migration, spaceId, spaceName)
 
     val user = randomString()
-    val role = randomString()
-    val permission1 = randomString()
-    val permission2 = randomString()
+    val policy = randomString()
+    val privilege1 = randomString()
+    val privilege2 = randomString()
 
     createUser(migration, user)
-    createRole(migration, spaceId, role, permission1, permission2)
-    createMember(migration, spaceId, user, spaceId, role)
+    definePrivileges(migration, privilege1, privilege2)
+    createPolicy(migration, spaceId, policy, privilege1, privilege2)
+    createMember(migration, spaceId, user, spaceId, policy)
 
     migration
   }
 
-  def createRole(migration:MigrationBuilder, spaceId:String, name:String, permissions:String*) {
-    migration.insert("member_roles").values(Map(
-      "space" -> spaceId,
-      "name" -> name
-    ))
-
-    permissions.foreach(p =>
-      migration.insert("role_permissions").values(Map(
-        "space" -> spaceId,
-        "role" -> name,
-        "permission" -> p
+  def definePrivileges(migration:MigrationBuilder, privileges:String*) {
+    privileges.foreach(p =>
+      migration.insert("privileges").values(Map(
+        "name" -> p
       ))
     )
   }
 
-  def createMember(migration:MigrationBuilder, spaceId:String, user:String, roleSpaceId:String, role:String) {
+  def createPolicy(migration:MigrationBuilder, spaceId:String, name:String, privileges:String*) {
+    migration.insert("policies").values(Map(
+      "space" -> spaceId,
+      "name" -> name
+    ))
+
+    privileges.foreach(p =>
+      migration.insert("policy_statements").values(Map(
+        "space" -> spaceId,
+        "policy" -> name,
+        "privilege" -> p
+      ))
+    )
+  }
+
+  def createMember(migration:MigrationBuilder, spaceId:String, user:String, policySpaceId:String, policy:String) {
     migration.insert("members").values(Map(
       "space" -> spaceId,
       "username" -> user,
-      "role_space" -> roleSpaceId,
-      "role" -> role
+      "policy_space" -> policySpaceId,
+      "policy" -> policy
     ))
   }
 }

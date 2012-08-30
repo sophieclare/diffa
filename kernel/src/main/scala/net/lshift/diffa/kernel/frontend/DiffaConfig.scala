@@ -29,7 +29,7 @@ import net.lshift.diffa.kernel.escalation.EscalationManager
  * defined in a single config belong to a particular domain.
  */
 case class DiffaConfig(
-  members:Set[RoleMember] = Set(),
+  members:Set[PolicyMember] = Set(),
   properties:Map[String, String] = Map(),
   endpoints:Set[EndpointDef] = Set(),
   pairs:Set[PairDef] = Set()
@@ -50,9 +50,9 @@ object DefaultLimits {
   val MYSQL_VARCHAR_PK_LIMIT = 255
 }
 
-case class RoleMember(
+case class PolicyMember(
   @BeanProperty var username:String = null,
-  @BeanProperty var role:String = null
+  @BeanProperty var policy:String = null
 ) {
   def this() = this(username = null)
 }

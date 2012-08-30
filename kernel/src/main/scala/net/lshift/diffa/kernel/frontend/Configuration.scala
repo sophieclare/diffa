@@ -67,14 +67,14 @@ class Configuration(val configStore: DomainConfigStore,
     val existingMembers = listSpaceMembers(space)
     val removedMembers = existingMembers.diff(diffaConfig.members.toSeq)
     removedMembers.foreach(m => {
-      if (m.username != callingUser) {      // Users aren't allowed to remove memberships for themselves
-        removeDomainMembership(space, m.username, m.role)
+      if (Some(m.username) != callingUser) {      // Users aren't allowed to remove memberships for themselves
+        removeDomainMembership(space, m.username, m.policy)
       }
     })
     val newMembers = diffaConfig.members.toSeq.diff(existingMembers)
     newMembers.foreach(m => {
-      if (m.username != callingUser) {      // Users aren't allowed to add memberships for themselves
-        makeDomainMember(space, m.username, m.role)
+      if (Some(m.username) != callingUser) {      // Users aren't allowed to add memberships for themselves
+        makeDomainMember(space, m.username, m.policy)
       }
     })
 
@@ -263,15 +263,15 @@ class Configuration(val configStore: DomainConfigStore,
     updatePair(space, pairKey, pair => replaceByName(pair.reports, report))
   }
 
-  def makeDomainMember(space:Long, userName:String, role:String) {
-    val roleKey = configStore.lookupRole(space, role)
-    configStore.makeDomainMember(space, userName, roleKey)
+  def makeDomainMember(space:Long, userName:String, policy:String) {
+    val policyKey = configStore.lookupPolicy(space, policy)
+    configStore.makeDomainMember(space, userName, policyKey)
   }
-  def removeDomainMembership(space:Long, userName:String, role:String) {
+  def removeDomainMembership(space:Long, userName:String, policy:String) {
     preferencesStore.removeAllFilteredItemsForDomain(space, userName)
-    configStore.removeDomainMembership(space, userName, role)
+    configStore.removeDomainMembership(space, userName, policy)
   }
-  def listSpaceMembers(space:Long) = configStore.listDomainMembers(space).map(m => RoleMember(m.user, m.role))
+  def listSpaceMembers(space:Long) = configStore.listDomainMembers(space).map(m => PolicyMember(m.user, m.policy))
 
   def notifyPairUpdate(p:PairRef) {
     supervisors.foreach(_.startActor(p))
