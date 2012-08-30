@@ -41,14 +41,16 @@ object Step0050 extends VerifiedMigrationStep {
       addForeignKey("fk_plcy_stmts_plcy", "space", "spaces", "id").
       addForeignKey("fk_plcy_stmts_priv", "privilege", "privileges", "name")
 
-    definePrivileges(migration, "domain-user")
+    definePrivileges(migration,
+      "domain-user", "read-diffs", "configure", "initiate-scan", "post-change-event",
+      "post-inventory", "view-scan-status", "view-diagnostics", "invoke-actions", "ignore-diffs", "view-explanations")
 
     // Replacement policy for indicating a domain user
     createPolicy(migration, "0", "User", "domain-user")
 
     // Full-access admin policy
-      // TODO: Add all privileges against this policy
-    createPolicy(migration, "0", "Admin")
+    createPolicy(migration, "0", "Admin", "read-diffs", "configure", "initiate-scan", "post-change-event",
+      "post-inventory", "view-scan-status", "view-diagnostics", "invoke-actions", "ignore-diffs", "view-explanations")
 
     // We can no longer create a foreign key based purely upon the user being a member of the space. Instead, just
     // ensure the user exists.
