@@ -16,7 +16,6 @@
 
 package net.lshift.diffa.kernel.differencing
 
-import net.lshift.diffa.kernel.events.VersionID
 import reflect.BeanProperty
 import scala.collection.JavaConversions._
 import org.joda.time.{DateTime, Interval}
@@ -37,13 +36,8 @@ import org.jooq._
 import java.lang.{Long => LONG}
 import java.sql.Timestamp
 import net.lshift.diffa.kernel.naming.{CacheName, SequenceName}
-import scala.Some
-import net.lshift.diffa.kernel.differencing.AggregateTile
 import net.lshift.diffa.kernel.config.PairRef
-import net.lshift.diffa.kernel.differencing.DifferenceEvent
 import net.lshift.diffa.kernel.events.VersionID
-import net.lshift.diffa.kernel.differencing.ReportedDifferenceEvent
-import net.lshift.diffa.kernel.differencing.EventOptions
 
 /**
  * Hibernate backed Domain Cache provider.
@@ -412,7 +406,7 @@ class JooqDomainDifferenceStore(db: DatabaseFacade,
                         and(DIFFS.IGNORED.equal(false)).
                       fetchLazy()
 
-      db.processAsStream(cursor, r => handler(recordToReportedDifferenceEvent(r).asExternalReportedDifferenceEvent ))
+      db.processAsStream(cursor, (r:Record) => handler(recordToReportedDifferenceEvent(r).asExternalReportedDifferenceEvent ))
     }
   }
 
@@ -509,7 +503,7 @@ class JooqDomainDifferenceStore(db: DatabaseFacade,
         where(DIFFS.NEXT_ESCALATION_TIME.lessOrEqual(dateTimeToTimestamp(cutoff))).
         fetchLazy()
 
-    db.processAsStream(escalatees, r => callback(recordToReportedDifferenceEventAsDifferenceEvent(r)))
+    db.processAsStream(escalatees, (r:Record) => callback(recordToReportedDifferenceEventAsDifferenceEvent(r)))
   }
 
 
@@ -574,7 +568,7 @@ class JooqDomainDifferenceStore(db: DatabaseFacade,
 
   private def initializeExistingSequences() = db.execute { t =>
 
-    val maxSeqId = t.select(nvl(max(DIFFS.SEQ_ID), 0)).
+    val maxSeqId = t.select(nvl(max(DIFFS.SEQ_ID).asInstanceOf[Field[Any]], 0)).
                      from(DIFFS).
                      fetchOne().
                      getValueAsBigInteger(0).
@@ -582,7 +576,7 @@ class JooqDomainDifferenceStore(db: DatabaseFacade,
 
     synchronizeSequence(SequenceName.SPACES, maxSeqId)
 
-    val maxExtentId = t.select(nvl(max(EXTENTS.ID), 0)).
+    val maxExtentId = t.select(nvl(max(EXTENTS.ID).asInstanceOf[Field[Any]], 0)).
                         from(EXTENTS).
                         fetchOne().
                         getValueAsBigInteger(0).
@@ -634,14 +628,14 @@ class JooqDomainDifferenceStore(db: DatabaseFacade,
     val nextSeqId: java.lang.Long = nextPendingEventSequenceValue(space)
 
     t.insertInto(PENDING_DIFFS).
-      set(PENDING_DIFFS.SEQ_ID, nextSeqId).
-      set(PENDING_DIFFS.SPACE, space:LONG).
-      set(PENDING_DIFFS.PAIR, pair).
-      set(PENDING_DIFFS.ENTITY_ID, pending.objId.id).
-      set(PENDING_DIFFS.DETECTED_AT, dateTimeToTimestamp(pending.detectedAt)).
-      set(PENDING_DIFFS.LAST_SEEN, dateTimeToTimestamp(pending.lastSeen)).
-      set(PENDING_DIFFS.UPSTREAM_VSN, pending.upstreamVsn).
-      set(PENDING_DIFFS.DOWNSTREAM_VSN, pending.downstreamVsn).
+        set(PENDING_DIFFS.SEQ_ID, nextSeqId).
+        set(PENDING_DIFFS.SPACE, space:LONG).
+        set(PENDING_DIFFS.PAIR, pair).
+        set(PENDING_DIFFS.ENTITY_ID, pending.objId.id).
+        set(PENDING_DIFFS.DETECTED_AT, dateTimeToTimestamp(pending.detectedAt)).
+        set(PENDING_DIFFS.LAST_SEEN, dateTimeToTimestamp(pending.lastSeen)).
+        set(PENDING_DIFFS.UPSTREAM_VSN, pending.upstreamVsn).
+        set(PENDING_DIFFS.DOWNSTREAM_VSN, pending.downstreamVsn).
       execute()
     
     pending.oid = nextSeqId
@@ -661,9 +655,9 @@ class JooqDomainDifferenceStore(db: DatabaseFacade,
 
     db.execute { t =>
       t.update(PENDING_DIFFS).
-        set(PENDING_DIFFS.UPSTREAM_VSN, upstreamVsn).
-        set(PENDING_DIFFS.DOWNSTREAM_VSN, downstreamVsn).
-        set(PENDING_DIFFS.LAST_SEEN, dateTimeToTimestamp(seenAt)).
+          set(PENDING_DIFFS.UPSTREAM_VSN, upstreamVsn).
+          set(PENDING_DIFFS.DOWNSTREAM_VSN, downstreamVsn).
+          set(PENDING_DIFFS.LAST_SEEN, dateTimeToTimestamp(seenAt)).
         where(PENDING_DIFFS.SEQ_ID.equal(pending.oid)).
         execute()
     }
