@@ -30,6 +30,7 @@ import net.lshift.diffa.schema.tables.Pairs.PAIRS
 import net.lshift.diffa.schema.tables.Spaces.SPACES
 import net.lshift.diffa.schema.tables.EndpointViews.ENDPOINT_VIEWS
 import net.lshift.diffa.schema.tables.Breakers.BREAKERS
+import net.lshift.diffa.schema.tables.Extents.EXTENTS
 import JooqConfigStoreCompanion._
 import net.lshift.diffa.kernel.naming.CacheName._
 import net.lshift.diffa.kernel.util.MissingObjectException
@@ -46,10 +47,14 @@ import net.lshift.diffa.kernel.frontend.PairDef
 import net.lshift.diffa.kernel.frontend.EndpointDef
 import org.jooq.{Record, Field, Condition, Table}
 import java.lang.{Long => LONG}
+import java.lang.{Integer => INT}
+import net.lshift.diffa.kernel.util.sequence.SequenceProvider
+import net.lshift.diffa.kernel.naming.SequenceName
 
 class JooqDomainConfigStore(jooq:JooqDatabaseFacade,
                             hookManager:HookManager,
                             cacheProvider:CacheProvider,
+                            sequenceProvider:SequenceProvider,
                             membershipListener:DomainMembershipAware)
     extends DomainConfigStore
     with DomainLifecycleAware {
@@ -287,9 +292,10 @@ class JooqDomainConfigStore(jooq:JooqDatabaseFacade,
     pair.validate()
 
     jooq.execute(t => {
-      t.insertInto(PAIRS).
-          set(PAIRS.SPACE, space:LONG).
-          set(PAIRS.NAME, pair.key).
+
+      // Attempt to prevent unecessary sequence churn when updating pairs
+      // TODO We should consider splitting out create and update APIs for records that use sequences
+      val rows = t.update(PAIRS).
           set(PAIRS.UPSTREAM, pair.upstreamName).
           set(PAIRS.DOWNSTREAM, pair.downstreamName).
           set(PAIRS.ALLOW_MANUAL_SCANS, pair.allowManualScans).
@@ -297,15 +303,40 @@ class JooqDomainConfigStore(jooq:JooqDatabaseFacade,
           set(PAIRS.SCAN_CRON_SPEC, pair.scanCronSpec).
           set(PAIRS.SCAN_CRON_ENABLED, boolean2Boolean(pair.scanCronEnabled)).
           set(PAIRS.VERSION_POLICY_NAME, pair.versionPolicyName).
-        onDuplicateKeyUpdate().
-          set(PAIRS.UPSTREAM, pair.upstreamName).
-          set(PAIRS.DOWNSTREAM, pair.downstreamName).
-          set(PAIRS.ALLOW_MANUAL_SCANS, pair.allowManualScans).
-          set(PAIRS.MATCHING_TIMEOUT, pair.matchingTimeout.asInstanceOf[Integer]).
-          set(PAIRS.SCAN_CRON_SPEC, pair.scanCronSpec).
-          set(PAIRS.SCAN_CRON_ENABLED, boolean2Boolean(pair.scanCronEnabled)).
-          set(PAIRS.VERSION_POLICY_NAME, pair.versionPolicyName).
+        where(PAIRS.SPACE.eq(space)).
+          and(PAIRS.NAME.eq(pair.key)).
         execute()
+
+      if (rows == 0) {
+
+        val extent = sequenceProvider.nextSequenceValue(SequenceName.EXTENTS)
+
+        t.insertInto(EXTENTS).
+            set(EXTENTS.ID, extent:LONG).
+          onDuplicateKeyIgnore().
+          execute()
+
+        t.insertInto(PAIRS).
+            set(PAIRS.SPACE, space:LONG).
+            set(PAIRS.NAME, pair.key).
+            set(PAIRS.EXTENT, extent:LONG).
+            set(PAIRS.UPSTREAM, pair.upstreamName).
+            set(PAIRS.DOWNSTREAM, pair.downstreamName).
+            set(PAIRS.ALLOW_MANUAL_SCANS, pair.allowManualScans).
+            set(PAIRS.MATCHING_TIMEOUT, pair.matchingTimeout.asInstanceOf[Integer]).
+            set(PAIRS.SCAN_CRON_SPEC, pair.scanCronSpec).
+            set(PAIRS.SCAN_CRON_ENABLED, boolean2Boolean(pair.scanCronEnabled)).
+            set(PAIRS.VERSION_POLICY_NAME, pair.versionPolicyName).
+          onDuplicateKeyUpdate().
+            set(PAIRS.UPSTREAM, pair.upstreamName).
+            set(PAIRS.DOWNSTREAM, pair.downstreamName).
+            set(PAIRS.ALLOW_MANUAL_SCANS, pair.allowManualScans).
+            set(PAIRS.MATCHING_TIMEOUT, pair.matchingTimeout.asInstanceOf[Integer]).
+            set(PAIRS.SCAN_CRON_SPEC, pair.scanCronSpec).
+            set(PAIRS.SCAN_CRON_ENABLED, boolean2Boolean(pair.scanCronEnabled)).
+            set(PAIRS.VERSION_POLICY_NAME, pair.versionPolicyName).
+          execute()
+      }
 
       type HasName = {def name: String}
       def clearUnused[R <: Record](t:Factory, table:Table[R], namesSource:Iterable[HasName], pairCondition:Condition, nameField:Field[String]) {
@@ -360,10 +391,38 @@ class JooqDomainConfigStore(jooq:JooqDatabaseFacade,
           Map(PAIR_REPORTS.REPORT_TYPE -> r.reportType, PAIR_REPORTS.TARGET -> r.target))
       })
       pair.escalations.foreach(e => {
-        insertOrUpdate(t, ESCALATIONS,
-          Map(ESCALATIONS.SPACE -> space, ESCALATIONS.PAIR -> pair.key, ESCALATIONS.NAME -> e.name),
-          Map(ESCALATIONS.ACTION -> e.action, ESCALATIONS.ACTION_TYPE -> e.actionType,
-            ESCALATIONS.RULE -> e.rule, ESCALATIONS.DELAY -> e.delay))
+
+        val rows =  t.update(ESCALATIONS).
+                        set(ESCALATIONS.ACTION, e.action).
+                        set(ESCALATIONS.ACTION_TYPE, e.actionType).
+                        set(ESCALATIONS.RULE, e.rule).
+                        set(ESCALATIONS.DELAY, e.delay:INT).
+                      where(ESCALATIONS.SPACE.eq(space)).
+                        and(ESCALATIONS.PAIR.eq(pair.key)).
+                        and(ESCALATIONS.NAME.eq(e.name)).
+                      execute()
+
+        if (rows == 0 ) {
+
+          val id = sequenceProvider.nextSequenceValue(SequenceName.ESCALATIONS)
+
+          t.insertInto(ESCALATIONS).
+              set(ESCALATIONS.ID, id:LONG).
+              set(ESCALATIONS.SPACE, space:LONG).
+              set(ESCALATIONS.PAIR, pair.key).
+              set(ESCALATIONS.NAME, e.name).
+              set(ESCALATIONS.ACTION, e.action).
+              set(ESCALATIONS.ACTION_TYPE, e.actionType).
+              set(ESCALATIONS.RULE, e.rule).
+              set(ESCALATIONS.DELAY, e.delay:INT).
+            onDuplicateKeyUpdate().
+              set(ESCALATIONS.ACTION, e.action).
+              set(ESCALATIONS.ACTION_TYPE, e.actionType).
+              set(ESCALATIONS.RULE, e.rule).
+              set(ESCALATIONS.DELAY, e.delay:INT).
+            execute()
+        }
+
       })
 
       upgradeConfigVersion(t, space)

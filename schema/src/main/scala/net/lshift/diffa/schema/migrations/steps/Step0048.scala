@@ -146,6 +146,9 @@ object Step0048 extends VerifiedMigrationStep {
     migration.alterTable("escalations").
       addForeignKey("fk_escl_pair", Array("space", "pair"), "pairs", Array("space", "name"))
 
+    migration.alterTable("escalations")
+      .addUniqueConstraint("uk_escl_pairs", "space", "pair", "name")
+
     migration.createTable("diffs").
       column("seq_id", Types.BIGINT, false).
       column("extent", Types.BIGINT, false).

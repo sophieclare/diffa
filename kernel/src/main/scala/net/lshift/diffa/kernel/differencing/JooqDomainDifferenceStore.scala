@@ -38,6 +38,7 @@ import java.sql.Timestamp
 import net.lshift.diffa.kernel.naming.{CacheName, SequenceName}
 import net.lshift.diffa.kernel.config.PairRef
 import net.lshift.diffa.kernel.events.VersionID
+import net.lshift.diffa.kernel.lifecycle.PairLifecycleAware
 
 /**
  * Hibernate backed Domain Cache provider.
@@ -46,7 +47,7 @@ class JooqDomainDifferenceStore(db: DatabaseFacade,
                                 cacheProvider:CacheProvider,
                                 sequenceProvider:SequenceProvider,
                                 val hookManager:HookManager)
-    extends DomainDifferenceStore {
+    extends DomainDifferenceStore with PairLifecycleAware {
 
   val logger = LoggerFactory.getLogger(getClass)
 
@@ -57,6 +58,7 @@ class JooqDomainDifferenceStore(db: DatabaseFacade,
 
   val pendingEvents = cacheProvider.getCachedMap[VersionID, PendingDifferenceEvent]("pending.difference.events")
   val reportedEvents = cacheProvider.getCachedMap[VersionID, InternalReportedDifferenceEvent](CacheName.DIFFS)
+  val extentsByPair = cacheProvider.getCachedMap[PairRef, java.lang.Long](CacheName.EXTENT_PAIRS)
 
   /**
    * This is a marker to indicate the absence of an event in a map rather than using null
@@ -76,8 +78,12 @@ class JooqDomainDifferenceStore(db: DatabaseFacade,
   def reset {
     pendingEvents.evictAll()
     reportedEvents.evictAll()
+    extentsByPair.evictAll()
     aggregationCache.clear()
   }
+
+  def onPairUpdated(pair:PairRef) = extentsByPair.evict(pair)
+  def onPairDeleted(pair:PairRef) = extentsByPair.evict(pair)
 
   def removeDomain(space:Long) = {
 
@@ -167,15 +173,15 @@ class JooqDomainDifferenceStore(db: DatabaseFacade,
       val reported = getEventById(id)
 
       if (reportedEventExists(reported)) {
-        val reportable = InternalReportedDifferenceEvent(
-          objId = id,
-          detectedAt = reported.detectedAt,
+
+        val updated = reported.copy(
           isMatch = false,
           upstreamVsn = upstreamVsn,
           downstreamVsn = downstreamVsn,
           lastSeen = seen
         )
-        addReportableMismatch(reportable)
+
+        addReportableMismatch(updated)
       }
       else {
         val pendingUnmatched = PendingDifferenceEvent(null, id, lastUpdate, upstreamVsn, downstreamVsn, seen)
@@ -825,13 +831,13 @@ class JooqDomainDifferenceStore(db: DatabaseFacade,
         execute()
     }
 
-    // TODO Theoretically this should never happen ....
     if (rows == 0) {
       val pair = reportableUnmatched.objId.pair.name
       val space = reportableUnmatched.objId.pair.space
       val alert = formatAlertCode(space, pair, INCONSISTENT_DIFF_STORE)
       val msg = " %s No rows updated for previously reported diff %s, next sequence id was %s".format(alert, reportableUnmatched, nextSeqId)
       logger.error(msg, new Exception().fillInStackTrace())
+      throw new Exception(msg)
     }
 
     updateSequenceValueAndCache(reportableUnmatched, nextSeqId)
@@ -868,19 +874,16 @@ class JooqDomainDifferenceStore(db: DatabaseFacade,
 
   private def createReportedEvent(t: Factory, evt:InternalReportedDifferenceEvent, nextSeqId: Long) = {
 
-    val space = evt.objId.pair.space
-    val pair = evt.objId.pair.name
+    // I would have like to have done this extent lookup as a subselect in the insert statement
+    // but we need the value of the extent to put back into the cache.
+    // We could consider just invalidating the cache now and reading the extent through, but
+    // this would cause a lot of DB traffic that we can avoid.
+
+    val extent = getExtent(t, evt.objId.pair)
 
     t.insertInto(DIFFS).
-        set(DIFFS.SEQ_ID, java.lang.Long.valueOf(nextSeqId)).
-        set(DIFFS.EXTENT,
-          t.select(PAIRS.EXTENT).
-            from(PAIRS).
-            where(PAIRS.SPACE.eq(space)).
-              and(PAIRS.NAME.eq(pair)).
-            asField().
-            asInstanceOf[TableField[DiffsRecord, LONG]]
-        ).
+        set(DIFFS.SEQ_ID, nextSeqId:LONG).
+        set(DIFFS.EXTENT, extent:LONG).
         set(DIFFS.ENTITY_ID, evt.objId.id).
         set(DIFFS.IS_MATCH, java.lang.Boolean.valueOf(evt.isMatch)).
         set(DIFFS.DETECTED_AT, dateTimeToTimestamp(evt.detectedAt)).
@@ -890,8 +893,29 @@ class JooqDomainDifferenceStore(db: DatabaseFacade,
         set(DIFFS.IGNORED, java.lang.Boolean.valueOf(evt.ignored)).
       execute()
 
+
+    evt.extent = extent
+
     updateAggregateCache(evt.objId.pair, evt.detectedAt)
     updateSequenceValueAndCache(evt, nextSeqId)
+  }
+
+  private def getExtent(t:Factory, ref:PairRef) = {
+    extentsByPair.readThrough(ref, () => {
+      val extent =  t.select(nvl(PAIRS.EXTENT.asInstanceOf[Field[Any]],-1)).
+                      from(PAIRS).
+                      where(PAIRS.SPACE.eq(ref.space)).
+                        and(PAIRS.NAME.eq(ref.name)).
+                      fetchOne().getValueAsLong(0)
+
+      if (extent < 0) {
+        // This should never happen for an exisitng pair
+        val msg = " %s No extent for pair - check whether the pair exists".format(formatAlertCode(ref, INCONSISTENT_DIFF_STORE))
+        throw new Exception(msg)
+      }
+
+      extent
+    })
   }
 
   private def updateAggregateCache(pair:PairRef, detectedAt:DateTime) =

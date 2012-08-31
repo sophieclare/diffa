@@ -106,11 +106,25 @@
     <constructor-arg ref="notificationCentre" />
     <constructor-arg ref="escalationManager" />
   </bean>
+
+  <!-- NOTE that this explicit depends-on is required for sequence initialization -->
+
   <bean id="domainDifferenceStore" class="net.lshift.diffa.kernel.differencing.JooqDomainDifferenceStore" depends-on="diffaSessionFactory">
     <constructor-arg ref="jooqDatabaseFacade" />
     <constructor-arg ref="hazelcastCacheProvider" />
     <constructor-arg ref="hazelcastSequenceProvider" />
     <constructor-arg ref="hookManager" />
+  </bean>
+
+  <!-- register user preferences store as an event listener of the domain config store -->
+  <bean class="org.springframework.beans.factory.config.MethodInvokingFactoryBean">
+    <property name="targetObject" ref="domainConfigStore" />
+    <property name="targetMethod" value="registerPairEventListener" />
+    <property name="arguments">
+      <list>
+        <ref bean="domainDifferenceStore"/>
+      </list>
+    </property>
   </bean>
 
   <bean id="sweeper" class="net.lshift.diffa.kernel.util.Sweeper" init-method="start" destroy-method="shutdown">
@@ -406,10 +420,13 @@
     <constructor-arg ref="hazelcastSequenceProvider" />
   </bean>
 
-  <bean id="domainConfigStore" class="net.lshift.diffa.kernel.config.JooqDomainConfigStore">
+  <!-- NOTE that this explicit depends-on is required for sequence initialization -->
+
+  <bean id="domainConfigStore" class="net.lshift.diffa.kernel.config.JooqDomainConfigStore" depends-on="diffaSessionFactory">
     <constructor-arg ref="jooqDatabaseFacade" />
     <constructor-arg ref="hookManager" />
     <constructor-arg ref="hazelcastCacheProvider" />
+    <constructor-arg ref="hazelcastSequenceProvider" />
     <constructor-arg ref="systemConfigStore" />
   </bean>
 

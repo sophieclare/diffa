@@ -115,7 +115,7 @@ class LazyCleanStoreReferenceContainer(val applicationEnvironment: DatabaseEnvir
     makeStore[ServiceLimitsStore](sf => new JooqServiceLimitsStore(jooqDatabaseFacade), "ServiceLimitsStore")
 
   private lazy val _domainConfigStore =
-    makeStore(sf => new JooqDomainConfigStore(jooqDatabaseFacade, hookManager, cacheProvider, membershipListener), "domainConfigStore")
+    makeStore(sf => new JooqDomainConfigStore(jooqDatabaseFacade, hookManager, cacheProvider, sequenceProvider, membershipListener), "domainConfigStore")
 
   private lazy val _systemConfigStore =
     makeStore(sf => {
