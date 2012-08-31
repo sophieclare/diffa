@@ -15,6 +15,7 @@
 ## Library Upgrades
 
 * Upgraded to Hazelcast 2.2
+* Upgraded to Lucene 3.6.1
 * Upgraded to Spring Security 3.1.2
 
 ## Upgrading
