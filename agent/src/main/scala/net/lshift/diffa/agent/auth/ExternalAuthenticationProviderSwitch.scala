@@ -171,7 +171,7 @@ class ExternalAuthenticationProviderSwitch(val configStore:SystemConfigStore)
       val identities = Seq(username) ++ res.getAuthorities.map(a => a.getAuthority)
       val memberships = identities.flatMap(i => configStore.listDomainMemberships(i))
       val domainAuthorities = memberships.flatMap(m =>
-        configStore.lookupPolicyStatements(PolicyKey(m.policySpace, m.policy)).map(p => DomainAuthority(m.domain, p)))
+        configStore.lookupPolicyStatements(PolicyKey(m.policySpace, m.policy)).map(p => SpaceAuthority(m.space, m.domain, p)))
       val isRoot = configStore.containsRootUser(identities)
       val authorities = domainAuthorities ++ Seq(new SimpleGrantedAuthority("user")) ++ (isRoot match {
         case true   => Seq(new SimpleGrantedAuthority("root"))

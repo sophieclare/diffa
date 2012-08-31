@@ -55,20 +55,20 @@ class UserDetailsAdapter(val systemConfigStore:SystemConfigStore)
   def hasPermission(auth: Authentication, targetDomainObject: AnyRef, permission: AnyRef) = {
     permission match {
         // Tests to see whether the requesting user is the owner of the requested object
-      case "user-preferences" =>
+      case UserPrivilege("user-preferences") =>
         /*
         os.ten.si.ble [o-sten-suh-buhl]
         adjective
         1. outwardly appearing as such; professed; pretended: an ostensible cheerfulness concealing sadness.
         2.apparent, evident, or conspicuous: the ostensible truth of their theories.
         */
-        val ostensibleUsername = targetDomainObject.asInstanceOf[String]
+        val ostensibleUsername = targetDomainObject.asInstanceOf[UserTarget].username
         isUserWhoTheyClaimToBe(auth, ostensibleUsername)
 
         // For any other permission, check to see if the user has the privilege, or if they are a root user.
-      case permissionString:String =>
-        val domain = targetDomainObject.asInstanceOf[String]
-        isRoot(auth) || hasDomainPrivilege(auth, domain, permissionString)
+      case privilege:Privilege =>
+        val target = targetDomainObject.asInstanceOf[TargetObject]
+        isRoot(auth) || hasTargetPrivilege(auth, target, privilege)
 
 
         // Unknown permission request type
@@ -83,7 +83,7 @@ class UserDetailsAdapter(val systemConfigStore:SystemConfigStore)
     val isRoot = user.superuser
     val memberships = systemConfigStore.listDomainMemberships(user.name)
     val domainAuthorities = memberships.flatMap(m =>
-      systemConfigStore.lookupPolicyStatements(PolicyKey(m.policySpace, m.policy)).map(p => DomainAuthority(m.domain, p)))
+      systemConfigStore.lookupPolicyStatements(PolicyKey(m.policySpace, m.policy)).map(p => SpaceAuthority(m.space, m.domain, p)))
     val authorities = domainAuthorities ++
                       Seq(new SimpleGrantedAuthority("user"), new UserAuthority(user.name)) ++
     (isRoot match {
@@ -102,9 +102,13 @@ class UserDetailsAdapter(val systemConfigStore:SystemConfigStore)
     }
   }
   def isRoot(auth: Authentication) = auth.getAuthorities.find(_.getAuthority == "root").isDefined
-  def hasDomainPrivilege(auth: Authentication, domain:String, privilege:String) = auth.getAuthorities.find {
-      case DomainAuthority(grantedDomain, grantedPrivilegeStmt) =>
-        domain == grantedDomain && privilege == grantedPrivilegeStmt.privilege
+  def hasTargetPrivilege(auth: Authentication, target:TargetObject, privilege:Privilege) = auth.getAuthorities.find {
+      case SpaceAuthority(grantedSpace, grantedDomain, grantedPrivilegeStmt) =>
+        if (grantedPrivilegeStmt.privilege == privilege.name) {
+          privilege.isValidForTarget(grantedSpace, grantedPrivilegeStmt, target)
+        } else {
+          false
+        }
       case _ =>
         false
     }.isDefined
@@ -115,7 +119,7 @@ class UserDetailsAdapter(val systemConfigStore:SystemConfigStore)
   }.isDefined
 }
 
-case class DomainAuthority(domain:String, statement:PolicyStatement) extends GrantedAuthority {
+case class SpaceAuthority(space:Long, domain:String, statement:PolicyStatement) extends GrantedAuthority {
   def getAuthority = statement + "@" + domain
 }
 

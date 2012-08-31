@@ -85,7 +85,7 @@ class MembershipTest extends IsolatedDomainTest {
   def shouldBeAbleToAccessDomainConfigurationWhenDomainMember() {
 
     securityClient.declareUser(UserDef(username,email,false,password))
-    configClient.makeDomainMember(username, "User")
+    configClient.makeDomainMember(username, "Admin")
     userConfigClient.listDomainMembers
   }
 

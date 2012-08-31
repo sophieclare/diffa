@@ -101,4 +101,7 @@ trait SystemConfigStore {
 }
 
 case class PolicyKey(space:java.lang.Long, name:String)
-case class PolicyStatement(privilege:String, target:String)
+case class PolicyStatement(privilege:String, target:String) {
+    // TODO: Breakdown the target string, and allow matching against components
+  def appliesTo(objType:String, objName:String) = true
+}
