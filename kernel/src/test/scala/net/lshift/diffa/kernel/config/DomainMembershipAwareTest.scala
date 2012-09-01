@@ -24,6 +24,7 @@ import org.easymock.classextension.{EasyMock => E4}
 import org.junit.Test
 import net.lshift.diffa.kernel.util.cache.HazelcastCacheProvider
 import org.jooq.impl.Factory
+import net.lshift.diffa.kernel.util.sequence.HazelcastSequenceProvider
 
 class DomainMembershipAwareTest {
 
@@ -32,10 +33,11 @@ class DomainMembershipAwareTest {
   val hm = E4.createNiceMock(classOf[HookManager])
 
   val cp = new HazelcastCacheProvider
+  val sp = new HazelcastSequenceProvider
 
   val membershipListener = createStrictMock(classOf[DomainMembershipAware])
 
-  val domainConfigStore = new JooqDomainConfigStore(jf, hm, cp, membershipListener)
+  val domainConfigStore = new JooqDomainConfigStore(jf, hm, cp, sp, membershipListener)
 
   val member = Member("user",0L,"domain")
 
