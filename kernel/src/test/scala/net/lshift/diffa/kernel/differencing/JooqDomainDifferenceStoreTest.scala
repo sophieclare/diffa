@@ -734,10 +734,7 @@ class JooqDomainDifferenceStoreTest {
       domainDiffStore.addReportableUnmatchedEvent(VersionID(PairRef("nonexistent-pair1", space.id), "id1"), lastUpdate, "uV", "dV", seen)
       fail("No DataAccessException was thrown")
     } catch {
-      case e: DataAccessException =>
-        assertTrue("Cause must be an SQLIntegrityConstraintViolationException or ORA-14400",
-          e.getCause.isInstanceOf[SQLIntegrityConstraintViolationException]
-          || e.getMessage.contains("ORA-14400"))
+      case e: IllegalStateException => assertTrue("Cause must be due to non-existent pair", e.getMessage.contains("No extent for pair"))
       case unexpected =>
         throw unexpected
     }
