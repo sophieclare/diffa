@@ -756,6 +756,7 @@ class JooqDomainDifferenceStore(db: DatabaseFacade,
             (UnchangedUnmatchedEvent, updatedEvent.asDifferenceEvent)
           } else {
             reportableUnmatched.seqId = event.seqId
+            reportableUnmatched.extent = event.extent
             (UpdatedUnmatchedEvent, upgradePreviouslyReportedEvent(t, reportableUnmatched))
           }
 
