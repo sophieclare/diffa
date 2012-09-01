@@ -198,7 +198,7 @@ class JooqDomainDifferenceStoreTest {
     val (_, event1) = domainDiffStore.addReportableUnmatchedEvent(VersionID(PairRef("pair2", space.id), "id2"), timestamp, "uV1", "dV1", timestamp)
     domainDiffStore.ignoreEvent(space.id, event1.seqId)
     val (_, event2) = domainDiffStore.addReportableUnmatchedEvent(VersionID(PairRef("pair2", space.id), "id2"), timestamp, "uV2", "dV1", timestamp)
-    assertTrue(event1.seqId.toInt < event2.seqId.toInt)
+    assertTrue(event1.seqId.toLong < event2.seqId.toLong)
   }
 
   @Test
