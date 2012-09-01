@@ -1029,8 +1029,13 @@ case class InternalReportedDifferenceEvent(
 
   }
 
-  def asExternalReportedDifferenceEvent =
-    ReportedDifferenceEvent(seqId,extent,objId,detectedAt,isMatch,upstreamVsn,downstreamVsn,lastSeen,ignored,nextEscalationId, nextEscalationTime)
+  def asExternalReportedDifferenceEvent = {
+    val escalationId = nextEscalationId match {
+      case null   => -1L
+      case x:LONG => x.toLong
+    }
+    ReportedDifferenceEvent(seqId,extent,objId,detectedAt,isMatch,upstreamVsn,downstreamVsn,lastSeen,ignored, escalationId, nextEscalationTime)
+  }
 
   def asDifferenceEvent =
     DifferenceEvent(seqId.toString, objId, detectedAt, state, upstreamVsn, downstreamVsn, lastSeen,
