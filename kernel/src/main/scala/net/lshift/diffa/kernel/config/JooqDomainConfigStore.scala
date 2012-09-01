@@ -17,7 +17,6 @@
 package net.lshift.diffa.kernel.config
 
 import scala.collection.JavaConversions._
-import net.lshift.diffa.kernel.hooks.HookManager
 import net.lshift.diffa.schema.jooq.{DatabaseFacade => JooqDatabaseFacade}
 import net.lshift.diffa.schema.tables.Members.MEMBERS
 import net.lshift.diffa.schema.tables.ConfigOptions.CONFIG_OPTIONS
@@ -40,7 +39,6 @@ import reflect.BeanProperty
 import java.util
 import collection.mutable.ListBuffer
 import org.jooq.impl.Factory
-import org.jooq.impl.Factory._
 import net.lshift.diffa.kernel.frontend.DomainEndpointDef
 import net.lshift.diffa.kernel.frontend.DomainPairDef
 import net.lshift.diffa.kernel.frontend.PairDef
@@ -52,14 +50,11 @@ import net.lshift.diffa.kernel.util.sequence.SequenceProvider
 import net.lshift.diffa.kernel.naming.SequenceName
 
 class JooqDomainConfigStore(jooq:JooqDatabaseFacade,
-                            hookManager:HookManager,
                             cacheProvider:CacheProvider,
                             sequenceProvider:SequenceProvider,
                             membershipListener:DomainMembershipAware)
     extends DomainConfigStore
     with DomainLifecycleAware {
-
-  val hook = hookManager.createDifferencePartitioningHook(jooq)
 
   private val pairEventSubscribers = new ListBuffer[PairLifecycleAware]
   def registerPairEventListener(p:PairLifecycleAware) = pairEventSubscribers += p
@@ -431,8 +426,6 @@ class JooqDomainConfigStore(jooq:JooqDatabaseFacade,
 
     invalidatePairCachesOnly(space)
 
-    hook.pairCreated(space, pair.key)
-
     val ref = PairRef(space = space, name = pair.key)
 
     pairEventSubscribers.foreach(_.onPairUpdated(ref))
@@ -445,7 +438,6 @@ class JooqDomainConfigStore(jooq:JooqDatabaseFacade,
       deletePairWithDependencies(t, ref)
       upgradeConfigVersion(t, space)
       pairEventSubscribers.foreach(_.onPairDeleted(ref))
-      hook.pairRemoved(space, key)
     })
   }
 

@@ -19,7 +19,6 @@ package net.lshift.diffa.kernel.differencing
 import reflect.BeanProperty
 import scala.collection.JavaConversions._
 import org.joda.time.{DateTime, Interval}
-import net.lshift.diffa.kernel.hooks.HookManager
 import net.lshift.diffa.kernel.config.{JooqConfigStoreCompanion}
 import net.lshift.diffa.kernel.util.cache.{KeyPredicate, CachedMap, CacheProvider}
 import net.lshift.diffa.kernel.util.sequence.SequenceProvider
@@ -45,8 +44,7 @@ import net.lshift.diffa.kernel.lifecycle.PairLifecycleAware
  */
 class JooqDomainDifferenceStore(db: DatabaseFacade,
                                 cacheProvider:CacheProvider,
-                                sequenceProvider:SequenceProvider,
-                                val hookManager:HookManager)
+                                sequenceProvider:SequenceProvider)
     extends DomainDifferenceStore with PairLifecycleAware {
 
   val logger = LoggerFactory.getLogger(getClass)
@@ -54,7 +52,6 @@ class JooqDomainDifferenceStore(db: DatabaseFacade,
   initializeExistingSequences()
 
   val aggregationCache = new DifferenceAggregationCache(this, cacheProvider)
-  val hook = hookManager.createDifferencePartitioningHook(db)
 
   val pendingEvents = cacheProvider.getCachedMap[VersionID, PendingDifferenceEvent]("pending.difference.events")
   val reportedEvents = cacheProvider.getCachedMap[VersionID, InternalReportedDifferenceEvent](CacheName.DIFFS)
@@ -86,21 +83,6 @@ class JooqDomainDifferenceStore(db: DatabaseFacade,
   def onPairDeleted(pair:PairRef) = extentsByPair.evict(pair)
 
   def removeDomain(space:Long) = {
-
-    // If difference partitioning is enabled, ask the hook to clean up each pair. Note that we'll end up running a
-    // delete over all pair differences later anyway, so we won't record the result of the removal operation.
-    /*
-    if (hook.isDifferencePartitioningEnabled) {
-
-      db.execute(t => {
-        JooqConfigStoreCompanion.listPairsInCurrentTx(t, space).foreach(p => {
-          hook.removeAllPairDifferences(space, p.key)
-          removeLatestRecordedVersion(t, p.asRef)
-        })
-      })
-
-    }
-    */
 
     db.execute(t => {
       JooqConfigStoreCompanion.listPairsInCurrentTx(t, space).foreach(p => {

@@ -18,7 +18,6 @@ package net.lshift.diffa.kernel.config
 
 import org.hibernate.SessionFactory
 import net.lshift.diffa.schema.jooq.{DatabaseFacade => JooqDatabaseFacade}
-import net.lshift.diffa.kernel.hooks.HookManager
 import org.easymock.EasyMock._
 import org.easymock.classextension.{EasyMock => E4}
 import org.junit.Test
@@ -30,14 +29,13 @@ class DomainMembershipAwareTest {
 
   val sf = createStrictMock(classOf[SessionFactory])
   val jf = E4.createStrictMock(classOf[JooqDatabaseFacade])
-  val hm = E4.createNiceMock(classOf[HookManager])
 
   val cp = new HazelcastCacheProvider
   val sp = new HazelcastSequenceProvider
 
   val membershipListener = createStrictMock(classOf[DomainMembershipAware])
 
-  val domainConfigStore = new JooqDomainConfigStore(jf, hm, cp, sp, membershipListener)
+  val domainConfigStore = new JooqDomainConfigStore(jf, cp, sp, membershipListener)
 
   val member = Member("user",0L,"domain")
 
