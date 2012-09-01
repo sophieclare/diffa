@@ -418,7 +418,7 @@ class JooqDomainDifferenceStore(db: DatabaseFacade,
                     from(DIFFS).
                     join(PAIRS).
                       on(PAIRS.EXTENT.equal(DIFFS.EXTENT)).
-                    join(ESCALATIONS).
+                    leftOuterJoin(ESCALATIONS).
                       on(ESCALATIONS.ID.eq(DIFFS.NEXT_ESCALATION)).
                     where(PAIRS.SPACE.equal(pair.space)).
                       and(PAIRS.NAME.equal(pair.name)).
