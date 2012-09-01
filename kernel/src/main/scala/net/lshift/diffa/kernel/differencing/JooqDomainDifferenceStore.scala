@@ -494,7 +494,12 @@ class JooqDomainDifferenceStore(db: DatabaseFacade,
 
   def pendingEscalatees(cutoff:DateTime, callback:(DifferenceEvent) => Unit) = db.execute { t =>
     val escalatees =
-      t.selectFrom(DIFFS).
+      t.select().
+        from(DIFFS).
+        join(PAIRS).
+          on(PAIRS.EXTENT.eq(DIFFS.EXTENT)).
+        leftOuterJoin(ESCALATIONS).
+          on(ESCALATIONS.ID.eq(DIFFS.NEXT_ESCALATION)).
         where(DIFFS.NEXT_ESCALATION_TIME.lessOrEqual(dateTimeToTimestamp(cutoff))).
         fetchLazy()
 
@@ -510,6 +515,8 @@ class JooqDomainDifferenceStore(db: DatabaseFacade,
             t.select(ESCALATIONS.ID).
               from(ESCALATIONS).
               where(ESCALATIONS.NAME.eq(escalationName)).
+                and(ESCALATIONS.SPACE.eq(diff.objId.pair.space)).
+                and(ESCALATIONS.PAIR.eq(diff.objId.pair.name)).
               asField().
               asInstanceOf[Field[LONG]]).
           set(DIFFS.NEXT_ESCALATION_TIME, dateTimeToTimestamp(escalationTime)).
