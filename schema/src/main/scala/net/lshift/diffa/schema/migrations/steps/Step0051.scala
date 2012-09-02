@@ -18,14 +18,14 @@ package net.lshift.diffa.schema.migrations.steps
 import org.hibernate.cfg.Configuration
 import net.lshift.hibernate.migrations.MigrationBuilder
 import java.sql.Types
-import net.lshift.diffa.schema.migrations.{MigrationUtil, DefinePartitionInformationTable, VerifiedMigrationStep}
+import net.lshift.diffa.schema.migrations.{MigrationUtil, VerifiedMigrationStep}
 import scala.collection.JavaConversions._
 import net.lshift.diffa.schema.configs.InternalCollation
 import net.lshift.diffa.schema.servicelimits._
 
-object Step0048 extends VerifiedMigrationStep {
+object Step0051 extends VerifiedMigrationStep {
 
-  def versionId = 48
+  def versionId = 51
   def name = "Sub space database layout"
 
   def createMigration(config: Configuration) = {
@@ -37,20 +37,25 @@ object Step0048 extends VerifiedMigrationStep {
       column("version", Types.INTEGER, false).
       pk("version")
 
-    // Step 0 (part 2) - include the partition info table on all DBs (support may be added in future)
-    DefinePartitionInformationTable.defineTable(migration)
-
     // Begin creating the schema, so start with spaces, since lots of things depend on them
 
     migration.createTable("spaces").
       column("id", Types.BIGINT, false).
+      column("parent", Types.BIGINT, false, 0).
       column("name", Types.VARCHAR, 50, false).
       column("config_version", Types.INTEGER, 11, false).
       pk("id")
 
-    // When this table is hierarchical, this unqiue constraint needs to handled separately - for now, we are just introducing
-    // a surrogate key into the spaces table, which without further ado, opens up the opportunity for duplicate space names
-    migration.alterTable("spaces").addUniqueConstraint("name")
+    migration.alterTable("spaces").addForeignKey("fk_uniq_chld", "parent", "spaces", "id")
+
+    migration.createTable("space_paths").
+      column("ancestor", Types.BIGINT, false).
+      column("descendant", Types.BIGINT, false).
+      column("depth", Types.INTEGER, false).
+      pk("ancestor", "descendant")
+
+    migration.alterTable("space_paths").addForeignKey("fk_space_par", "ancestor", "spaces", "id")
+    migration.alterTable("space_paths").addForeignKey("fk_space_chd", "descendant", "spaces", "id")
 
     // Let's give ourselves some users and then make sure that they can become space cadets
 
@@ -179,6 +184,7 @@ object Step0048 extends VerifiedMigrationStep {
     migration.createIndex("diff_last_seen", "diffs", "last_seen")
     migration.createIndex("diff_detection", "diffs", "detected_at")
     migration.createIndex("rdiff_is_matched", "diffs", "is_match")
+    migration.createIndex("rdiff_is_ignored", "diffs", "ignored")
 
 
     migration.createTable("pending_diffs").
@@ -442,6 +448,12 @@ object Step0048 extends VerifiedMigrationStep {
       "config_version" -> "0"
     ))
 
+    migration.insert("space_paths").values(Map(
+      "ancestor"    -> "0",
+      "descendant"  -> "0",
+      "depth"       -> "0"
+    ))
+
     migration.insert("config_options").values(Map(
       "space" -> "0",
       "opt_key" -> "configStore.schemaVersion",
@@ -481,10 +493,12 @@ object Step0048 extends VerifiedMigrationStep {
   def applyVerification(config: Configuration) = {
     val migration = new MigrationBuilder(config)
 
+    createRandomSubspace(migration)
+
     val spaceName = randomString()
     val spaceId = randomInt()
 
-    createSpace(migration, spaceId, spaceName)
+    createSpace(migration, spaceId, "0", spaceName)
     createConfigOption(migration, spaceId)
 
     val upstream = randomString()
@@ -871,11 +885,63 @@ object Step0048 extends VerifiedMigrationStep {
     ))
   }
 
-  def createSpace(migration:MigrationBuilder, id:String, name:String) {
+  def createSpace(migration:MigrationBuilder, id:String, parentId:String, name:String) {
     migration.insert("spaces").values(Map(
       "id" -> id,
+      "parent" -> parentId,
       "name" -> name,
       "config_version" -> "0"
+    ))
+
+    migration.insert("space_paths").values(Map(
+      "ancestor"  -> id,
+      "descendant"   -> id,
+      "depth"   -> "0"
+    ))
+
+    migration.insert("space_paths").values(Map(
+      "ancestor"  -> parentId,
+      "descendant"   -> id,
+      "depth"   -> "0"
+    ))
+
+  }
+
+  def createRandomSubspace(migration:MigrationBuilder) {
+    val parentId = randomInt()
+    val childId = randomInt()
+    val parentName = randomString()
+    val childName = randomString()
+
+    migration.insert("spaces").values(Map(
+      "id"                -> parentId,
+      "name"              -> parentName,
+      "parent"            -> "0",
+      "config_version"    -> "0"
+    ))
+
+    migration.insert("space_paths").values(Map(
+      "ancestor"  -> parentId,
+      "descendant"   -> parentId,
+      "depth"   -> "0"
+    ))
+
+    migration.insert("spaces").values(Map(
+      "id"                -> childId,
+      "name"              -> childName,
+      "config_version"    -> "0"
+    ))
+
+    migration.insert("space_paths").values(Map(
+      "ancestor"  -> childId,
+      "descendant"   -> childId,
+      "depth"   -> "0"
+    ))
+
+    migration.insert("space_paths").values(Map(
+      "ancestor"  -> parentId,
+      "descendant"   -> childId,
+      "depth"   -> "1"
     ))
   }
 
