@@ -98,24 +98,10 @@ class JooqDomainDifferenceStore(db: DatabaseFacade,
 
   def removePair(pair: PairRef) = {
 
-    //val hookHelped = hook.removeAllPairDifferences(pair.space, pair.name)
-
     db.execute { t =>
-      /*
-      if (!hookHelped) {
-        t.delete(DIFFS).
-          where(DIFFS.PAIR.equal(pair.name)).
-            and(DIFFS.SPACE.equal(pair.space)).
-          execute()
-      }
-      */
-
-
       removePendingDifferences(t, pair)
       removeLatestRecordedVersion(t, pair)
       orphanExtentForPair(t, pair)
-
-
     }
 
     extentsByPair.evict(pair)
@@ -383,8 +369,6 @@ class JooqDomainDifferenceStore(db: DatabaseFacade,
                         on(PAIRS.EXTENT.equal(DIFFS.EXTENT)).
                       leftOuterJoin(PENDING_ESCALATIONS).
                         on(PENDING_ESCALATIONS.ID.eq(DIFFS.NEXT_ESCALATION)).
-                      //leftOuterJoin(PAIRS).
-                      //  on(PAIRS.EXTENT.eq(PENDING_ESCALATIONS.EXTENT)).
                       leftOuterJoin(ESCALATIONS).
                         on(ESCALATIONS.SPACE.eq(PAIRS.SPACE)).
                           and(ESCALATIONS.PAIR.eq(PAIRS.NAME)).
@@ -407,8 +391,6 @@ class JooqDomainDifferenceStore(db: DatabaseFacade,
                       on(PAIRS.EXTENT.equal(DIFFS.EXTENT)).
                     leftOuterJoin(PENDING_ESCALATIONS).
                       on(PENDING_ESCALATIONS.ID.eq(DIFFS.NEXT_ESCALATION)).
-                    //leftOuterJoin(PAIRS).
-                    //  on(PAIRS.EXTENT.eq(PENDING_ESCALATIONS.EXTENT)).
                     leftOuterJoin(ESCALATIONS).
                       on(ESCALATIONS.SPACE.eq(PAIRS.SPACE)).
                         and(ESCALATIONS.PAIR.eq(PAIRS.NAME)).
