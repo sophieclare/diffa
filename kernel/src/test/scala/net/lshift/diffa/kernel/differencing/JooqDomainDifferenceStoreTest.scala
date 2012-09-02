@@ -275,6 +275,13 @@ class JooqDomainDifferenceStoreTest {
 
     // Shred the milliseconds due to MySQL limitation
     assertEquals(timestamp.plusSeconds(10).withMillis(0), updatedEvent3.nextEscalationTime.withMillis(0))
+
+    domainDiffStore.removePair(PairRef("pair2", space.id))
+
+    // This should purge only the 1 removed events from pair2
+    val purged = domainDiffStore.purgeOrphanedEvents
+    assertEquals(1, purged)
+
   }
 
   @Test

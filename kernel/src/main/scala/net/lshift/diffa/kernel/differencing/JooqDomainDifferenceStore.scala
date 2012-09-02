@@ -544,17 +544,38 @@ class JooqDomainDifferenceStore(db: DatabaseFacade,
 
     preenReportedEventsCache(pair)
   }
-  //delete d from diff as d where not exists (select * from pair p where p.extent = d.extent);
-  def purgeOrphanedEvents = {
-    db.execute(t => {
 
-      t.delete(DIFFS).
-        whereNotExists(
-          t.select(field("1")).
-            from(PAIRS).
-            where(PAIRS.EXTENT.eq(DIFFS.EXTENT))
-        ).execute()
+  def purgeOrphanedEvents = {
+
+    val (diffs, escalations, extents) = db.execute(t => {
+
+      val diffs = t.delete(DIFFS).
+                    whereNotExists(
+                      t.select(field("1")).
+                        from(PAIRS).
+                        where(PAIRS.EXTENT.eq(DIFFS.EXTENT))
+                    ).execute()
+
+      val escalations = t.delete(PENDING_ESCALATIONS).
+                          whereNotExists(
+                          t.select(field("1")).
+                            from(PAIRS).
+                            where(PENDING_ESCALATIONS.EXTENT.eq(PAIRS.EXTENT))
+                        ).execute()
+
+      val extents = t.delete(EXTENTS).
+                      whereNotExists(
+                        t.select(field("1")).
+                          from(PAIRS).
+                          where(EXTENTS.ID.eq(PAIRS.EXTENT))
+                      ).execute()
+
+      (diffs,escalations,extents)
     })
+
+    logger.debug("Vacuumed %s diff(s), %s pending escalation(s) and %s extent(s)".format(diffs, escalations, extents))
+
+    diffs
   }
 
   def clearAllDifferences = db.execute { t =>
