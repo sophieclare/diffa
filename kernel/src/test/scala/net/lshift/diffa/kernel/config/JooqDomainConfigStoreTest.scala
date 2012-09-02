@@ -17,7 +17,6 @@
 package net.lshift.diffa.kernel.config
 
 import org.junit.Assert._
-import org.hamcrest.Matchers._
 import scala.collection.Map
 import org.joda.time.DateTime
 import scala.collection.JavaConversions._
@@ -29,7 +28,6 @@ import org.slf4j.LoggerFactory
 import org.junit.{After, Test, AfterClass, Before}
 import net.lshift.diffa.kernel.preferences.FilteredItemType
 import com.eaio.uuid.UUID
-import java.sql.SQLIntegrityConstraintViolationException
 import org.jooq.exception.DataAccessException
 import org.apache.commons.lang.RandomStringUtils
 

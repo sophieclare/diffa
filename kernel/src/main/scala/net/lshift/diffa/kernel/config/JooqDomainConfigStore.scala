@@ -22,6 +22,7 @@ import net.lshift.diffa.schema.tables.Members.MEMBERS
 import net.lshift.diffa.schema.tables.ConfigOptions.CONFIG_OPTIONS
 import net.lshift.diffa.schema.tables.RepairActions.REPAIR_ACTIONS
 import net.lshift.diffa.schema.tables.Escalations.ESCALATIONS
+import net.lshift.diffa.schema.tables.PendingEscalations.PENDING_ESCALATIONS
 import net.lshift.diffa.schema.tables.PairReports.PAIR_REPORTS
 import net.lshift.diffa.schema.tables.PairViews.PAIR_VIEWS
 import net.lshift.diffa.schema.tables.Endpoints.ENDPOINTS
@@ -399,10 +400,7 @@ class JooqDomainConfigStore(jooq:JooqDatabaseFacade,
 
         if (rows == 0 ) {
 
-          val id = sequenceProvider.nextSequenceValue(SequenceName.ESCALATIONS)
-
           t.insertInto(ESCALATIONS).
-              set(ESCALATIONS.ID, id:LONG).
               set(ESCALATIONS.SPACE, space:LONG).
               set(ESCALATIONS.PAIR, pair.key).
               set(ESCALATIONS.NAME, e.name).
@@ -415,6 +413,19 @@ class JooqDomainConfigStore(jooq:JooqDatabaseFacade,
               set(ESCALATIONS.ACTION_TYPE, e.actionType).
               set(ESCALATIONS.RULE, e.rule).
               set(ESCALATIONS.DELAY, e.delay:INT).
+            execute()
+
+          val id = sequenceProvider.nextSequenceValue(SequenceName.PENDING_ESCALATIONS)
+
+          t.insertInto(PENDING_ESCALATIONS).
+            set(PENDING_ESCALATIONS.ID, id:LONG).
+            set(PENDING_ESCALATIONS.EXTENT,
+              t.select(PAIRS.EXTENT).
+                from(PAIRS).
+                where(PAIRS.SPACE.eq(space).
+                  and(PAIRS.NAME.eq(pair.key))).
+                asField().
+                asInstanceOf[Field[LONG]]).
             execute()
         }
 
