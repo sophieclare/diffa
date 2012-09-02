@@ -544,6 +544,18 @@ class JooqDomainDifferenceStore(db: DatabaseFacade,
 
     preenReportedEventsCache(pair)
   }
+  //delete d from diff as d where not exists (select * from pair p where p.extent = d.extent);
+  def purgeOrphanedEvents = {
+    db.execute(t => {
+
+      t.delete(DIFFS).
+        whereNotExists(
+          t.select(field("1")).
+            from(PAIRS).
+            where(PAIRS.EXTENT.eq(DIFFS.EXTENT))
+        ).execute()
+    })
+  }
 
   def clearAllDifferences = db.execute { t =>
     reset
@@ -568,10 +580,6 @@ class JooqDomainDifferenceStore(db: DatabaseFacade,
       val msg = " %s No pair to orphan".format(formatAlertCode(pair, INCONSISTENT_DIFF_STORE))
       logger.warn(msg)
     }
-  }
-
-  private def orphanExtent(t:Factory, condition:Condition) = {
-
   }
 
   private def initializeExistingSequences() = db.execute { t =>

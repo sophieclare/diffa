@@ -156,6 +156,11 @@ trait DomainDifferenceStore {
    * Clears any scheduled escalations for all differences in the given pair.
    */
   def unscheduleEscalations(pair:PairRef)
+
+  /**
+   * Removes any differences that have been orphaned due to pair vacuuming or deletions.
+   */
+  def purgeOrphanedEvents : Int
 }
 
 case class TileGroup(

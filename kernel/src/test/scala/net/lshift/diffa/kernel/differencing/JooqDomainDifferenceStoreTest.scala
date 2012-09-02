@@ -664,14 +664,28 @@ class JooqDomainDifferenceStoreTest {
   @Test
   def shouldRemoveEventsWhenPairIsRemoved() {
     val timestamp = new DateTime()
+
     domainDiffStore.addReportableUnmatchedEvent(VersionID(PairRef("pair2", space.id), "id2"), timestamp, "uV", "dV", timestamp)
     domainDiffStore.addReportableUnmatchedEvent(VersionID(PairRef("pair2", space.id), "id3"), timestamp, "uV", "dV", timestamp)
+
+    domainDiffStore.addReportableUnmatchedEvent(VersionID(PairRef("pair1", space.id), "id4"), timestamp, "uV", "dV", timestamp)
 
     domainDiffStore.removePair(PairRef("pair2", space.id))
 
     val interval = new Interval(timestamp.minusDays(1), timestamp.plusDays(1))
-    val unmatched = domainDiffStore.retrieveUnmatchedEvents(space.id, interval)
-    assertEquals(0, unmatched.length)
+    val firstQuery = domainDiffStore.retrieveUnmatchedEvents(space.id, interval)
+    assertEquals(1, firstQuery.length)
+
+    // This should purge only the 2 removed events from pair2
+    val purged = domainDiffStore.purgeOrphanedEvents
+    assertEquals(2, purged)
+
+    // The unmatched events from pair1 should remain in tact
+    val secondQuery = domainDiffStore.retrieveUnmatchedEvents(space.id, interval)
+    assertEquals(1, secondQuery.length)
+
+    assertEquals(firstQuery, secondQuery)
+
   }
 
   @Test
