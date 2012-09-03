@@ -800,8 +800,6 @@ object Step0051 extends VerifiedMigrationStep {
       "downstream_vsn" -> randomString(),
       "detected_at" -> randomTimestamp(),
       "last_seen" -> randomTimestamp(),
-      "is_match" -> "0",
-      "ignored" -> "0",
       "next_escalation" -> escalationId,
       "next_escalation_time" -> randomTimestamp()
     ))
