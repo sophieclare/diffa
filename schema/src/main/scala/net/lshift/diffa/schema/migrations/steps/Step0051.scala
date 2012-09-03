@@ -831,8 +831,7 @@ object Step0051 extends VerifiedMigrationStep {
       "space" -> spaceId,
       "pair" -> parent,
       "name" -> randomString(),
-      "scan_cron_spec" -> "0 0 * * * ?",
-      "scan_cron_enabled" -> "1"
+      "scan_cron_spec" -> "0 0 * * * ?"
     ))
   }
 
@@ -845,8 +844,7 @@ object Step0051 extends VerifiedMigrationStep {
       "downstream" -> downstream,
       "version_policy_name" -> "same",
       "matching_timeout" -> "0",
-      "scan_cron_spec" -> "0 0 * * * ?",
-      "scan_cron_enabled" -> "1"
+      "scan_cron_spec" -> "0 0 * * * ?"
     ))
   }
 
