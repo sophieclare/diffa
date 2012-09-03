@@ -137,26 +137,21 @@ object Step0051 extends VerifiedMigrationStep {
     migration.alterTable("pairs")
       .addUniqueConstraint("uk_pair_exts", "extent")
 
-    migration.createTable("pending_escalations").
+    migration.createTable("escalations").
       column("id", Types.BIGINT, false).
       column("extent", Types.BIGINT, false).
-      pk("id")
-
-    migration.alterTable("pending_escalations").
-      addForeignKey("fk_pesc_exts", "extent", "extents", "id")
-
-    migration.createTable("escalations").
-      column("space", Types.BIGINT, false).
-      column("pair", Types.VARCHAR, 50, false).
       column("name", Types.VARCHAR, 50, false).
       column("action", Types.VARCHAR, 50, true).
       column("action_type", Types.VARCHAR, 255, false).
       column("delay", Types.INTEGER, 11, false, 0).
       column("rule", Types.VARCHAR, 1024, true, null).
-      pk("space", "pair", "name")
+      pk("id")
 
     migration.alterTable("escalations").
-      addForeignKey("fk_escl_pair", Array("space", "pair"), "pairs", Array("space", "name"))
+      addForeignKey("fk_escl_ext", "extent", "extents", "id")
+
+    migration.alterTable("pairs")
+      .addUniqueConstraint("uk_escl_exts", "extent", "name")
 
     migration.createTable("diffs").
       column("seq_id", Types.BIGINT, false).
@@ -176,7 +171,7 @@ object Step0051 extends VerifiedMigrationStep {
       .addForeignKey("fk_diff_ext", "extent", "extents", "id")
 
     migration.alterTable("diffs").
-      addForeignKey("fk_next_esc", "next_escalation", "pending_escalations", "id")
+      addForeignKey("fk_next_esc", "next_escalation", "escalations", "id")
 
     migration.alterTable("diffs")
       .addUniqueConstraint("uk_diffs", "extent", "entity_id")
@@ -185,7 +180,6 @@ object Step0051 extends VerifiedMigrationStep {
     migration.createIndex("diff_detection", "diffs", "detected_at")
     migration.createIndex("rdiff_is_matched", "diffs", "is_match")
     migration.createIndex("rdiff_is_ignored", "diffs", "ignored")
-
 
     migration.createTable("pending_diffs").
       column("space", Types.BIGINT, false).
@@ -524,8 +518,7 @@ object Step0051 extends VerifiedMigrationStep {
     val escalationId = randomInt()
     val escalationName = randomString()
 
-    createEscalation(migration, spaceId, pair, escalationName)
-    createPendingEscalation(migration, escalationId, extent)
+    createEscalation(migration, extent, escalationId, escalationName)
 
     createDiff(migration, spaceId, pair, extent, escalationId)
     createPendingDiff(migration, spaceId, pair)
@@ -807,22 +800,15 @@ object Step0051 extends VerifiedMigrationStep {
     ))
   }
 
-  def createEscalation(migration:MigrationBuilder, spaceId:String, pair:String,  name:String) {
+  def createEscalation(migration:MigrationBuilder, extent:String, escalationId:String, name:String) {
     migration.insert("escalations").values(Map(
-      "space" -> spaceId,
-      "pair" -> pair,
+      "id" -> escalationId,
+      "extent" -> extent,
       "name" -> name,
       "action" -> randomString(),
       "action_type" -> "ignore",
       "delay" -> "10",
       "rule" -> "mismatch"
-    ))
-  }
-
-  def createPendingEscalation(migration:MigrationBuilder, escalationId:String, extent:String) {
-    migration.insert("pending_escalations").values(Map(
-      "id" -> escalationId,
-      "extent" -> extent
     ))
   }
 
