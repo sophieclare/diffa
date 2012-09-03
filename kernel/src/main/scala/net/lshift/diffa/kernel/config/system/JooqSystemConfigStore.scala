@@ -326,7 +326,7 @@ class JooqSystemConfigStore(jooq:JooqDatabaseFacade,
     t.delete(UNIQUE_CATEGORY_VIEW_NAMES).where(UNIQUE_CATEGORY_VIEW_NAMES.SPACE.equal(id)).execute()
     t.delete(ENDPOINT_VIEWS).where(ENDPOINT_VIEWS.SPACE.equal(id)).execute()
     t.delete(PAIR_REPORTS).where(PAIR_REPORTS.SPACE.equal(id)).execute()
-    t.delete(ESCALATIONS).where(ESCALATIONS.SPACE.equal(id)).execute()
+    //t.delete(ESCALATIONS).where(ESCALATIONS.SPACE.equal(id)).execute()
     t.delete(REPAIR_ACTIONS).where(REPAIR_ACTIONS.SPACE.equal(id)).execute()
     t.delete(PAIR_VIEWS).where(PAIR_VIEWS.SPACE.equal(id)).execute()
     t.delete(BREAKERS).where(BREAKERS.SPACE.equal(id)).execute()

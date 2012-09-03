@@ -355,11 +355,8 @@ class JooqDomainDifferenceStore(db: DatabaseFacade,
         from(DIFFS).
         join(PAIRS).
           on(PAIRS.EXTENT.equal(DIFFS.EXTENT)).
-        leftOuterJoin(PENDING_ESCALATIONS).
-          on(PENDING_ESCALATIONS.ID.eq(DIFFS.NEXT_ESCALATION)).
         leftOuterJoin(ESCALATIONS).
-          on(ESCALATIONS.SPACE.eq(PAIRS.SPACE)).
-            and(ESCALATIONS.PAIR.eq(PAIRS.NAME)).
+          on(ESCALATIONS.ID.eq(DIFFS.NEXT_ESCALATION)).
         where(PAIRS.SPACE.equal(space)).
           and(DIFFS.DETECTED_AT.greaterOrEqual(dateTimeToTimestamp(interval.getStart))).
           and(DIFFS.DETECTED_AT.lessThan(dateTimeToTimestamp(interval.getEnd))).
@@ -379,11 +376,8 @@ class JooqDomainDifferenceStore(db: DatabaseFacade,
                       from(DIFFS).
                       join(PAIRS).
                         on(PAIRS.EXTENT.equal(DIFFS.EXTENT)).
-                      leftOuterJoin(PENDING_ESCALATIONS).
-                        on(PENDING_ESCALATIONS.ID.eq(DIFFS.NEXT_ESCALATION)).
                       leftOuterJoin(ESCALATIONS).
-                        on(ESCALATIONS.SPACE.eq(PAIRS.SPACE)).
-                          and(ESCALATIONS.PAIR.eq(PAIRS.NAME)).
+                        on(ESCALATIONS.ID.eq(DIFFS.NEXT_ESCALATION)).
                       where(PAIRS.SPACE.equal(pairRef.space)).
                         and(PAIRS.NAME.equal(pairRef.name)).
                         and(DIFFS.IS_MATCH.equal(false)).
@@ -403,11 +397,8 @@ class JooqDomainDifferenceStore(db: DatabaseFacade,
                     from(DIFFS).
                     join(PAIRS).
                       on(PAIRS.EXTENT.equal(DIFFS.EXTENT)).
-                    leftOuterJoin(PENDING_ESCALATIONS).
-                      on(PENDING_ESCALATIONS.ID.eq(DIFFS.NEXT_ESCALATION)).
                     leftOuterJoin(ESCALATIONS).
-                      on(ESCALATIONS.SPACE.eq(PAIRS.SPACE)).
-                        and(ESCALATIONS.PAIR.eq(PAIRS.NAME)).
+                      on(ESCALATIONS.ID.eq(DIFFS.NEXT_ESCALATION)).
                     where(PAIRS.SPACE.equal(pair.space)).
                       and(PAIRS.NAME.equal(pair.name)).
                       and(DIFFS.DETECTED_AT.greaterOrEqual(dateTimeToTimestamp(interval.getStart))).
@@ -488,11 +479,8 @@ class JooqDomainDifferenceStore(db: DatabaseFacade,
         from(DIFFS).
         join(PAIRS).
           on(PAIRS.EXTENT.eq(DIFFS.EXTENT)).
-        leftOuterJoin(PENDING_ESCALATIONS).
-          on(PENDING_ESCALATIONS.ID.eq(DIFFS.NEXT_ESCALATION)).
         leftOuterJoin(ESCALATIONS).
-          on(ESCALATIONS.PAIR.eq(PAIRS.NAME)).
-            and(ESCALATIONS.SPACE.eq(PAIRS.SPACE)).
+          on(ESCALATIONS.ID.eq(DIFFS.NEXT_ESCALATION)).
         where(DIFFS.NEXT_ESCALATION_TIME.lessOrEqual(dateTimeToTimestamp(cutoff))).
         fetchLazy()
 
@@ -505,16 +493,13 @@ class JooqDomainDifferenceStore(db: DatabaseFacade,
     db.execute { t =>
       t.update(DIFFS).
           set(DIFFS.NEXT_ESCALATION,
-            t.select(PENDING_ESCALATIONS.ID).
-              from(PENDING_ESCALATIONS).
+            t.select(ESCALATIONS.ID).
+              from(ESCALATIONS).
               join(PAIRS).
-                on(PENDING_ESCALATIONS.EXTENT.eq(PAIRS.EXTENT)).
-              join(ESCALATIONS).
-                on(ESCALATIONS.PAIR.eq(PAIRS.NAME)).
-                  and(ESCALATIONS.SPACE.eq(PAIRS.SPACE)).
+                on(ESCALATIONS.EXTENT.eq(PAIRS.EXTENT)).
               where(ESCALATIONS.NAME.eq(escalationName)).
-                and(ESCALATIONS.SPACE.eq(diff.objId.pair.space)).
-                and(ESCALATIONS.PAIR.eq(diff.objId.pair.name)).
+                and(PAIRS.SPACE.eq(diff.objId.pair.space)).
+                and(PAIRS.NAME.eq(diff.objId.pair.name)).
               asField().
               asInstanceOf[Field[LONG]]).
           set(DIFFS.NEXT_ESCALATION_TIME, dateTimeToTimestamp(escalationTime)).
@@ -554,11 +539,11 @@ class JooqDomainDifferenceStore(db: DatabaseFacade,
                         where(PAIRS.EXTENT.eq(DIFFS.EXTENT))
                     ).execute()
 
-      val escalations = t.delete(PENDING_ESCALATIONS).
+      val escalations = t.delete(ESCALATIONS).
                           whereNotExists(
                           t.select(field("1")).
                             from(PAIRS).
-                            where(PENDING_ESCALATIONS.EXTENT.eq(PAIRS.EXTENT))
+                            where(ESCALATIONS.EXTENT.eq(PAIRS.EXTENT))
                         ).execute()
 
       val extents = t.delete(EXTENTS).
@@ -726,11 +711,8 @@ class JooqDomainDifferenceStore(db: DatabaseFacade,
         from(DIFFS).
         join(PAIRS).
           on(PAIRS.EXTENT.eq(DIFFS.EXTENT)).
-        leftOuterJoin(PENDING_ESCALATIONS).
-          on(PENDING_ESCALATIONS.ID.eq(DIFFS.NEXT_ESCALATION)).
         join(ESCALATIONS).
-          on(ESCALATIONS.SPACE.eq(PAIRS.SPACE)).
-            and(ESCALATIONS.PAIR.eq(PAIRS.NAME)).
+          on(ESCALATIONS.ID.eq(DIFFS.NEXT_ESCALATION)).
         where(DIFFS.SEQ_ID.eq(id)).
         fetchOne()).map(recordToReportedDifferenceEvent)
   }
@@ -744,11 +726,8 @@ class JooqDomainDifferenceStore(db: DatabaseFacade,
         from(DIFFS).
         join(PAIRS).
           on(PAIRS.EXTENT.equal(DIFFS.EXTENT)).
-        leftOuterJoin(PENDING_ESCALATIONS).
-          on(PENDING_ESCALATIONS.ID.eq(DIFFS.NEXT_ESCALATION)).
         leftOuterJoin(ESCALATIONS).
-          on(ESCALATIONS.SPACE.eq(PAIRS.SPACE)).
-            and(ESCALATIONS.PAIR.eq(PAIRS.NAME)).
+          on(ESCALATIONS.ID.eq(DIFFS.NEXT_ESCALATION)).
         where(PAIRS.SPACE.equal(id.pair.space).
           and(PAIRS.NAME.equal(id.pair.name)).
           and(DIFFS.ENTITY_ID.equal(id.id)))
