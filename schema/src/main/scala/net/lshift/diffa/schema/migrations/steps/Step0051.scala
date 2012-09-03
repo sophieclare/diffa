@@ -162,12 +162,12 @@ object Step0051 extends VerifiedMigrationStep {
       column("seq_id", Types.BIGINT, false).
       column("extent", Types.BIGINT, false).
       column("entity_id", Types.VARCHAR, 255, false).
-      column("is_match", Types.BIT, false, 0).
+      column("is_match", Types.BIT, false).
       column("detected_at", Types.TIMESTAMP, false).
       column("last_seen", Types.TIMESTAMP, false).
       column("upstream_vsn", Types.VARCHAR, 255, true).
       column("downstream_vsn", Types.VARCHAR, 255, true).
-      column("ignored", Types.BIT, false, 0).
+      column("ignored", Types.BIT, false).
       column("next_escalation", Types.BIGINT, true, null).
       column("next_escalation_time", Types.TIMESTAMP, true, null).
       pk("seq_id")
@@ -464,7 +464,7 @@ object Step0051 extends VerifiedMigrationStep {
       "name" -> "guest",
       "email" -> "guest@diffa.io",
       "password_enc" -> "84983c60f7daadc1cb8698621f802c0d9f9a3c3c295c810748fb048115c186ec",
-      "superuser" -> Boolean.box(true)
+      "superuser" -> "1"
     ))
 
     migration.insert("members").values(Map(
@@ -796,6 +796,8 @@ object Step0051 extends VerifiedMigrationStep {
       "seq_id" -> randomInt(),
       "entity_id" -> randomString(),
       "extent" -> extent,
+      "is_match" -> "0",
+      "ignored" -> "0",
       "upstream_vsn" -> randomString(),
       "downstream_vsn" -> randomString(),
       "detected_at" -> randomTimestamp(),
