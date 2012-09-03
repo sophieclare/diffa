@@ -71,6 +71,9 @@ class JooqDomainDifferenceStore(db: DatabaseFacade,
   val prefetchLimit = 1000 // TODO This should be a tuning parameter
   prefetchPendingEvents(prefetchLimit)
 
+  val PAIR_NAME_ALIAS = "pair_name"
+  val ESCALATION_NAME_ALIAS = "escalation_name"
+
 
   def reset {
     pendingEvents.evictAll()
@@ -346,10 +349,17 @@ class JooqDomainDifferenceStore(db: DatabaseFacade,
   def retrieveUnmatchedEvents(space:Long, interval: Interval) = {
 
     db.execute { t =>
-      t.select().
+      t.select(DIFFS.getFields).
+        select(PAIRS.SPACE, PAIRS.NAME.as(PAIR_NAME_ALIAS)).
+        select(ESCALATIONS.NAME.as(ESCALATION_NAME_ALIAS)).
         from(DIFFS).
         join(PAIRS).
           on(PAIRS.EXTENT.equal(DIFFS.EXTENT)).
+        leftOuterJoin(PENDING_ESCALATIONS).
+          on(PENDING_ESCALATIONS.ID.eq(DIFFS.NEXT_ESCALATION)).
+        leftOuterJoin(ESCALATIONS).
+          on(ESCALATIONS.SPACE.eq(PAIRS.SPACE)).
+            and(ESCALATIONS.PAIR.eq(PAIRS.NAME)).
         where(PAIRS.SPACE.equal(space)).
           and(DIFFS.DETECTED_AT.greaterOrEqual(dateTimeToTimestamp(interval.getStart))).
           and(DIFFS.DETECTED_AT.lessThan(dateTimeToTimestamp(interval.getEnd))).
@@ -363,7 +373,9 @@ class JooqDomainDifferenceStore(db: DatabaseFacade,
   def streamUnmatchedEvents(pairRef:PairRef, handler:(ReportedDifferenceEvent) => Unit) = {
 
     db.execute { t =>
-      val cursor =  t.select().
+      val cursor =  t.select(DIFFS.getFields).
+                      select(PAIRS.SPACE, PAIRS.NAME.as(PAIR_NAME_ALIAS)).
+                      select(ESCALATIONS.NAME.as(ESCALATION_NAME_ALIAS)).
                       from(DIFFS).
                       join(PAIRS).
                         on(PAIRS.EXTENT.equal(DIFFS.EXTENT)).
@@ -385,7 +397,9 @@ class JooqDomainDifferenceStore(db: DatabaseFacade,
   def retrievePagedEvents(pair: PairRef, interval: Interval, offset: Int, length: Int, options:EventOptions = EventOptions()) = {
 
     db.execute { t =>
-      val query = t.select().
+      val query = t.select(DIFFS.getFields).
+                    select(PAIRS.NAME.as(PAIR_NAME_ALIAS), PAIRS.SPACE).
+                    select(ESCALATIONS.NAME.as(ESCALATION_NAME_ALIAS)).
                     from(DIFFS).
                     join(PAIRS).
                       on(PAIRS.EXTENT.equal(DIFFS.EXTENT)).
@@ -468,7 +482,9 @@ class JooqDomainDifferenceStore(db: DatabaseFacade,
 
   def pendingEscalatees(cutoff:DateTime, callback:(DifferenceEvent) => Unit) = db.execute { t =>
     val escalatees =
-      t.select().
+      t.select(DIFFS.getFields).
+        select(PAIRS.NAME.as(PAIR_NAME_ALIAS), PAIRS.SPACE).
+        select(ESCALATIONS.NAME.as(ESCALATION_NAME_ALIAS)).
         from(DIFFS).
         join(PAIRS).
           on(PAIRS.EXTENT.eq(DIFFS.EXTENT)).
@@ -703,30 +719,33 @@ class JooqDomainDifferenceStore(db: DatabaseFacade,
 
 
   private def getEventBySequenceId(t:Factory, id: Long) : Option[InternalReportedDifferenceEvent] = {
-    Option(t.select().
-      from(DIFFS).
-      join(PAIRS).
-        on(PAIRS.EXTENT.eq(DIFFS.EXTENT)).
-      leftOuterJoin(PENDING_ESCALATIONS).
-        on(PENDING_ESCALATIONS.ID.eq(DIFFS.NEXT_ESCALATION)).
-      join(ESCALATIONS).
-        on(ESCALATIONS.SPACE.eq(PAIRS.SPACE)).
-          and(ESCALATIONS.PAIR.eq(PAIRS.NAME)).
-      where(DIFFS.SEQ_ID.eq(id)).
-      fetchOne()).map(recordToReportedDifferenceEvent)
+    Option(
+      t.select(DIFFS.getFields).
+        select(PAIRS.SPACE, PAIRS.NAME.as(PAIR_NAME_ALIAS)).
+        select(ESCALATIONS.NAME.as(ESCALATION_NAME_ALIAS)).
+        from(DIFFS).
+        join(PAIRS).
+          on(PAIRS.EXTENT.eq(DIFFS.EXTENT)).
+        leftOuterJoin(PENDING_ESCALATIONS).
+          on(PENDING_ESCALATIONS.ID.eq(DIFFS.NEXT_ESCALATION)).
+        join(ESCALATIONS).
+          on(ESCALATIONS.SPACE.eq(PAIRS.SPACE)).
+            and(ESCALATIONS.PAIR.eq(PAIRS.NAME)).
+        where(DIFFS.SEQ_ID.eq(id)).
+        fetchOne()).map(recordToReportedDifferenceEvent)
   }
 
   private def getEventById(t:Factory, id: VersionID) : InternalReportedDifferenceEvent = {
 
     val query = (f: Factory) =>
-      f.select().
+      f.select(DIFFS.getFields).
+        select(PAIRS.SPACE, PAIRS.NAME.as(PAIR_NAME_ALIAS)).
+        select(ESCALATIONS.NAME.as(ESCALATION_NAME_ALIAS)).
         from(DIFFS).
         join(PAIRS).
           on(PAIRS.EXTENT.equal(DIFFS.EXTENT)).
         leftOuterJoin(PENDING_ESCALATIONS).
           on(PENDING_ESCALATIONS.ID.eq(DIFFS.NEXT_ESCALATION)).
-        //leftOuterJoin(PAIRS).
-        //  on(PAIRS.EXTENT.eq(PENDING_ESCALATIONS.EXTENT)).
         leftOuterJoin(ESCALATIONS).
           on(ESCALATIONS.SPACE.eq(PAIRS.SPACE)).
             and(ESCALATIONS.PAIR.eq(PAIRS.NAME)).
@@ -985,7 +1004,7 @@ class JooqDomainDifferenceStore(db: DatabaseFacade,
       extent = r.getValue(DIFFS.EXTENT),
       objId = VersionID(pair = PairRef(
         space = r.getValue(PAIRS.SPACE),
-        name = r.getValue(PAIRS.NAME)),
+        name = r.getValue(PAIRS.NAME.as(PAIR_NAME_ALIAS))),
         id = r.getValue(DIFFS.ENTITY_ID)),
       isMatch = r.getValue(DIFFS.IS_MATCH),
       detectedAt = timestampToDateTime(r.getValue(DIFFS.DETECTED_AT)),
@@ -996,7 +1015,7 @@ class JooqDomainDifferenceStore(db: DatabaseFacade,
       nextEscalationId = r.getValue(DIFFS.NEXT_ESCALATION))
 
     if (event.nextEscalationId != null) {
-      event.nextEscalationName = r.getValue(ESCALATIONS.NAME)
+      event.nextEscalationName = r.getValue(ESCALATIONS.NAME.as(ESCALATION_NAME_ALIAS))
       event.nextEscalationTime = timestampToDateTime(r.getValue(DIFFS.NEXT_ESCALATION_TIME))
     }
 
