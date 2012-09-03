@@ -846,8 +846,7 @@ object Step0051 extends VerifiedMigrationStep {
       "version_policy_name" -> "same",
       "matching_timeout" -> "0",
       "scan_cron_spec" -> "0 0 * * * ?",
-      "scan_cron_enabled" -> "1",
-      "allow_manual_scans" -> "1"
+      "scan_cron_enabled" -> "1"
     ))
   }
 
