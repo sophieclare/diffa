@@ -162,12 +162,12 @@ object Step0051 extends VerifiedMigrationStep {
       column("seq_id", Types.BIGINT, false).
       column("extent", Types.BIGINT, false).
       column("entity_id", Types.VARCHAR, 255, false).
-      column("is_match", Types.BIT, false).
+      column("is_match", Types.BIT, false, 0).
       column("detected_at", Types.TIMESTAMP, false).
       column("last_seen", Types.TIMESTAMP, false).
       column("upstream_vsn", Types.VARCHAR, 255, true).
       column("downstream_vsn", Types.VARCHAR, 255, true).
-      column("ignored", Types.BIT, false).
+      column("ignored", Types.BIT, false, 0).
       column("next_escalation", Types.BIGINT, true, null).
       column("next_escalation_time", Types.TIMESTAMP, true, null).
       pk("seq_id")
