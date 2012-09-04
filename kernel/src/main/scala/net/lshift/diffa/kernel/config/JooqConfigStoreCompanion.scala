@@ -304,8 +304,7 @@ object JooqConfigStoreCompanion {
         on(REPAIR_ACTIONS.PAIR.equal(PAIRS.NAME)).
         and(REPAIR_ACTIONS.SPACE.equal(PAIRS.SPACE)).
       leftOuterJoin(ESCALATIONS).
-        on(ESCALATIONS.PAIR.equal(PAIRS.NAME)).
-        and(ESCALATIONS.SPACE.equal(PAIRS.SPACE)).
+        on(ESCALATIONS.EXTENT.equal(PAIRS.EXTENT)).
       leftOuterJoin(PAIR_REPORTS).
         on(PAIR_REPORTS.PAIR.equal(PAIRS.NAME)).
         and(PAIR_REPORTS.SPACE.equal(PAIRS.SPACE)).
@@ -416,7 +415,6 @@ object JooqConfigStoreCompanion {
 
   def deletePairWithDependencies(t:Factory, pair:PairRef) = {
     deleteRepairActionsByPair(t, pair)
-    deleteEscalationsByPair(t, pair)
     deleteReportsByPair(t, pair)
     deletePairViewsByPair(t, pair)
     deleteStoreCheckpointsByPair(t, pair)
@@ -456,13 +454,6 @@ object JooqConfigStoreCompanion {
     t.delete(REPAIR_ACTIONS).
       where(REPAIR_ACTIONS.SPACE.equal(pair.space)).
       and(REPAIR_ACTIONS.PAIR.equal(pair.name)).
-      execute()
-  }
-
-  def deleteEscalationsByPair(t:Factory, pair:PairRef) = {
-    t.delete(ESCALATIONS).
-      where(ESCALATIONS.SPACE.equal(pair.space)).
-      and(ESCALATIONS.PAIR.equal(pair.name)).
       execute()
   }
 

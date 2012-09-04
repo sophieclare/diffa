@@ -513,16 +513,15 @@ class JooqDomainDifferenceStore(db: DatabaseFacade,
   def unscheduleEscalations(pair:PairRef) = {
 
     db.execute { t =>
-      val rows =  t.update(DIFFS).
-                      set(DIFFS.NEXT_ESCALATION, null:LONG).
-                      set(DIFFS.NEXT_ESCALATION_TIME, null:Timestamp).
-                    where(DIFFS.EXTENT.eq(
-                    t.select(PAIRS.EXTENT).
-                      from(PAIRS).
-                      where(PAIRS.SPACE.eq(pair.space).
-                        and(PAIRS.NAME.eq(pair.name))
-                  ))).execute()
-      rows
+      t.update(DIFFS).
+          set(DIFFS.NEXT_ESCALATION, null:LONG).
+          set(DIFFS.NEXT_ESCALATION_TIME, null:Timestamp).
+        where(DIFFS.EXTENT.eq(
+        t.select(PAIRS.EXTENT).
+          from(PAIRS).
+          where(PAIRS.SPACE.eq(pair.space).
+            and(PAIRS.NAME.eq(pair.name))
+      ))).execute()
     }
 
     preenReportedEventsCache(pair)
