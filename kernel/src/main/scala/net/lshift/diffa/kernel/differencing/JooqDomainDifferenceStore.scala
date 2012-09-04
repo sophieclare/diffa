@@ -710,7 +710,7 @@ class JooqDomainDifferenceStore(db: DatabaseFacade,
         from(DIFFS).
         join(PAIRS).
           on(PAIRS.EXTENT.eq(DIFFS.EXTENT)).
-        join(ESCALATIONS).
+        leftOuterJoin(ESCALATIONS).
           on(ESCALATIONS.ID.eq(DIFFS.NEXT_ESCALATION)).
         where(DIFFS.SEQ_ID.eq(id)).
         fetchOne()).map(recordToReportedDifferenceEvent)
