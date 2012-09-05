@@ -155,7 +155,7 @@ object Step0051 extends VerifiedMigrationStep {
 
     migration.createTable("escalation_rules").
       column("id", Types.BIGINT, false).
-      column("rule", Types.VARCHAR, 1024, false, "*").
+      column("rule", Types.VARCHAR, 767, false, "*").
       column("extent", Types.BIGINT, true, null).
       column("escalation", Types.VARCHAR, 50, true, null).
       column("previous_extent", Types.BIGINT, false).
