@@ -289,10 +289,6 @@ object JooqConfigStoreCompanion {
                            key:Option[String] = None,
                            endpoint:Option[String] = None) : Seq[DomainPairDef] = {
 
-    t.select().from(PAIRS).execute()
-    t.select().from(ESCALATIONS).execute()
-    t.select().from(ESCALATION_RULES).execute()
-
     val baseQuery = t.select(PAIRS.getFields).
       select(PAIR_VIEWS.NAME, PAIR_VIEWS.SCAN_CRON_SPEC, PAIR_VIEWS.SCAN_CRON_ENABLED).
       select(REPAIR_ACTIONS.getFields).
@@ -316,7 +312,7 @@ object JooqConfigStoreCompanion {
           and(ESCALATION_RULES.EXTENT.eq(ESCALATIONS.EXTENT)).
       leftOuterJoin(PAIR_REPORTS).
         on(PAIR_REPORTS.PAIR.equal(PAIRS.NAME)).
-        and(PAIR_REPORTS.SPACE.equal(PAIRS.SPACE)).
+          and(PAIR_REPORTS.SPACE.equal(PAIRS.SPACE)).
         where(PAIRS.SPACE.equal(space))
 
     val keyedQuery = key match {
@@ -388,7 +384,7 @@ object JooqConfigStoreCompanion {
 
     })
 
-    compressed.values.toList
+    compressed.values.toList.sortBy(_.key)
   }
 
   def mapResultsToList[T](results:Result[Record], rowMapper:Record => T) = {

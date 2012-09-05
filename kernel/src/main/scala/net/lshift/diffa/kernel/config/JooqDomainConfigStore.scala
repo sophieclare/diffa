@@ -434,22 +434,16 @@ class JooqDomainConfigStore(jooq:JooqDatabaseFacade,
 
         val updateRules = t.update(ESCALATION_RULES).
                               set(ESCALATION_RULES.ESCALATION, e.name).
-                              set(ESCALATION_RULES.EXTENT,
+                              set(ESCALATION_RULES.PREVIOUS_ESCALATION, e.name).
+                              set(ESCALATION_RULES.EXTENT, ESCALATION_RULES.PREVIOUS_EXTENT).
+                            where(ESCALATION_RULES.RULE.eq(rule)).
+                              and(ESCALATION_RULES.PREVIOUS_EXTENT.eq(
                                 t.select(PAIRS.EXTENT).
                                   from(PAIRS).
                                   where(PAIRS.SPACE.eq(space).
                                     and(PAIRS.NAME.eq(pair.key))).
                                   asField().
-                                  asInstanceOf[Field[LONG]]).
-                              set(ESCALATION_RULES.RULE, rule).
-                            where(ESCALATION_RULES.ESCALATION.eq(e.name)).
-                            and(ESCALATION_RULES.PREVIOUS_EXTENT.eq(
-                            t.select(PAIRS.EXTENT).
-                              from(PAIRS).
-                              where(PAIRS.SPACE.eq(space).
-                                and(PAIRS.NAME.eq(pair.key))).
-                              asField().
-                              asInstanceOf[Field[LONG]]
+                                  asInstanceOf[Field[LONG]]
                             ))
 
         val rows = updateRules.execute()
