@@ -138,20 +138,34 @@ object Step0051 extends VerifiedMigrationStep {
       .addUniqueConstraint("uk_pair_exts", "extent")
 
     migration.createTable("escalations").
-      column("id", Types.BIGINT, false).
-      column("extent", Types.BIGINT, false).
       column("name", Types.VARCHAR, 50, false).
+      column("extent", Types.BIGINT, false).
       column("action", Types.VARCHAR, 50, true).
       column("action_type", Types.VARCHAR, 255, false).
       column("delay", Types.INTEGER, 11, false, 0).
-      column("rule", Types.VARCHAR, 1024, true, null).
-      pk("id")
+      pk("name", "extent")
 
     migration.alterTable("escalations").
       addForeignKey("fk_escl_ext", "extent", "extents", "id")
 
     migration.alterTable("pairs")
       .addUniqueConstraint("uk_escl_exts", "extent", "name")
+
+    migration.createTable("escalation_rules").
+      column("id", Types.BIGINT, false).
+      column("rule", Types.VARCHAR, 1024, false, "*").
+      column("extent", Types.BIGINT, true, null).
+      column("escalation", Types.VARCHAR, 50, true, null).
+      column("previous_extent", Types.BIGINT, false).
+      column("previous_escalation", Types.VARCHAR, 50, false).
+      pk("id")
+
+
+    migration.alterTable("escalation_rules").
+      addForeignKey("fk_rule_esc", Array("escalation", "extent"), "escalations", Array("name", "extent"))
+
+    migration.alterTable("escalation_rules")
+      .addUniqueConstraint("uk_esc_rules_ext", "rule", "extent")
 
     migration.createTable("diffs").
       column("seq_id", Types.BIGINT, false).
@@ -171,7 +185,7 @@ object Step0051 extends VerifiedMigrationStep {
       .addForeignKey("fk_diff_ext", "extent", "extents", "id")
 
     migration.alterTable("diffs").
-      addForeignKey("fk_next_esc", "next_escalation", "escalations", "id")
+      addForeignKey("fk_next_esc", "next_escalation", "escalation_rules", "id")
 
     migration.alterTable("diffs")
       .addUniqueConstraint("uk_diffs", "extent", "entity_id")
@@ -515,12 +529,15 @@ object Step0051 extends VerifiedMigrationStep {
     createPair(migration, spaceId, pair, extent, upstream, downstream)
     createPairView(migration, spaceId, pair)
 
-    val escalationId = randomInt()
     val escalationName = randomString()
 
-    createEscalation(migration, extent, escalationId, escalationName)
+    createEscalation(migration, extent, escalationName)
 
-    createDiff(migration, spaceId, pair, extent, escalationId)
+    val ruleId = randomInt()
+
+    createEscalationRule(migration, ruleId, extent, escalationName)
+
+    createDiff(migration, spaceId, pair, extent, ruleId)
     createPendingDiff(migration, spaceId, pair)
 
     createPairReport(migration, spaceId, pair)
@@ -784,7 +801,7 @@ object Step0051 extends VerifiedMigrationStep {
     ))
   }
 
-  def createDiff(migration:MigrationBuilder, spaceId:String, pair:String, extent:String, escalationId:String) {
+  def createDiff(migration:MigrationBuilder, spaceId:String, pair:String, extent:String, ruleId:String) {
     migration.insert("diffs").values(Map(
       "seq_id" -> randomInt(),
       "entity_id" -> randomString(),
@@ -795,20 +812,32 @@ object Step0051 extends VerifiedMigrationStep {
       "downstream_vsn" -> randomString(),
       "detected_at" -> randomTimestamp(),
       "last_seen" -> randomTimestamp(),
-      "next_escalation" -> escalationId,
+      "next_escalation" -> ruleId,
       "next_escalation_time" -> randomTimestamp()
     ))
   }
 
-  def createEscalation(migration:MigrationBuilder, extent:String, escalationId:String, name:String) {
+  def createEscalationRule(migration:MigrationBuilder, ruleId:String, extent:String, escalation:String) {
+    migration.insert("escalation_rules").values(Map(
+      "id" -> ruleId,
+      "rule" -> "mismatch",
+      "previous_extent" -> extent,
+      "previous_escalation" -> escalation
+    ))
+
+    val update = "update escalation_rules set extent = %s, previous_escalation = '%s'".format(extent, escalation)
+    val predicate = " where previous_extent = %s and previous_escalation = '%s'".format(extent, escalation)
+
+    migration.sql(update + predicate)
+  }
+
+  def createEscalation(migration:MigrationBuilder, extent:String, name:String) {
     migration.insert("escalations").values(Map(
-      "id" -> escalationId,
       "extent" -> extent,
       "name" -> name,
       "action" -> randomString(),
       "action_type" -> "ignore",
-      "delay" -> "10",
-      "rule" -> "mismatch"
+      "delay" -> "10"
     ))
   }
 

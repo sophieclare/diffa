@@ -22,5 +22,5 @@ package net.lshift.diffa.kernel.naming;
 public enum SequenceName {
   SPACES,
   EXTENTS,
-  ESCALATIONS
+  ESCALATION_RULES
 }

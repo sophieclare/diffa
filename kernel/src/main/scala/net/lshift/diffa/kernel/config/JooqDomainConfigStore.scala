@@ -22,6 +22,7 @@ import net.lshift.diffa.schema.tables.Members.MEMBERS
 import net.lshift.diffa.schema.tables.ConfigOptions.CONFIG_OPTIONS
 import net.lshift.diffa.schema.tables.RepairActions.REPAIR_ACTIONS
 import net.lshift.diffa.schema.tables.Escalations.ESCALATIONS
+import net.lshift.diffa.schema.tables.EscalationRules.ESCALATION_RULES
 import net.lshift.diffa.schema.tables.PairReports.PAIR_REPORTS
 import net.lshift.diffa.schema.tables.PairViews.PAIR_VIEWS
 import net.lshift.diffa.schema.tables.Endpoints.ENDPOINTS
@@ -393,54 +394,120 @@ class JooqDomainConfigStore(jooq:JooqDatabaseFacade,
           Map(PAIR_REPORTS.SPACE -> space, PAIR_REPORTS.PAIR -> pair.key, PAIR_REPORTS.NAME -> r.name),
           Map(PAIR_REPORTS.REPORT_TYPE -> r.reportType, PAIR_REPORTS.TARGET -> r.target))
       })
+
+      // Clear all previous escalations and then re-add them
+
+      t.update(ESCALATION_RULES).
+          set(ESCALATION_RULES.EXTENT, null:LONG).
+          set(ESCALATION_RULES.ESCALATION, null:String).
+        where(ESCALATION_RULES.EXTENT.eq(
+          t.select(PAIRS.EXTENT).
+            from(PAIRS).
+            where(PAIRS.SPACE.eq(space).
+              and(PAIRS.NAME.eq(pair.key))).
+            asField().
+            asInstanceOf[Field[LONG]]
+        )).execute()
+
+      t.delete(ESCALATIONS).
+        where(ESCALATIONS.EXTENT.eq(
+        t.select(PAIRS.EXTENT).
+          from(PAIRS).
+          where(PAIRS.SPACE.eq(space).
+            and(PAIRS.NAME.eq(pair.key))).
+          asField().
+          asInstanceOf[Field[LONG]]
+      )).execute()
+
       pair.escalations.foreach(e => {
 
-        // Attempt an update to the escalations table first to avoid sequence churn
+        // TODO somehow factor out the subselect to avoid repetitions
+
+        t.insertInto(ESCALATIONS).
+            set(ESCALATIONS.NAME, e.name).
+            set(ESCALATIONS.EXTENT,
+              t.select(PAIRS.EXTENT).
+                from(PAIRS).
+                where(PAIRS.SPACE.eq(space).
+                and(PAIRS.NAME.eq(pair.key))).
+                asField().
+                asInstanceOf[Field[LONG]]).
+            set(ESCALATIONS.ACTION, e.action).
+            set(ESCALATIONS.ACTION_TYPE, e.actionType).
+            set(ESCALATIONS.DELAY, e.delay:INT).
+          onDuplicateKeyUpdate().
+            set(ESCALATIONS.EXTENT,
+              t.select(PAIRS.EXTENT).
+                from(PAIRS).
+                where(PAIRS.SPACE.eq(space).
+                  and(PAIRS.NAME.eq(pair.key))).
+                asField().
+                asInstanceOf[Field[LONG]]).
+            set(ESCALATIONS.ACTION, e.action).
+            set(ESCALATIONS.ACTION_TYPE, e.actionType).
+            set(ESCALATIONS.DELAY, e.delay:INT).
+          execute()
+
+        val rule = if (e.rule == null) "*" else e.rule
+
+        // Attempt an update to the escalation rules table first to avoid sequence churn
         // this means we'll have to potentially attempt the update twice, depending on concurrency
 
-        val updateEscalations = t.update(ESCALATIONS).
-                                    set(ESCALATIONS.ACTION, e.action).
-                                    set(ESCALATIONS.ACTION_TYPE, e.actionType).
-                                    set(ESCALATIONS.RULE, e.rule).
-                                    set(ESCALATIONS.DELAY, e.delay:INT).
-                                  where(ESCALATIONS.EXTENT.eq(
-                                    t.select(PAIRS.EXTENT).
-                                      from(PAIRS).
-                                        where(PAIRS.SPACE.eq(space).
-                                          and(PAIRS.NAME.eq(pair.key))).
-                                      asField().
-                                      asInstanceOf[Field[LONG]]
-                                    )).
-                                    and(ESCALATIONS.NAME.eq(e.name))
+        val updateRules = t.update(ESCALATION_RULES).
+                              set(ESCALATION_RULES.ESCALATION, e.name).
+                              set(ESCALATION_RULES.EXTENT,
+                                t.select(PAIRS.EXTENT).
+                                  from(PAIRS).
+                                  where(PAIRS.SPACE.eq(space).
+                                    and(PAIRS.NAME.eq(pair.key))).
+                                  asField().
+                                  asInstanceOf[Field[LONG]]).
+                              set(ESCALATION_RULES.RULE, rule).
+                            where(ESCALATION_RULES.ESCALATION.eq(e.name)).
+                            and(ESCALATION_RULES.PREVIOUS_EXTENT.eq(
+                            t.select(PAIRS.EXTENT).
+                              from(PAIRS).
+                              where(PAIRS.SPACE.eq(space).
+                                and(PAIRS.NAME.eq(pair.key))).
+                              asField().
+                              asInstanceOf[Field[LONG]]
+                            ))
 
-        val rows = updateEscalations.execute()
+        val rows = updateRules.execute()
 
-        if (rows == 0 ) {
+        if (rows == 0) {
 
-          val escalationId = sequenceProvider.nextSequenceValue(SequenceName.ESCALATIONS)
+          val ruleId = sequenceProvider.nextSequenceValue(SequenceName.ESCALATION_RULES)
 
           try {
-            t.insertInto(ESCALATIONS).
-              set(ESCALATIONS.ID, escalationId:LONG).
-              set(ESCALATIONS.EXTENT,
+            t.insertInto(ESCALATION_RULES).
+              set(ESCALATION_RULES.ID, ruleId:LONG).
+              set(ESCALATION_RULES.EXTENT,
                 t.select(PAIRS.EXTENT).
                 from(PAIRS).
                 where(PAIRS.SPACE.eq(space).
                   and(PAIRS.NAME.eq(pair.key))).
                 asField().
                 asInstanceOf[Field[LONG]]).
-              set(ESCALATIONS.NAME, e.name).
-              set(ESCALATIONS.ACTION, e.action).
-              set(ESCALATIONS.ACTION_TYPE, e.actionType).
-              set(ESCALATIONS.RULE, e.rule).
-              set(ESCALATIONS.DELAY, e.delay:INT).
+              set(ESCALATION_RULES.PREVIOUS_EXTENT,
+                t.select(PAIRS.EXTENT).
+                  from(PAIRS).
+                  where(PAIRS.SPACE.eq(space).
+                  and(PAIRS.NAME.eq(pair.key))).
+                  asField().
+                  asInstanceOf[Field[LONG]]).
+              set(ESCALATION_RULES.ESCALATION, e.name).
+              set(ESCALATION_RULES.PREVIOUS_ESCALATION, e.name).
+              set(ESCALATION_RULES.RULE, rule).
             execute()
           }
           catch {
             case x:Exception if x.getCause.isInstanceOf[SQLIntegrityConstraintViolationException] => {
-              updateEscalations.execute()
+              updateRules.execute()
             }
           }
+
+        } else {
 
         }
 

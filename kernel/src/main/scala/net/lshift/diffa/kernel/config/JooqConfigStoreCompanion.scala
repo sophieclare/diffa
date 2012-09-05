@@ -26,6 +26,7 @@ import net.lshift.diffa.schema.tables.RangeCategories.RANGE_CATEGORIES
 import net.lshift.diffa.schema.tables.RangeCategoryViews.RANGE_CATEGORY_VIEWS
 import scala.collection.JavaConversions._
 import net.lshift.diffa.schema.tables.Escalations.ESCALATIONS
+import net.lshift.diffa.schema.tables.EscalationRules.ESCALATION_RULES
 import net.lshift.diffa.schema.tables.PairReports.PAIR_REPORTS
 import net.lshift.diffa.schema.tables.RepairActions.REPAIR_ACTIONS
 import net.lshift.diffa.schema.tables.Pairs.PAIRS
@@ -288,10 +289,15 @@ object JooqConfigStoreCompanion {
                            key:Option[String] = None,
                            endpoint:Option[String] = None) : Seq[DomainPairDef] = {
 
+    t.select().from(PAIRS).execute()
+    t.select().from(ESCALATIONS).execute()
+    t.select().from(ESCALATION_RULES).execute()
+
     val baseQuery = t.select(PAIRS.getFields).
       select(PAIR_VIEWS.NAME, PAIR_VIEWS.SCAN_CRON_SPEC, PAIR_VIEWS.SCAN_CRON_ENABLED).
       select(REPAIR_ACTIONS.getFields).
       select(ESCALATIONS.getFields).
+      select(ESCALATION_RULES.RULE).
       select(PAIR_REPORTS.getFields).
       select(SPACES.NAME).
       from(PAIRS).
@@ -305,6 +311,9 @@ object JooqConfigStoreCompanion {
         and(REPAIR_ACTIONS.SPACE.equal(PAIRS.SPACE)).
       leftOuterJoin(ESCALATIONS).
         on(ESCALATIONS.EXTENT.equal(PAIRS.EXTENT)).
+      leftOuterJoin(ESCALATION_RULES).
+        on(ESCALATION_RULES.ESCALATION.eq(ESCALATIONS.NAME)).
+          and(ESCALATION_RULES.EXTENT.eq(ESCALATIONS.EXTENT)).
       leftOuterJoin(PAIR_REPORTS).
         on(PAIR_REPORTS.PAIR.equal(PAIRS.NAME)).
         and(PAIR_REPORTS.SPACE.equal(PAIRS.SPACE)).
@@ -393,7 +402,7 @@ object JooqConfigStoreCompanion {
       name = record.getValue(ESCALATIONS.NAME),
       action = record.getValue(ESCALATIONS.ACTION),
       actionType = record.getValue(ESCALATIONS.ACTION_TYPE),
-      rule = record.getValue(ESCALATIONS.RULE),
+      rule = record.getValue(ESCALATION_RULES.RULE),
       delay = record.getValue(ESCALATIONS.DELAY))
   }
 
