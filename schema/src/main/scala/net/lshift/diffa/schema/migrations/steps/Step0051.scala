@@ -166,7 +166,7 @@ object Step0051 extends VerifiedMigrationStep {
       addForeignKey("fk_rule_esc", Array("escalation", "extent"), "escalations", Array("name", "extent"))
 
     migration.alterTable("escalation_rules")
-      .addUniqueConstraint("uk_esc_rules_ext", "rule", "extent")
+      .addUniqueConstraint("uk_esc_rules_ext", "rule", "previous_extent")
 
     migration.createTable("diffs").
       column("seq_id", Types.BIGINT, false).
