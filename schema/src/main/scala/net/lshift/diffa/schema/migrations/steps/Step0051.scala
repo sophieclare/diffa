@@ -145,11 +145,13 @@ object Step0051 extends VerifiedMigrationStep {
       column("delay", Types.INTEGER, 11, false, 0).
       pk("name", "extent")
 
-    migration.alterTable("escalations").
-      addForeignKey("fk_escl_ext", "extent", "extents", "id")
+    //migration.alterTable("escalations").
+    //  addForeignKey("fk_escl_ext", "extent", "extents", "id")
 
-    migration.alterTable("pairs")
-      .addUniqueConstraint("uk_escl_exts", "extent", "name")
+    //migration.alterTable("pairs")
+    //  .addUniqueConstraint("uk_escl_exts", "extent", "name")
+
+    migration.sql("alter table escalations  add constraint fk_escl_pair foreign key (extent) references pairs (extent)")
 
     migration.createTable("escalation_rules").
       column("id", Types.BIGINT, false).

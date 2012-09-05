@@ -329,20 +329,6 @@ class JooqDomainConfigStore(jooq:JooqDatabaseFacade,
             set(PAIRS.VERSION_POLICY_NAME, pair.versionPolicyName).
           execute()
 
-      } else {
-
-        val orphanEscalations = pair.escalations.isEmpty
-
-        if (orphanEscalations) {
-
-          val extent = upgradeExtent(t)
-
-          t.update(PAIRS).
-              set(PAIRS.EXTENT, extent:LONG).
-            where(PAIRS.SPACE.eq(space)).
-              and(PAIRS.NAME.eq(pair.key)).
-            execute()
-        }
       }
 
       type HasName = {def name: String}
