@@ -415,20 +415,13 @@ class JooqDomainConfigStore(jooq:JooqDatabaseFacade,
               t.select(PAIRS.EXTENT).
                 from(PAIRS).
                 where(PAIRS.SPACE.eq(space).
-                and(PAIRS.NAME.eq(pair.key))).
+                  and(PAIRS.NAME.eq(pair.key))).
                 asField().
                 asInstanceOf[Field[LONG]]).
             set(ESCALATIONS.ACTION, e.action).
             set(ESCALATIONS.ACTION_TYPE, e.actionType).
             set(ESCALATIONS.DELAY, e.delay:INT).
           onDuplicateKeyUpdate().
-            set(ESCALATIONS.EXTENT,
-              t.select(PAIRS.EXTENT).
-                from(PAIRS).
-                where(PAIRS.SPACE.eq(space).
-                  and(PAIRS.NAME.eq(pair.key))).
-                asField().
-                asInstanceOf[Field[LONG]]).
             set(ESCALATIONS.ACTION, e.action).
             set(ESCALATIONS.ACTION_TYPE, e.actionType).
             set(ESCALATIONS.DELAY, e.delay:INT).
