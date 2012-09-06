@@ -432,44 +432,48 @@ class JooqDomainConfigStore(jooq:JooqDatabaseFacade,
         // Attempt an update to the escalation rules table first to avoid sequence churn
         // this means we'll have to potentially attempt the update twice, depending on concurrency
 
-        val updateExistingRules = t.update(ESCALATION_RULES).
-                              set(ESCALATION_RULES.ESCALATION, ESCALATION_RULES.PREVIOUS_ESCALATION).
-                              set(ESCALATION_RULES.EXTENT, ESCALATION_RULES.PREVIOUS_EXTENT).
-                            where(ESCALATION_RULES.RULE.eq(rule)).
-                              and(ESCALATION_RULES.PREVIOUS_ESCALATION.eq(e.name)).
-                              and(ESCALATION_RULES.PREVIOUS_EXTENT.eq(
-                                t.select(PAIRS.EXTENT).
-                                  from(PAIRS).
-                                  where(PAIRS.SPACE.eq(space).
-                                    and(PAIRS.NAME.eq(pair.key))).
-                                  asField().
-                                  asInstanceOf[Field[LONG]]
-                            ))
+        val updateExistingRules
+          = t.update(ESCALATION_RULES).
+                set(ESCALATION_RULES.ESCALATION, ESCALATION_RULES.PREVIOUS_ESCALATION).
+                set(ESCALATION_RULES.EXTENT, ESCALATION_RULES.PREVIOUS_EXTENT).
+              where(ESCALATION_RULES.RULE.eq(rule)).
+                and(ESCALATION_RULES.PREVIOUS_ESCALATION.eq(e.name)).
+                and(ESCALATION_RULES.PREVIOUS_EXTENT.eq(
+                  t.select(PAIRS.EXTENT).
+                    from(PAIRS).
+                    where(PAIRS.SPACE.eq(space).
+                      and(PAIRS.NAME.eq(pair.key))).
+                    asField().
+                    asInstanceOf[Field[LONG]]
+              ))
 
         val rows = updateExistingRules.execute()
 
         if (rows == 0) {
 
-          val updatePreviousEscalationName = t.update(ESCALATION_RULES).
-            set(ESCALATION_RULES.ESCALATION, e.name).
-            set(ESCALATION_RULES.PREVIOUS_ESCALATION, e.name).
-            set(ESCALATION_RULES.EXTENT,
-              t.select(PAIRS.EXTENT).
-                from(PAIRS).
-                where(PAIRS.SPACE.eq(space).
-                  and(PAIRS.NAME.eq(pair.key))).
-                asField().
-                asInstanceOf[Field[LONG]]
-            ).
-            where(ESCALATION_RULES.RULE.eq(rule)).
-            and(ESCALATION_RULES.PREVIOUS_EXTENT.eq(
-            t.select(PAIRS.EXTENT).
-              from(PAIRS).
-              where(PAIRS.SPACE.eq(space).
-              and(PAIRS.NAME.eq(pair.key))).
-              asField().
-              asInstanceOf[Field[LONG]]
-          )).execute()
+          // Has just the escalation name changed?
+
+          val updatePreviousEscalationName
+            = t.update(ESCALATION_RULES).
+                  set(ESCALATION_RULES.ESCALATION, e.name).
+                  set(ESCALATION_RULES.PREVIOUS_ESCALATION, e.name).
+                  set(ESCALATION_RULES.EXTENT,
+                    t.select(PAIRS.EXTENT).
+                      from(PAIRS).
+                      where(PAIRS.SPACE.eq(space).
+                        and(PAIRS.NAME.eq(pair.key))).
+                      asField().
+                      asInstanceOf[Field[LONG]]
+                  ).
+                  where(ESCALATION_RULES.RULE.eq(rule)).
+                    and(ESCALATION_RULES.PREVIOUS_EXTENT.eq(
+                  t.select(PAIRS.EXTENT).
+                    from(PAIRS).
+                    where(PAIRS.SPACE.eq(space).
+                      and(PAIRS.NAME.eq(pair.key))).
+                    asField().
+                    asInstanceOf[Field[LONG]]
+                )).execute()
 
           if (updatePreviousEscalationName == 0) {
 
@@ -499,22 +503,6 @@ class JooqDomainConfigStore(jooq:JooqDatabaseFacade,
             }
             catch {
               case x:Exception if x.getCause.isInstanceOf[SQLIntegrityConstraintViolationException] => {
-                /*
-                t.update(ESCALATION_RULES).
-                  set(ESCALATION_RULES.ESCALATION, e.name).
-                  set(ESCALATION_RULES.PREVIOUS_ESCALATION, e.name).
-                  set(ESCALATION_RULES.EXTENT, ESCALATION_RULES.PREVIOUS_EXTENT).
-                  where(ESCALATION_RULES.RULE.eq(rule)).
-
-                  and(ESCALATION_RULES.PREVIOUS_EXTENT.eq(
-                    t.select(PAIRS.EXTENT).
-                      from(PAIRS).
-                      where(PAIRS.SPACE.eq(space).
-                      and(PAIRS.NAME.eq(pair.key))).
-                      asField().
-                      asInstanceOf[Field[LONG]]
-                )).execute()
-                */
                 // This should happen as a result of a race condition between the first attempt to update
                 // and the attempt to insert a new row. If there is a genuine reason for the non-PK unique
                 // constraint to have caused the constraint violation, then this second attempt to

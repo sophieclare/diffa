@@ -503,11 +503,6 @@ class JooqDomainDifferenceStore(db: DatabaseFacade,
   def scheduleEscalation(diff: DifferenceEvent, escalationName: String, escalationTime: DateTime) = {
 
     db.execute { t =>
-
-      t.select().from(PAIRS).execute()
-      t.select().from(ESCALATIONS).execute()
-      t.select().from(ESCALATION_RULES).execute()
-
       t.update(DIFFS).
           set(DIFFS.NEXT_ESCALATION,
             t.select(ESCALATION_RULES.ID).
@@ -522,8 +517,6 @@ class JooqDomainDifferenceStore(db: DatabaseFacade,
           set(DIFFS.NEXT_ESCALATION_TIME, dateTimeToTimestamp(escalationTime)).
         where(DIFFS.SEQ_ID.eq(diff.sequenceId)).
         execute()
-
-      t.select().from(DIFFS).execute()
     }
 
     reportedEvents.evict(diff.objId)
