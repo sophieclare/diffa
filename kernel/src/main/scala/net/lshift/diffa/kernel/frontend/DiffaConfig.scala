@@ -276,7 +276,7 @@ case class PairDef(
 
     escalations.groupBy(_.rule).foreach{case (rule, esc) => {
       if (esc.size > 1) {
-        throw new ConfigValidationException(pairPath, "Rule %s was duplicated: %s".format(rule, escalations))
+        throw new ConfigValidationException(pairPath, "Rule '%s' was duplicated: %s".format(rule, escalations))
       }
     }}
 
