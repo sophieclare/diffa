@@ -195,6 +195,10 @@ class DomainResource {
   @Path("/{space:.+}/limits")
   def getLimitsResource(@PathParam("space") space:String) =
     withSpace(space, Privileges.CONFIGURE, (id:Long) => new DomainServiceLimitsResource(config, id))
+
+  @Path("/{space:.+}/policies")
+  def getPoliciesResource(@PathParam("space") space:String) =
+    withSpace(space, Privileges.CONFIGURE, (id:Long) => new DomainPoliciesResource(systemConfigStore, id))
 }
 
 trait IndividuallySecuredResource

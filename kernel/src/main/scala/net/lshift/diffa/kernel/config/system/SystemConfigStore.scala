@@ -22,6 +22,7 @@ import net.lshift.diffa.kernel.frontend.DomainPairDef
 import net.lshift.diffa.kernel.config.User
 import net.lshift.diffa.kernel.config.Member
 import net.lshift.diffa.kernel.util.MissingObjectException
+import reflect.BeanProperty
 
 
 /**
@@ -93,15 +94,19 @@ trait SystemConfigStore {
   def deleteUser(name: String): Unit
   def listUsers : Seq[User]
   def listDomainMemberships(username: String) : Seq[Member]
-  def lookupPolicyStatements(policy:PolicyKey): Seq[PolicyStatement]
   def getUser(name: String) : User
   def getUserByToken(token: String) : User
   def containsRootUser(names:Seq[String]):Boolean
 
+  def storePolicy(policy:PolicyKey, stmts:Seq[PolicyStatement])
+  def lookupPolicyStatements(policy:PolicyKey): Seq[PolicyStatement]
+  def removePolicy(policy:PolicyKey)
 }
 
 case class PolicyKey(space:java.lang.Long, name:String)
-case class PolicyStatement(privilege:String, target:String) {
+case class PolicyStatement(@BeanProperty var privilege:String = null, @BeanProperty var target:String = null) {
+  def this() = this(privilege = null)
+
     // TODO: Breakdown the target string, and allow matching against components
   def appliesTo(objType:String, objName:String) = true
 }

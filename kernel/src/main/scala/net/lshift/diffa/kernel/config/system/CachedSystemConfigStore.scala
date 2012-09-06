@@ -97,6 +97,16 @@ class CachedSystemConfigStore(underlying:SystemConfigStore, cacheProvider:CacheP
       () => underlying.lookupPolicyStatements(policy).toList)
   }
 
+  def storePolicy(policy: PolicyKey, stmts: Seq[PolicyStatement]) {
+    underlying.storePolicy(policy, stmts)
+    policyCache.evict(policy)
+  }
+
+  def removePolicy(policy: PolicyKey) {
+    underlying.removePolicy(policy)
+    policyCache.evict(policy)
+  }
+
   def getUser(username: String) = {
     usersCache.readThrough(username, () => underlying.getUser(username))
   }

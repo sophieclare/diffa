@@ -51,7 +51,7 @@ object Step0051 extends VerifiedMigrationStep {
       column("policy", Types.VARCHAR, 50, false).
       column("privilege", Types.VARCHAR, 50, false).
       column("target", Types.VARCHAR, 50, true).
-      pk("space", "policy", "privilege")
+      pk("space", "policy", "privilege", "target")
     migration.alterTable("policy_statements").
       addForeignKey("fk_plcy_stmts_plcy", "space", "spaces", "id").
       addForeignKey("fk_plcy_stmts_priv", "privilege", "privileges", "name")
@@ -127,7 +127,8 @@ object Step0051 extends VerifiedMigrationStep {
       migration.insert("policy_statements").values(Map(
         "space" -> spaceId,
         "policy" -> name,
-        "privilege" -> p
+        "privilege" -> p,
+        "target" -> "*"
       ))
     )
   }

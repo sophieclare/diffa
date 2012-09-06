@@ -96,6 +96,27 @@ class JooqSystemConfigStoreTest {
     assertUserEquals(updatedUser, user)
   }
 
+  @Test
+  def shouldBeAbleToStoreRetrieveAndUpdatePolicy() {
+    val key = PolicyKey(0, "TestPol")
+    val initial = Seq(
+        PolicyStatement("space-user", "*"),
+        PolicyStatement("read-diffs", "*")
+      )
+
+    systemConfigStore.storePolicy(key, initial)
+    assertEquals(initial.toSet, systemConfigStore.lookupPolicyStatements(key).toSet)
+
+    val updated = Seq(
+        PolicyStatement("space-user", "*"),
+        PolicyStatement("read-diffs", "pair=p1"),
+        PolicyStatement("read-diffs", "pair=p2"),
+        PolicyStatement("initiate-scan", "pair=p2")
+      )
+    systemConfigStore.storePolicy(key, updated)
+    assertEquals(updated.toSet, systemConfigStore.lookupPolicyStatements(key).toSet)
+  }
+  
   def assertUserEquals(expected:User, actual:User) {
     assertEquals(expected.name, actual.name)
     assertEquals(expected.email, actual.email)

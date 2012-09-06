@@ -16,7 +16,6 @@
 
 package net.lshift.diffa.kernel.config.system
 
-import scala.collection.JavaConversions._
 import org.slf4j.LoggerFactory
 import net.lshift.diffa.kernel.util.AlertCodes._
 import net.lshift.diffa.kernel.util.MissingObjectException
@@ -43,6 +42,7 @@ import net.lshift.diffa.schema.tables.EndpointViews.ENDPOINT_VIEWS
 import net.lshift.diffa.schema.tables.Endpoints.ENDPOINTS
 import net.lshift.diffa.schema.tables.ConfigOptions.CONFIG_OPTIONS
 import net.lshift.diffa.schema.tables.Members.MEMBERS
+import net.lshift.diffa.schema.tables.Policies.POLICIES
 import net.lshift.diffa.schema.tables.PolicyStatements.POLICY_STATEMENTS
 import net.lshift.diffa.schema.tables.StoreCheckpoints.STORE_CHECKPOINTS
 import net.lshift.diffa.schema.tables.PendingDiffs.PENDING_DIFFS
@@ -54,7 +54,6 @@ import net.lshift.diffa.schema.tables.Users.USERS
 import net.lshift.diffa.kernel.lifecycle.DomainLifecycleAware
 import collection.mutable.ListBuffer
 import net.lshift.diffa.kernel.util.cache.CacheProvider
-import org.jooq.{TableField, Record}
 import net.lshift.diffa.schema.tables.records.UsersRecord
 import net.lshift.diffa.kernel.util.sequence.SequenceProvider
 import java.lang.{Long => LONG, Integer => INT}
@@ -67,6 +66,8 @@ import net.lshift.diffa.kernel.config.User
 import net.lshift.diffa.kernel.frontend.DomainEndpointDef
 import net.lshift.diffa.kernel.naming.{CacheName, SequenceName}
 import org.jooq.impl.Factory
+import org.jooq._
+import collection.JavaConversions._
 
 class JooqSystemConfigStore(jooq:JooqDatabaseFacade,
                             cacheProvider:CacheProvider,
@@ -272,14 +273,61 @@ class JooqSystemConfigStore(jooq:JooqDatabaseFacade,
   }
 
   def lookupPolicyStatements(policy:PolicyKey) = {
-    jooq.execute(t => {
-      val results = t.select().
+    jooq.execute(t => lookupPolicyStatements(policy, t))
+  }
+
+  def lookupPolicyStatements(policy:PolicyKey, t:Factory) = {
+    val results = t.select().
                       from(POLICY_STATEMENTS).
                       where(POLICY_STATEMENTS.SPACE.equal(policy.space).and(POLICY_STATEMENTS.POLICY.equal(policy.name))).
                       fetch()
 
-      results.iterator().map(recordToPolicyStatement(_)).toSeq
+    results.iterator().map(recordToPolicyStatement(_)).toSeq
+  }
+
+  def storePolicy(policy:PolicyKey, stmts:Seq[PolicyStatement]) {
+    jooq.execute(t => {
+      // Remove all missing policy statements
+      val existing = lookupPolicyStatements(policy, t)
+      val toRemove:Set[PolicyStatement] = existing.toSet -- stmts
+      val toAdd:Set[PolicyStatement] = stmts.toSet -- existing
+
+      toRemove.foreach(r => {
+        t.delete(POLICY_STATEMENTS).
+          where(POLICY_STATEMENTS.SPACE.equal(policy.space).and(POLICY_STATEMENTS.POLICY.equal(policy.name))).
+            and(POLICY_STATEMENTS.PRIVILEGE.equal(r.privilege)).
+            and(POLICY_STATEMENTS.TARGET.equal(r.target)).
+          execute()
+      })
+
+      t.insertInto(POLICIES).
+        set(Map(POLICIES.SPACE -> policy.space, POLICIES.NAME -> policy.name)).
+        onDuplicateKeyIgnore().
+        execute()
+
+      toAdd.foreach(a => {
+        t.insertInto(POLICY_STATEMENTS).
+          set(Map(
+            POLICY_STATEMENTS.SPACE -> policy.space,
+            POLICY_STATEMENTS.POLICY -> policy.name,
+            POLICY_STATEMENTS.PRIVILEGE -> a.privilege,
+            POLICY_STATEMENTS.TARGET -> a.target
+          )).
+          execute()
+      })
     })
+  }
+
+  def removePolicy(policy:PolicyKey) {
+    jooq.execute(t => {
+      t.delete(POLICY_STATEMENTS).
+        where(POLICY_STATEMENTS.SPACE.equal(policy.space).and(POLICY_STATEMENTS.POLICY.equal(policy.name))).
+        execute()
+      t.delete(POLICIES).
+        where(POLICIES.SPACE.equal(policy.space).and(POLICIES.NAME.equal(policy.name))).
+        execute()
+    })
+
   }
 
   def containsRootUser(usernames: Seq[String]) : Boolean = jooq.execute(t => {
