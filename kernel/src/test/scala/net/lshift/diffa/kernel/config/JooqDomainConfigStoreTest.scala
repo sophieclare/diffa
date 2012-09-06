@@ -404,6 +404,53 @@ class JooqDomainConfigStoreTest {
     assertEquals(0, domainConfigStore.getPairDef(space.id, pairKey).reports.size)
   }
 
+  @Test(expected = classOf[ConfigValidationException])
+  def escalationRulesMustBeUniqueWithinPairs {
+
+    val path = RandomStringUtils.randomAlphanumeric(10)
+    val space = systemConfigStore.createOrUpdateSpace(path)
+
+    val pair = buildBasicRandomPair(space.id)
+
+    val repair = RepairActionDef(
+      name = RandomStringUtils.randomAlphanumeric(10),
+      scope = RepairAction.ENTITY_SCOPE,
+      url = "http://foo.com")
+
+    val escalation = EscalationDef(
+      name = RandomStringUtils.randomAlphanumeric(10),
+      action = repair.name,
+      rule = "upstreamMissing",
+      actionType = EscalationActionType.REPAIR,
+      delay = 30)
+
+    val withEscalation = pair.copy(repairActions = Set(repair), escalations = Set(escalation))
+    domainConfigStore.createOrUpdatePair(space.id, withEscalation)
+
+    val duplicatedRule = EscalationDef(
+      name = RandomStringUtils.randomAlphanumeric(10),
+      action = repair.name,
+      rule = "upstreamMissing",
+      actionType = EscalationActionType.REPAIR,
+      delay = 30)
+
+    val withDuplicatedRule = pair.copy(repairActions = Set(repair), escalations = Set(escalation, duplicatedRule))
+    domainConfigStore.createOrUpdatePair(space.id, withDuplicatedRule)
+
+  }
+
+  private def buildBasicRandomPair(space:Long) : PairDef = {
+    val up = domainConfigStore.createOrUpdateEndpoint(space, EndpointDef(name = RandomStringUtils.randomAlphanumeric(10)))
+    val down = domainConfigStore.createOrUpdateEndpoint(space, EndpointDef(name = RandomStringUtils.randomAlphanumeric(10)))
+    val pair = PairDef(
+      key = RandomStringUtils.randomAlphanumeric(10),
+      upstreamName = up.name,
+      downstreamName = down.name
+    )
+    domainConfigStore.createOrUpdatePair(space, pair)
+    pair
+  }
+
   @Test
   def testDeleteMissing {
 
