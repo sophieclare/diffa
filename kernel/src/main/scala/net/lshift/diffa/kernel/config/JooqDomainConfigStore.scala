@@ -433,7 +433,7 @@ class JooqDomainConfigStore(jooq:JooqDatabaseFacade,
         // this means we'll have to potentially attempt the update twice, depending on concurrency
 
         val updateRules = t.update(ESCALATION_RULES).
-                              set(ESCALATION_RULES.ESCALATION, e.name).
+                              set(ESCALATION_RULES.ESCALATION, ESCALATION_RULES.PREVIOUS_ESCALATION).
                               //set(ESCALATION_RULES.PREVIOUS_ESCALATION, e.name).
                               set(ESCALATION_RULES.EXTENT, ESCALATION_RULES.PREVIOUS_EXTENT).
                             where(ESCALATION_RULES.RULE.eq(rule)).

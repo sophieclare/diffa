@@ -70,7 +70,7 @@ class JooqDomainDifferenceStoreTest {
       ),
       escalations = Set(
         EscalationDef(name = "esc1", action = "r1", actionType = "repair", rule = "upstreamMissing"),
-        EscalationDef(name = "esc2", action = "r2", actionType = "repair", rule = "upstreamMissing")
+        EscalationDef(name = "esc2", action = "r2", actionType = "repair", rule = "downstreamMissing")
       ))
     val pair2 = pairTemplate.copy(key = "pair2",
       repairActions = Set(RepairActionDef(name = "r1", url = "http://localhost/repair", scope = "entity")),
