@@ -34,8 +34,10 @@ import net.lshift.diffa.kernel.limiting.DomainRateLimiterFactory
 import net.lshift.diffa.agent.rest.ResponseUtils._
 import net.lshift.diffa.kernel.frontend.EscalationDef
 import net.lshift.diffa.kernel.differencing.{DomainDifferenceStore, DifferencesManager}
-import net.lshift.diffa.kernel.config.{BreakerHelper, DomainCredentialsManager, User, DomainConfigStore}
+import net.lshift.diffa.kernel.config._
 import org.springframework.security.access.PermissionEvaluator
+import net.lshift.diffa.kernel.config.User
+import net.lshift.diffa.kernel.frontend.EscalationDef
 
 /**
  * The policy is that we will publish spaces as the replacement term for domains
@@ -99,7 +101,11 @@ class DomainResource {
     val authentication = SecurityContextHolder.getContext.getAuthentication
     val hasPermission = permissionEvaluator.hasPermission(authentication, path, "domain-user")
     if (hasPermission) {
-      val space = systemConfigStore.lookupSpaceByPath(path)
+      val space = try {
+        systemConfigStore.lookupSpaceByPath(path)
+      } catch {
+        case ex => Space(id = path.toLong)
+      }
       f(space.id)
     }
     else {

@@ -52,13 +52,19 @@ class UserDetailsAdapter(val systemConfigStore:SystemConfigStore)
     extractDetails(user)
   }
 
-  def hasPermission(auth: Authentication, targetDomainObject: AnyRef, permission: AnyRef) = {
+  def hasPermission(auth: Authentication, targetObject: AnyRef, permission: AnyRef) = {
     permission match {
         // If we're asking for a domain-user, then return true if the provided authentication
         // has a DomainAuthority for the given domain (or is a root user)
       case "domain-user" =>
-        val domain = targetDomainObject.asInstanceOf[String]
-        isRoot(auth) || hasDomainRole(auth, domain, "user")
+        val space = targetObject.asInstanceOf[String]
+        val spaceId: Long = try {
+          space.toLong
+        } catch {
+          case nfe: NumberFormatException =>
+            systemConfigStore.lookupSpaceByPath(space).id
+        }
+        isRoot(auth) || hasDomainRole(auth, spaceId, "user")
 
         // Tests to see whether the requesting user is the owner of the requested object
       case "user-preferences" =>
@@ -68,7 +74,7 @@ class UserDetailsAdapter(val systemConfigStore:SystemConfigStore)
         1. outwardly appearing as such; professed; pretended: an ostensible cheerfulness concealing sadness.
         2.apparent, evident, or conspicuous: the ostensible truth of their theories.
         */
-        val ostensibleUsername = targetDomainObject.asInstanceOf[String]
+        val ostensibleUsername = targetObject.asInstanceOf[String]
         isUserWhoTheyClaimToBe(auth, ostensibleUsername)
 
         // Unknown permission request type
@@ -82,8 +88,8 @@ class UserDetailsAdapter(val systemConfigStore:SystemConfigStore)
   def extractDetails(user:User) = {
     val isRoot = user.superuser
     val memberships = systemConfigStore.listDomainMemberships(user.name)
-    val domainAuthorities = memberships.map(m => DomainAuthority(m.domain, "user"))
-    val authorities = domainAuthorities ++
+    val spaceAuthorities = memberships.map(m => DomainAuthority(m.space, "user"))
+    val authorities = spaceAuthorities ++
                       Seq(new SimpleGrantedAuthority("user"), new UserAuthority(user.name)) ++
     (isRoot match {
       case true   => Seq(new SimpleGrantedAuthority("root"))
@@ -101,9 +107,9 @@ class UserDetailsAdapter(val systemConfigStore:SystemConfigStore)
     }
   }
   def isRoot(auth: Authentication) = auth.getAuthorities.find(_.getAuthority == "root").isDefined
-  def hasDomainRole(auth: Authentication, domain:String, role:String) = auth.getAuthorities.find {
-      case DomainAuthority(grantedDomain, grantedRole) =>
-        domain == grantedDomain && role == grantedRole
+  def hasDomainRole(auth: Authentication, space: Long, role:String) = auth.getAuthorities.find {
+      case DomainAuthority(grantedSpace, grantedRole) =>
+        space == grantedSpace && role == grantedRole
       case _ =>
         false
     }.isDefined
@@ -114,8 +120,8 @@ class UserDetailsAdapter(val systemConfigStore:SystemConfigStore)
   }.isDefined
 }
 
-case class DomainAuthority(domain:String, domainRole:String) extends GrantedAuthority {
-  def getAuthority = domainRole + "@" + domain
+case class DomainAuthority(space: Long, domainRole:String) extends GrantedAuthority {
+  def getAuthority = domainRole + "@" + space
 }
 
 case class UserAuthority(username:String) extends GrantedAuthority {

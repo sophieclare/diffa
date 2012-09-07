@@ -55,6 +55,7 @@ class CachedSystemConfigStore(underlying:SystemConfigStore, cacheProvider:CacheP
   def listSubspaces(parent:Long) = underlying.listSubspaces(parent)
 
   def lookupSpaceByPath(path: String) = underlying.lookupSpaceByPath(path)
+  def lookupSpaceById(id: java.lang.Long) = underlying.lookupSpaceById(id)
 
   def createOrUpdateDomain(domain:String) = underlying.createOrUpdateDomain(domain)
   //def deleteDomain(domain:String) = underlying.deleteDomain(domain)

@@ -27,6 +27,7 @@ public enum CacheName {
   DOMAIN_PAIR_BREAKERS,
 
   SPACE_PATHS,
-  SPACE_IDS
+  SPACE_IDS,
+  SPACE_ID_PATHS
 
 }

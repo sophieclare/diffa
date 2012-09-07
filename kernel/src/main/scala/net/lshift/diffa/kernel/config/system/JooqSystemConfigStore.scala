@@ -79,6 +79,7 @@ class JooqSystemConfigStore(jooq:JooqDatabaseFacade,
 
   private val spacePathCache = cacheProvider.getCachedMap[String,Space](CacheName.SPACE_PATHS)
   private val spaceIdCache = cacheProvider.getCachedMap[java.lang.Long,Space](CacheName.SPACE_IDS)
+  private val spaceIdPathCache = cacheProvider.getCachedMap[java.lang.Long,Option[String]](CacheName.SPACE_ID_PATHS)
 
   initializeExistingSequences()
 
@@ -151,6 +152,26 @@ class JooqSystemConfigStore(jooq:JooqDatabaseFacade,
 
   def lookupSpaceByPath(path: String) = {
     jooq.execute(lookupSpaceId(_, path))
+  }
+
+  def lookupSpaceById(id: java.lang.Long): Option[String] = {
+    spaceIdPathCache.readThrough(id, () =>
+      jooq.execute[Option[String]](t => {
+        t.select(listAgg(SPACES.NAME, "/").withinGroupOrderBy(field("depth").desc()).as("space_path")).
+          from(SPACES).
+          join(
+            t.select(SPACE_PATHS.getFields).
+              from(SPACE_PATHS).
+              where(SPACE_PATHS.ANCESTOR.notEqual(0)).
+              orderBy(SPACE_PATHS.DEPTH.desc)).
+            on(field("ancestor").equal(SPACES.ID)).
+          where(field("descendant").equal(id)).
+          fetchOne() match {
+            case null   => None
+            case record: Record => Option(record.getValueAsString("space_path"))
+        }
+      })
+    )
   }
 
   def doesDomainExist(path: String) = resolveSpaceByPath(path) match {
@@ -371,7 +392,7 @@ class JooqSystemConfigStore(jooq:JooqDatabaseFacade,
     )
   }
 
-  private def resolveSpaceById(id:Long) = {
+  private def resolveSpaceById(id:Long): Space = {
     spaceIdCache.readThrough(id, () => jooq.execute(t => {
       t.select().
         from(SPACES).

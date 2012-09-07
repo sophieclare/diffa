@@ -60,6 +60,7 @@ trait SystemConfigStore {
   def doesSpaceExist(space: Long): Boolean
 
   def lookupSpaceByPath(path: String) : Space
+  def lookupSpaceById(id: java.lang.Long): Option[String]
 
   @Deprecated  def listDomains : Seq[String]
   def listSpaces : Seq[Space]
