@@ -22,6 +22,7 @@ import net.lshift.diffa.schema.migrations.{MigrationUtil, DefinePartitionInforma
 import scala.collection.JavaConversions._
 import net.lshift.diffa.schema.configs.InternalCollation
 import net.lshift.diffa.schema.servicelimits._
+import org.apache.commons.codec.digest.DigestUtils
 
 object Step0048 extends VerifiedMigrationStep {
 
@@ -767,6 +768,12 @@ object Step0048 extends VerifiedMigrationStep {
   }
 
   def createDiff(migration:MigrationBuilder, spaceId:String, pair:String, escalation:String) {
+    if (migration.canUseListPartitioning) {
+      val partitionName  = "p_" + DigestUtils.md5Hex(spaceId + "_" + pair).substring(0, 28)
+      migration.sql("alter table diffs add partition %s values('%d_%s')".format(
+        partitionName, Integer.parseInt(spaceId), pair)) // Integer.parseInt needed to make sure no leading zeros.
+    }
+
     migration.insert("diffs").values(Map(
       "space" -> spaceId,
       "pair" -> pair,
@@ -781,6 +788,7 @@ object Step0048 extends VerifiedMigrationStep {
       "next_escalation" -> escalation,
       "next_escalation_time" -> randomTimestamp()
     ))
+
   }
 
   def createEscalation(migration:MigrationBuilder, spaceId:String, pair:String, name:String) {
