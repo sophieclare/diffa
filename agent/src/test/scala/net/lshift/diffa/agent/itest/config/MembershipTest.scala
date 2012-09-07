@@ -20,12 +20,14 @@ import org.junit.Test
 import org.junit.Assert._
 import net.lshift.diffa.agent.itest.support.TestConstants._
 import com.eaio.uuid.UUID
-import net.lshift.diffa.agent.client.{ConfigurationRestClient, SecurityRestClient, SystemConfigRestClient}
 import net.lshift.diffa.client.{RestClientParams, AccessDeniedException}
 import com.sun.jersey.api.client.UniformInterfaceException
 import net.lshift.diffa.agent.itest.IsolatedDomainTest
 import org.apache.commons.lang3.RandomStringUtils
 import net.lshift.diffa.kernel.frontend.{PolicyMember, UserDef, DomainDef}
+import net.lshift.diffa.agent.client.{PoliciesRestClient, ConfigurationRestClient, SecurityRestClient, SystemConfigRestClient}
+import net.lshift.diffa.agent.auth.{Privilege, Privileges}
+import net.lshift.diffa.kernel.config.system.PolicyStatement
 
 /**
  * Tests whether domain membership admin is accessible via the REST API
@@ -39,6 +41,8 @@ class MembershipTest extends IsolatedDomainTest {
   val systemConfigClient = new SystemConfigRestClient(agentURL)
   val securityClient = new SecurityRestClient(agentURL)
   val configClient = new ConfigurationRestClient(agentURL, isolatedDomain)
+  val policiesClient = new PoliciesRestClient(agentURL, isolatedDomain)
+  val rootPoliciesClient = new PoliciesRestClient(agentURL, defaultDomain)
   val userConfigClient = new ConfigurationRestClient(agentURL, isolatedDomain, RestClientParams(username = Some(username), password = Some(password)))
 
   @Test
@@ -113,5 +117,33 @@ class MembershipTest extends IsolatedDomainTest {
     } catch {
       case ex:UniformInterfaceException => assertEquals(401, ex.getResponse.getStatus)
     }
+  }
+
+  // This test ensures that all privileges defined in the Privileges object are actually assignable
+  @Test
+  def shouldBeAbleToCreateRoleWithAllKnownPermissions() {
+    val stmts = allAssignablePrivileges.map(p => PolicyStatement(privilege = p, target = "*"))
+
+    policiesClient.storePolicy("NewPol", stmts)
+
+    val stored = policiesClient.retrievePolicy("NewPol")
+    assertEquals(stmts.toSet, stored.toSet)
+  }
+
+  @Test
+  def shouldHaveAllPrivilegesAssignedToAdminRole() {
+    val stmts = allAssignablePrivileges.map(p => PolicyStatement(privilege = p, target = "*"))
+
+    val stored = rootPoliciesClient.retrievePolicy("Admin")
+    assertEquals(stmts.toSet, stored.toSet)
+  }
+
+  private lazy val allAssignablePrivileges = {
+    val privs = Privileges.getClass.getDeclaredMethods.
+      filter(m => classOf[Privilege].isAssignableFrom(m.getReturnType)).
+      map(m => m.invoke(Privileges).asInstanceOf[Privilege].name).toSeq
+
+    // user-preferences is a snowflake we should ignore
+    privs.filter(_ != "user-preferences")
   }
 }

@@ -118,7 +118,8 @@ class JooqSystemConfigStoreTest {
 
   @Test
   def shouldBeAbleToStoreRetrieveAndUpdatePolicy() {
-    val key = PolicyKey(0, "TestPol")
+    val space = systemConfigStore.createOrUpdateSpace(domainName)
+    val key = PolicyKey(space.id, "TestPol")
     val initial = Seq(
         PolicyStatement("space-user", "*"),
         PolicyStatement("read-diffs", "*")
@@ -139,7 +140,8 @@ class JooqSystemConfigStoreTest {
 
   @Test
   def shouldBeAbleToRemovePolicy() {
-    val key = PolicyKey(0, "TestPol")
+    val space = systemConfigStore.createOrUpdateSpace(domainName)
+    val key = PolicyKey(space.id, "TestPol")
     val initial = Seq(
         PolicyStatement("space-user", "*"),
         PolicyStatement("read-diffs", "*")
