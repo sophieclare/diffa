@@ -15,6 +15,8 @@
  */
 package net.lshift.diffa.kernel.naming;
 
+import net.lshift.diffa.schema.tables.Diffs;
+
 /**
  * This a is canonical list of names used to identify caches.
  */
@@ -28,6 +30,9 @@ public enum CacheName {
 
   SPACE_PATHS,
   SPACE_IDS,
-  SPACE_ID_PATHS
+  SPACE_ID_PATHS,
 
+  DIFFS,
+
+  EXTENT_PAIRS
 }
