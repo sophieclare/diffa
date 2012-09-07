@@ -96,6 +96,26 @@ class JooqSystemConfigStoreTest {
     assertUserEquals(updatedUser, user)
   }
 
+  def assertUserEquals(expected:User, actual:User) {
+    assertEquals(expected.name, actual.name)
+    assertEquals(expected.email, actual.email)
+    assertEquals(expected.passwordEnc, actual.passwordEnc)
+    assertEquals(expected.superuser, actual.superuser)
+  }
+
+  @Ignore // MySQL uses unicode by default, but we don't have a way to wire in the internal collation as a parameter to test yet.
+  @Test
+  def shouldListDomainsWithAsciiCollationByDefault = {
+    val domainNames = Seq("bar", "Baz", "Foo", "diffa", domainName)
+    domainNames.foreach { name =>
+      systemConfigStore.createOrUpdateDomain(name)
+    }
+    val results = systemConfigStore.listDomains
+
+    assertEquals(List("Baz", "Foo", "bar", "diffa", "domain"), results.toList)
+
+  }
+
   @Test
   def shouldBeAbleToStoreRetrieveAndUpdatePolicy() {
     val key = PolicyKey(0, "TestPol")
@@ -116,25 +136,18 @@ class JooqSystemConfigStoreTest {
     systemConfigStore.storePolicy(key, updated)
     assertEquals(updated.toSet, systemConfigStore.lookupPolicyStatements(key).toSet)
   }
-  
-  def assertUserEquals(expected:User, actual:User) {
-    assertEquals(expected.name, actual.name)
-    assertEquals(expected.email, actual.email)
-    assertEquals(expected.passwordEnc, actual.passwordEnc)
-    assertEquals(expected.superuser, actual.superuser)
-  }
 
-  @Ignore // MySQL uses unicode by default, but we don't have a way to wire in the internal collation as a parameter to test yet.
   @Test
-  def shouldListDomainsWithAsciiCollationByDefault = {
-    val domainNames = Seq("bar", "Baz", "Foo", "diffa", domainName)
-    domainNames.foreach { name =>
-      systemConfigStore.createOrUpdateDomain(name)
-    }
-    val results = systemConfigStore.listDomains
+  def shouldBeAbleToRemovePolicy() {
+    val key = PolicyKey(0, "TestPol")
+    val initial = Seq(
+        PolicyStatement("space-user", "*"),
+        PolicyStatement("read-diffs", "*")
+      )
 
-    assertEquals(List("Baz", "Foo", "bar", "diffa", "domain"), results.toList)
-
+    systemConfigStore.storePolicy(key, initial)
+    systemConfigStore.removePolicy(key)
+    assertEquals(Set[PolicyStatement](), systemConfigStore.lookupPolicyStatements(key).toSet)
   }
 }
 

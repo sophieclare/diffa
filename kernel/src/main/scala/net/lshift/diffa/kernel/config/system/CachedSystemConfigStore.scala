@@ -29,6 +29,7 @@ class CachedSystemConfigStore(underlying:SystemConfigStore, cacheProvider:CacheP
   val usersCache = cacheProvider.getCachedMap[String, User]("users")
   val membershipCache = cacheProvider.getCachedMap[String, java.util.List[Member]]("user.domain.memberships")
   val policyCache = cacheProvider.getCachedMap[PolicyKey, java.util.List[PolicyStatement]](CacheName.SPACE_POLICY_STATEMENTS)
+  val superspaceCache = cacheProvider.getCachedMap[Long, java.util.List[Long]](CacheName.SPACE_SUPERSPACES)
 
   def reset {
     usersCache.evictAll()
@@ -56,6 +57,7 @@ class CachedSystemConfigStore(underlying:SystemConfigStore, cacheProvider:CacheP
   def listSpaces : Seq[Space] = underlying.listSpaces
 
   def listSubspaces(parent:Long) = underlying.listSubspaces(parent)
+  def listSuperspaceIds(child:Long) = superspaceCache.readThrough(child, () => underlying.listSuperspaceIds(child).toList)
 
   def lookupSpaceByPath(path: String) = underlying.lookupSpaceByPath(path)
 

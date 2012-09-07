@@ -51,6 +51,7 @@ trait SystemConfigStore {
    * This allows callers to apply functions to an entire subspace tree recursively.
    */
   def listSubspaces(parent:Long) : Seq[Space]
+  def listSuperspaceIds(child:Long): Seq[Long]
 
   @Deprecated def createOrUpdateDomain(domain: String)
 

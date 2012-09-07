@@ -30,7 +30,8 @@ import net.lshift.diffa.kernel.config.system.{PolicyStatement, PolicyKey, System
  */
 class UserDetailsAdapter(val systemConfigStore:SystemConfigStore)
     extends UserDetailsService
-    with PermissionEvaluator {
+    with PermissionEvaluator
+    with TargetEnhancer {
 
   def loadUserByUsername(username: String) = {
     val user = try {
@@ -102,7 +103,10 @@ class UserDetailsAdapter(val systemConfigStore:SystemConfigStore)
     }
   }
   def isRoot(auth: Authentication) = auth.getAuthorities.find(_.getAuthority == "root").isDefined
-  def hasTargetPrivilege(auth: Authentication, target:TargetObject, privilege:Privilege) = auth.getAuthorities.find {
+  def hasTargetPrivilege(auth: Authentication, target:TargetObject, privilege:Privilege) = {
+    target.enhance(this)
+
+    auth.getAuthorities.find {
       case SpaceAuthority(grantedSpace, grantedDomain, grantedPrivilegeStmt) =>
         if (grantedPrivilegeStmt.privilege == privilege.name) {
           privilege.isValidForTarget(grantedSpace, grantedPrivilegeStmt, target)
@@ -112,11 +116,14 @@ class UserDetailsAdapter(val systemConfigStore:SystemConfigStore)
       case _ =>
         false
     }.isDefined
+  }
 
   def isUserWhoTheyClaimToBe(auth: Authentication, ostensibleUsername:String) = auth.getAuthorities.find {
     case UserAuthority(actualUsername) => actualUsername == ostensibleUsername
     case _                             => false
   }.isDefined
+
+  def expandSpaceParents(space: Long) = systemConfigStore.listSuperspaceIds(space)
 }
 
 case class SpaceAuthority(space:Long, domain:String, statement:PolicyStatement) extends GrantedAuthority {

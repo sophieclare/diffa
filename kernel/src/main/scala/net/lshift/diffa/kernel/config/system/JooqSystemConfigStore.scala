@@ -68,6 +68,7 @@ import net.lshift.diffa.kernel.naming.{CacheName, SequenceName}
 import org.jooq.impl.Factory
 import org.jooq._
 import collection.JavaConversions._
+import net.lshift.diffa.kernel.config.JooqConfigStoreCompanion.{ancestorIdTree}
 
 class JooqSystemConfigStore(jooq:JooqDatabaseFacade,
                             cacheProvider:CacheProvider,
@@ -150,6 +151,7 @@ class JooqSystemConfigStore(jooq:JooqDatabaseFacade,
   }
 
   def listSubspaces(parent:Long) = jooq.execute(descendancyTree(_, parent)).toSeq
+  def listSuperspaceIds(parent:Long) = jooq.execute(ancestorIdTree(_, parent)).toSeq
 
   def lookupSpaceByPath(path: String) = {
     jooq.execute(lookupSpaceId(_, path))

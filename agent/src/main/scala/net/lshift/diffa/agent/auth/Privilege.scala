@@ -24,7 +24,7 @@ case class UserPrivilege(val name:String) extends Privilege {
 class SpacePrivilege(val name:String) extends Privilege {
   def isValidForTarget(space:Long, stmt:PolicyStatement, target:TargetObject) = {
     target match {
-      case st:SpaceTarget => st.space == space
+      case st:SpaceTarget => st.space == space || st.parents.contains(space)
       case _              => false
     }
   }
