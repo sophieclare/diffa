@@ -804,12 +804,6 @@ object Step0051 extends VerifiedMigrationStep {
   }
 
   def createDiff(migration:MigrationBuilder, spaceId:String, pair:String, extent:String, ruleId:String) {
-    if (migration.canUseListPartitioning) {
-      val partitionName  = "p_" + DigestUtils.md5Hex(spaceId + "_" + pair).substring(0, 28)
-      migration.sql("alter table diffs add partition %s values('%d_%s')".format(
-        partitionName, Integer.parseInt(spaceId), pair)) // Integer.parseInt needed to make sure no leading zeros.
-    }
-
     migration.insert("diffs").values(Map(
       "seq_id" -> randomInt(),
       "entity_id" -> randomString(),
