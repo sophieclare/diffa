@@ -51,18 +51,6 @@ public class MigrationBuilder {
     this.statements = new ArrayList<String>();
   }
 
-  public Dialect getDialect() {
-    return dialect;
-  }
-
-  public DialectExtension getDialectExtension() {
-    return dialectExtension;
-  }
-
-  public Configuration getConfig() {
-    return config;
-  }
-
   //
   // Builder Methods
   //
@@ -83,20 +71,12 @@ public class MigrationBuilder {
     return register(new AlterTableBuilder(config, dialect, dialectExtension, table));
   }
 
-  public DropTableBuilder dropTable(String table) {
-    return register(new DropTableBuilder(config, dialect, table));
-  }
-
   public CreateIndexBuilder createIndex(String name, String table, String...columns) {
     return register(new CreateIndexBuilder(name, table, columns));
   }
 
   public CopyTableBuilder copyTableContents(String source, String destination, Iterable<String> sourceCols, Iterable<String> destCols) {
     return register(new CopyTableBuilder(source, destination, sourceCols, destCols));
-  }
-
-  public CopyTableBuilder copyTableContents(String source, String destination, Iterable<String> destCols) {
-    return register(new CopyTableBuilder(source, destination, destCols));
   }
 
   public AnalyzeTableBuilder analyzeTable(String table) {
@@ -220,14 +200,6 @@ public class MigrationBuilder {
 
   public List<String> getStatements() {
     return statements;
-  }
-
-  public boolean canUseHashPartitioning() {
-    return dialectExtension.supportsHashPartitioning();
-  }
-
-  @Deprecated public boolean canUseListPartitioning() {
-    return dialectExtension.supportsListPartitioning();
   }
 
   public boolean canAnalyze() {
