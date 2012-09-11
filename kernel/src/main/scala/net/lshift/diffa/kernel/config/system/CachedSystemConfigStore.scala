@@ -36,6 +36,7 @@ class CachedSystemConfigStore(underlying:SystemConfigStore, cacheProvider:CacheP
     userTokenCache.evictAll()
     membershipCache.evictAll()
     policyCache.evictAll()
+    superspaceCache.evictAll()
   }
 
   def onMembershipCreated(member: Member) = {
