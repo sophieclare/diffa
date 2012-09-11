@@ -18,7 +18,7 @@
     <module>participant-support</module>
     <module>participants-web</module>
     <module>dist</module>
-    <module>hibernate-migrations</module>
+    <module>db-migrations</module>
     <module>schema</module>
     <module>schema-bindings</module>
     <module>jst-packaging</module>
@@ -444,7 +444,7 @@
 
     <dependency>
       <groupId>net.lshift</groupId>
-      <artifactId>hibernate-migrations</artifactId>
+      <artifactId>db-migrations</artifactId>
       <version>1.6.0-SNAPSHOT</version>
     </dependency>
 

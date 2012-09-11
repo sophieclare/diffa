@@ -51,8 +51,8 @@ class ActionsProxy(val config:DomainConfigStore,
 
   def listActions(pair:PairRef): Seq[Actionable] =
     withValidPair(pair) { p =>
-      config.getPairDef(pair).repairActions.map(Actionable.fromRepairAction(
-        systemConfig.lookupSpaceById(pair.space).get, pair.name, _)).toSeq
+      val path = systemConfig.lookupSpacePathById(pair.space)
+      config.getPairDef(pair).repairActions.map(Actionable.fromRepairAction(path, pair.name, _)).toSeq
     }
 
   def listEntityScopedActions(pair:PairRef) = listActions(pair).filter(_.scope == RepairAction.ENTITY_SCOPE)

@@ -40,7 +40,7 @@ class ScanningTest extends IsolatedDomainTest {
       systemConfig.declareDomain(DomainDef(name = parentSpace))
       systemConfig.declareDomain(DomainDef(name = subspace))
       val subspaceConfigClient = new ConfigurationRestClient(agentURL, subspace)
-      subspaceConfigClient.makeDomainMember(memberUsername)
+      subspaceConfigClient.makeDomainMember(userName = memberUsername, policy = "Admin")
       val pair = RandomStringUtils.randomAlphanumeric(10)
       val up = RandomStringUtils.randomAlphanumeric(10)
       val down = RandomStringUtils.randomAlphanumeric(10)

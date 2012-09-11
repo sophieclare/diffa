@@ -16,12 +16,12 @@
 
 package net.lshift.diffa.kernel.config.system
 
-import scala.collection.JavaConversions._
 import org.slf4j.LoggerFactory
 import net.lshift.diffa.kernel.util.AlertCodes._
 import net.lshift.diffa.kernel.util.MissingObjectException
 import org.apache.commons.lang.RandomStringUtils
 import net.lshift.diffa.kernel.config._
+
 import net.lshift.diffa.schema.jooq.{DatabaseFacade => JooqDatabaseFacade}
 import net.lshift.diffa.schema.tables.UserItemVisibility.USER_ITEM_VISIBILITY
 import net.lshift.diffa.schema.tables.Breakers.BREAKERS
@@ -44,6 +44,8 @@ import net.lshift.diffa.schema.tables.EndpointViews.ENDPOINT_VIEWS
 import net.lshift.diffa.schema.tables.Endpoints.ENDPOINTS
 import net.lshift.diffa.schema.tables.ConfigOptions.CONFIG_OPTIONS
 import net.lshift.diffa.schema.tables.Members.MEMBERS
+import net.lshift.diffa.schema.tables.Policies.POLICIES
+import net.lshift.diffa.schema.tables.PolicyStatements.POLICY_STATEMENTS
 import net.lshift.diffa.schema.tables.StoreCheckpoints.STORE_CHECKPOINTS
 import net.lshift.diffa.schema.tables.PendingDiffs.PENDING_DIFFS
 import net.lshift.diffa.schema.tables.Spaces.SPACES
@@ -53,7 +55,6 @@ import net.lshift.diffa.schema.tables.Users.USERS
 import net.lshift.diffa.kernel.lifecycle.DomainLifecycleAware
 import collection.mutable.ListBuffer
 import net.lshift.diffa.kernel.util.cache.CacheProvider
-import org.jooq.{TableField, Record}
 import net.lshift.diffa.schema.tables.records.UsersRecord
 import net.lshift.diffa.kernel.util.sequence.SequenceProvider
 import java.lang.{Long => LONG, Integer => INT}
@@ -66,6 +67,9 @@ import net.lshift.diffa.kernel.config.User
 import net.lshift.diffa.kernel.frontend.DomainEndpointDef
 import net.lshift.diffa.kernel.naming.{CacheName, SequenceName}
 import org.jooq.impl.Factory
+import org.jooq._
+import collection.JavaConversions._
+import net.lshift.diffa.kernel.config.JooqConfigStoreCompanion.{ancestorIdTree}
 
 class JooqSystemConfigStore(jooq:JooqDatabaseFacade,
                             cacheProvider:CacheProvider,
@@ -149,29 +153,34 @@ class JooqSystemConfigStore(jooq:JooqDatabaseFacade,
   }
 
   def listSubspaces(parent:Long) = jooq.execute(descendancyTree(_, parent)).toSeq
+  def listSuperspaceIds(parent:Long) = jooq.execute(ancestorIdTree(_, parent)).toSeq
 
   def lookupSpaceByPath(path: String) = {
     jooq.execute(lookupSpaceId(_, path))
   }
 
-  def lookupSpaceById(id: java.lang.Long): Option[String] = {
-    spaceIdPathCache.readThrough(id, () =>
-      jooq.execute[Option[String]](t => {
-        t.select(listAgg(SPACES.NAME, "/").withinGroupOrderBy(field("depth").desc()).as("space_path")).
+  def lookupSpacePathById(space: Long) = {
+    jooq.execute( t => {
+
+      val spacePath = Factory.groupConcat(SPACES.NAME).orderBy(SPACES.ID.asc()).separator("/")
+
+      val path =
+        t.select(spacePath.as("path")).
           from(SPACES).
-          join(
-            t.select(SPACE_PATHS.getFields).
-              from(SPACE_PATHS).
-              where(SPACE_PATHS.ANCESTOR.notEqual(0)).
-              orderBy(SPACE_PATHS.DEPTH.desc)).
-            on(field("ancestor").equal(SPACES.ID)).
-          where(field("descendant").equal(id)).
-          fetchOne() match {
-            case null   => None
-            case record: Record => Option(record.getValueAsString("space_path"))
-        }
-      })
-    )
+          join(SPACE_PATHS).
+            on(SPACE_PATHS.ANCESTOR.eq(SPACES.ID)).
+          where(SPACE_PATHS.DESCENDANT.eq(space)).
+            and(SPACE_PATHS.ANCESTOR.ne(0)).
+          groupBy(SPACE_PATHS.DESCENDANT).
+          fetchOne()
+
+      if (path == null) {
+        throw new MissingObjectException(space.toString)
+      }
+      else {
+        path.getValueAsString("path")
+      }
+    })
   }
 
   def doesDomainExist(path: String) = resolveSpaceByPath(path) match {
@@ -271,7 +280,7 @@ class JooqSystemConfigStore(jooq:JooqDatabaseFacade,
 
   def listDomainMemberships(username: String) : Seq[Member] = {
     jooq.execute(t => {
-      val results = t.select(MEMBERS.SPACE, SPACES.NAME).
+      val results = t.select(MEMBERS.SPACE, MEMBERS.POLICY, MEMBERS.POLICY_SPACE, SPACES.NAME).
                       from(MEMBERS).
                       join(SPACES).on(SPACES.ID.equal(MEMBERS.SPACE)).
                       where(MEMBERS.USERNAME.equal(username)).
@@ -279,6 +288,9 @@ class JooqSystemConfigStore(jooq:JooqDatabaseFacade,
       results.iterator().map(r => Member(
         user = username,
         space = r.getValue(MEMBERS.SPACE),
+        policySpace = r.getValue(MEMBERS.POLICY_SPACE),
+        policy = r.getValue(MEMBERS.POLICY),
+
         // TODO Ideally we shouldn't need to do this join, since the domain field is deprecated
         // and consumers of this call should be able to deal with the surrogate space id, but
         // for now that creates further churn in the patch to land space ids, so we'll just backplane the
@@ -286,6 +298,64 @@ class JooqSystemConfigStore(jooq:JooqDatabaseFacade,
         domain = r.getValue(SPACES.NAME)
       ))
     }).toSeq
+  }
+
+  def lookupPolicyStatements(policy:PolicyKey) = {
+    jooq.execute(t => lookupPolicyStatements(policy, t))
+  }
+
+  def lookupPolicyStatements(policy:PolicyKey, t:Factory) = {
+    val results = t.select().
+                      from(POLICY_STATEMENTS).
+                      where(POLICY_STATEMENTS.SPACE.equal(policy.space).and(POLICY_STATEMENTS.POLICY.equal(policy.name))).
+                      fetch()
+
+    results.iterator().map(recordToPolicyStatement(_)).toSeq
+  }
+
+  def storePolicy(policy:PolicyKey, stmts:Seq[PolicyStatement]) {
+    jooq.execute(t => {
+      // Remove all missing policy statements
+      val existing = lookupPolicyStatements(policy, t)
+      val toRemove:Set[PolicyStatement] = existing.toSet -- stmts
+      val toAdd:Set[PolicyStatement] = stmts.toSet -- existing
+
+      toRemove.foreach(r => {
+        t.delete(POLICY_STATEMENTS).
+          where(POLICY_STATEMENTS.SPACE.equal(policy.space).and(POLICY_STATEMENTS.POLICY.equal(policy.name))).
+            and(POLICY_STATEMENTS.PRIVILEGE.equal(r.privilege)).
+            and(POLICY_STATEMENTS.TARGET.equal(r.target)).
+          execute()
+      })
+
+      t.insertInto(POLICIES).
+        set(Map(POLICIES.SPACE -> policy.space, POLICIES.NAME -> policy.name)).
+        onDuplicateKeyIgnore().
+        execute()
+
+      toAdd.foreach(a => {
+        t.insertInto(POLICY_STATEMENTS).
+          set(Map(
+            POLICY_STATEMENTS.SPACE -> policy.space,
+            POLICY_STATEMENTS.POLICY -> policy.name,
+            POLICY_STATEMENTS.PRIVILEGE -> a.privilege,
+            POLICY_STATEMENTS.TARGET -> a.target
+          )).
+          execute()
+      })
+    })
+  }
+
+  def removePolicy(policy:PolicyKey) {
+    jooq.execute(t => {
+      t.delete(POLICY_STATEMENTS).
+        where(POLICY_STATEMENTS.SPACE.equal(policy.space).and(POLICY_STATEMENTS.POLICY.equal(policy.name))).
+        execute()
+      t.delete(POLICIES).
+        where(POLICIES.SPACE.equal(policy.space).and(POLICIES.NAME.equal(policy.name))).
+        execute()
+    })
+
   }
 
   def containsRootUser(usernames: Seq[String]) : Boolean = jooq.execute(t => {
@@ -376,6 +446,8 @@ class JooqSystemConfigStore(jooq:JooqDatabaseFacade,
     t.delete(MEMBERS).where(MEMBERS.SPACE.equal(id)).execute()
     t.delete(STORE_CHECKPOINTS).where(STORE_CHECKPOINTS.SPACE.equal(id)).execute()
     t.delete(PENDING_DIFFS).where(PENDING_DIFFS.SPACE.equal(id)).execute()
+    t.delete(POLICY_STATEMENTS).where(POLICY_STATEMENTS.SPACE.equal(id)).execute()
+    t.delete(POLICIES).where(POLICIES.SPACE.equal(id)).execute()
 
     t.delete(SPACE_PATHS).
       where(SPACE_PATHS.ANCESTOR.equal(id)).
@@ -539,13 +611,14 @@ class JooqSystemConfigStore(jooq:JooqDatabaseFacade,
 
 
   private def descendancyTree(t:Factory, parent:Long) = {
-    val hierarchy = t.select().
-      from(SPACES).
-      join(SPACE_PATHS).
-        on(SPACE_PATHS.DESCENDANT.equal(SPACES.ID)).
-      where(SPACE_PATHS.ANCESTOR.equal(parent)).
-      orderBy(SPACE_PATHS.DEPTH.desc()).
-      fetch()
+    val hierarchy =
+      t.select().
+        from(SPACES).
+        join(SPACE_PATHS).
+          on(SPACE_PATHS.DESCENDANT.equal(SPACES.ID)).
+        where(SPACE_PATHS.ANCESTOR.equal(parent)).
+        orderBy(SPACE_PATHS.DEPTH.desc()).
+        fetch()
 
     if (hierarchy == null) {
       throw new MissingObjectException(parent.toString)
@@ -603,6 +676,13 @@ class JooqSystemConfigStore(jooq:JooqDatabaseFacade,
       token = record.getValue(USERS.TOKEN),
       superuser = record.getValue(USERS.SUPERUSER),
       passwordEnc = record.getValue(USERS.PASSWORD_ENC)
+    )
+  }
+
+  private def recordToPolicyStatement(record:Record) = {
+    PolicyStatement(
+      privilege = record.getValue(POLICY_STATEMENTS.PRIVILEGE),
+      target = record.getValue(POLICY_STATEMENTS.TARGET)
     )
   }
 }

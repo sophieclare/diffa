@@ -161,7 +161,7 @@
     </dependency>
     <dependency>
       <groupId>net.lshift</groupId>
-      <artifactId>hibernate-migrations</artifactId>
+      <artifactId>db-migrations</artifactId>
     </dependency>
     <dependency>
       <groupId>com.ibm.icu</groupId>
