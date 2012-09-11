@@ -126,7 +126,6 @@ class UserDetailsAdapter(val systemConfigStore:SystemConfigStore)
   def expandSpaceParents(space: Long) = systemConfigStore.listSuperspaceIds(space)
 }
 
-// TODO: Why are both space and spacePath here?
 case class SpaceAuthority(space:Long, spacePath:String, statement:PolicyStatement) extends GrantedAuthority {
   def getAuthority = statement + "@" + spacePath
 }
