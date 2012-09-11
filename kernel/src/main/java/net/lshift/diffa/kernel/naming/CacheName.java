@@ -34,7 +34,6 @@ public enum CacheName {
   
   SPACE_PATHS,
   SPACE_IDS,
-  SPACE_ID_PATHS,
 
   DIFFS,
 
