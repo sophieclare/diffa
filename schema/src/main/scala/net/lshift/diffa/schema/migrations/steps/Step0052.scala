@@ -35,7 +35,7 @@ object Step0052 extends VerifiedMigrationStep {
   def createMigration(config: Configuration) = {
     val migration = new MigrationBuilder(config)
 
-    migration.createTable("privileges").
+    migration.createTable("privilege_names").
       column("name", Types.VARCHAR, 50, false).
       pk("name")
 
@@ -54,7 +54,7 @@ object Step0052 extends VerifiedMigrationStep {
       pk("space", "policy", "privilege", "target")
     migration.alterTable("policy_statements").
       addForeignKey("fk_plcy_stmts_plcy", "space", "spaces", "id").
-      addForeignKey("fk_plcy_stmts_priv", "privilege", "privileges", "name")
+      addForeignKey("fk_plcy_stmts_priv", "privilege", "privilege_names", "name")
 
     definePrivileges(migration,
       "space-user", "read-diffs", "configure", "initiate-scan", "cancel-scan", "post-change-event",
@@ -111,7 +111,7 @@ object Step0052 extends VerifiedMigrationStep {
 
   def definePrivileges(migration:MigrationBuilder, privileges:String*) {
     privileges.foreach(p =>
-      migration.insert("privileges").values(Map(
+      migration.insert("privilege_names").values(Map(
         "name" -> p
       ))
     )
