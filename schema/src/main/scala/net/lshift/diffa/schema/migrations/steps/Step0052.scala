@@ -27,9 +27,9 @@ import org.hibernate.mapping.Column
  * Database step adding access control policies.
  */
 
-object Step0051 extends VerifiedMigrationStep {
+object Step0052 extends VerifiedMigrationStep {
 
-  def versionId = 51
+  def versionId = 52
   def name = "Access control policies"
 
   def createMigration(config: Configuration) = {
