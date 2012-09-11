@@ -21,12 +21,14 @@ import net.lshift.diffa.kernel.util.AlertCodes._
 import net.lshift.diffa.kernel.util.MissingObjectException
 import org.apache.commons.lang.RandomStringUtils
 import net.lshift.diffa.kernel.config._
+
 import net.lshift.diffa.schema.jooq.{DatabaseFacade => JooqDatabaseFacade}
 import net.lshift.diffa.schema.tables.UserItemVisibility.USER_ITEM_VISIBILITY
 import net.lshift.diffa.schema.tables.Breakers.BREAKERS
 import net.lshift.diffa.schema.tables.ExternalHttpCredentials.EXTERNAL_HTTP_CREDENTIALS
 import net.lshift.diffa.schema.tables.PairReports.PAIR_REPORTS
 import net.lshift.diffa.schema.tables.Escalations.ESCALATIONS
+import net.lshift.diffa.schema.tables.EscalationRules.ESCALATION_RULES
 import net.lshift.diffa.schema.tables.RepairActions.REPAIR_ACTIONS
 import net.lshift.diffa.schema.tables.PairViews.PAIR_VIEWS
 import net.lshift.diffa.schema.tables.Pairs.PAIRS
@@ -46,7 +48,6 @@ import net.lshift.diffa.schema.tables.Policies.POLICIES
 import net.lshift.diffa.schema.tables.PolicyStatements.POLICY_STATEMENTS
 import net.lshift.diffa.schema.tables.StoreCheckpoints.STORE_CHECKPOINTS
 import net.lshift.diffa.schema.tables.PendingDiffs.PENDING_DIFFS
-import net.lshift.diffa.schema.tables.Diffs.DIFFS
 import net.lshift.diffa.schema.tables.Spaces.SPACES
 import net.lshift.diffa.schema.tables.SpacePaths.SPACE_PATHS
 import net.lshift.diffa.schema.tables.SystemConfigOptions.SYSTEM_CONFIG_OPTIONS
@@ -155,6 +156,31 @@ class JooqSystemConfigStore(jooq:JooqDatabaseFacade,
 
   def lookupSpaceByPath(path: String) = {
     jooq.execute(lookupSpaceId(_, path))
+  }
+
+  def lookupSpacePathById(space: Long) = {
+    jooq.execute( t => {
+
+      val spacePath = Factory.groupConcat(SPACES.NAME).orderBy(SPACES.ID.asc()).separator("/")
+
+      val path =
+        t.select(spacePath.as("path")).
+          from(SPACES).
+          join(SPACE_PATHS).
+            on(SPACE_PATHS.ANCESTOR.eq(SPACES.ID)).
+          where(SPACE_PATHS.DESCENDANT.eq(space)).
+            and(SPACE_PATHS.ANCESTOR.ne(0)).
+          groupBy(SPACE_PATHS.DESCENDANT).
+          fetchOne()
+
+      if (path == null) {
+        throw new MissingObjectException(space.toString)
+      }
+      else {
+        path.getValueAsString("path")
+      }
+
+    })
   }
 
   def doesDomainExist(path: String) = resolveSpaceByPath(path) match {
@@ -379,6 +405,26 @@ class JooqSystemConfigStore(jooq:JooqDatabaseFacade,
 
   private def deleteSingleSpace(t:Factory, id:Long) = {
 
+    t.update(ESCALATION_RULES).
+      set(ESCALATION_RULES.EXTENT, null:LONG).
+      set(ESCALATION_RULES.ESCALATION, null:String).
+      whereExists(
+      t.select(field("1")).
+        from(PAIRS).
+        where(ESCALATION_RULES.EXTENT.eq(PAIRS.EXTENT))
+        and(PAIRS.SPACE.eq(id)
+      )).
+      execute()
+
+    t.delete(ESCALATIONS).
+      whereExists(
+      t.select(field("1")).
+        from(PAIRS).
+        where(ESCALATIONS.EXTENT.eq(PAIRS.EXTENT))
+          and(PAIRS.SPACE.eq(id)
+        )).
+      execute()
+
     t.delete(EXTERNAL_HTTP_CREDENTIALS).where(EXTERNAL_HTTP_CREDENTIALS.SPACE.equal(id)).execute()
     t.delete(USER_ITEM_VISIBILITY).where(USER_ITEM_VISIBILITY.SPACE.equal(id)).execute()
     t.delete(PREFIX_CATEGORIES).where(PREFIX_CATEGORIES.SPACE.equal(id)).execute()
@@ -391,7 +437,6 @@ class JooqSystemConfigStore(jooq:JooqDatabaseFacade,
     t.delete(UNIQUE_CATEGORY_VIEW_NAMES).where(UNIQUE_CATEGORY_VIEW_NAMES.SPACE.equal(id)).execute()
     t.delete(ENDPOINT_VIEWS).where(ENDPOINT_VIEWS.SPACE.equal(id)).execute()
     t.delete(PAIR_REPORTS).where(PAIR_REPORTS.SPACE.equal(id)).execute()
-    t.delete(ESCALATIONS).where(ESCALATIONS.SPACE.equal(id)).execute()
     t.delete(REPAIR_ACTIONS).where(REPAIR_ACTIONS.SPACE.equal(id)).execute()
     t.delete(PAIR_VIEWS).where(PAIR_VIEWS.SPACE.equal(id)).execute()
     t.delete(BREAKERS).where(BREAKERS.SPACE.equal(id)).execute()
@@ -401,7 +446,6 @@ class JooqSystemConfigStore(jooq:JooqDatabaseFacade,
     t.delete(MEMBERS).where(MEMBERS.SPACE.equal(id)).execute()
     t.delete(STORE_CHECKPOINTS).where(STORE_CHECKPOINTS.SPACE.equal(id)).execute()
     t.delete(PENDING_DIFFS).where(PENDING_DIFFS.SPACE.equal(id)).execute()
-    t.delete(DIFFS).where(DIFFS.SPACE.equal(id)).execute()
     t.delete(POLICY_STATEMENTS).where(POLICY_STATEMENTS.SPACE.equal(id)).execute()
     t.delete(POLICIES).where(POLICIES.SPACE.equal(id)).execute()
 
@@ -567,13 +611,14 @@ class JooqSystemConfigStore(jooq:JooqDatabaseFacade,
 
 
   private def descendancyTree(t:Factory, parent:Long) = {
-    val hierarchy = t.select().
-      from(SPACES).
-      join(SPACE_PATHS).
-        on(SPACE_PATHS.DESCENDANT.equal(SPACES.ID)).
-      where(SPACE_PATHS.ANCESTOR.equal(parent)).
-      orderBy(SPACE_PATHS.DEPTH.desc()).
-      fetch()
+    val hierarchy =
+      t.select().
+        from(SPACES).
+        join(SPACE_PATHS).
+          on(SPACE_PATHS.DESCENDANT.equal(SPACES.ID)).
+        where(SPACE_PATHS.ANCESTOR.equal(parent)).
+        orderBy(SPACE_PATHS.DEPTH.desc()).
+        fetch()
 
     if (hierarchy == null) {
       throw new MissingObjectException(parent.toString)

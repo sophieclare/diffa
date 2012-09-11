@@ -19,7 +19,7 @@ import net.lshift.diffa.schema.migrations.VerifiedMigrationStep
 import org.hibernate.cfg.Configuration
 import net.lshift.hibernate.migrations.MigrationBuilder
 import java.sql.Types
-import Step0048.{createSpace,createUser}
+import Step0051.{createSpace,createUser}
 import scala.collection.JavaConversions._
 import org.hibernate.mapping.Column
 
@@ -94,7 +94,7 @@ object Step0052 extends VerifiedMigrationStep {
     val spaceName = randomString()
     val spaceId = randomInt()
 
-    createSpace(migration, spaceId, spaceName)
+    createSpace(migration, spaceId, "0", spaceName)
 
     val user = randomString()
     val policy = randomString()
