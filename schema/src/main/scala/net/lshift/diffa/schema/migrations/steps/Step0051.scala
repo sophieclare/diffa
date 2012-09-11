@@ -22,7 +22,6 @@ import net.lshift.diffa.schema.migrations.{MigrationUtil, VerifiedMigrationStep}
 import scala.collection.JavaConversions._
 import net.lshift.diffa.schema.configs.InternalCollation
 import net.lshift.diffa.schema.servicelimits._
-import org.apache.commons.codec.digest.DigestUtils
 
 object Step0051 extends VerifiedMigrationStep {
 
