@@ -83,7 +83,6 @@ class JooqSystemConfigStore(jooq:JooqDatabaseFacade,
 
   private val spacePathCache = cacheProvider.getCachedMap[String,Space](CacheName.SPACE_PATHS)
   private val spaceIdCache = cacheProvider.getCachedMap[java.lang.Long,Space](CacheName.SPACE_IDS)
-  private val spaceIdPathCache = cacheProvider.getCachedMap[java.lang.Long,Option[String]](CacheName.SPACE_ID_PATHS)
 
   initializeExistingSequences()
 
