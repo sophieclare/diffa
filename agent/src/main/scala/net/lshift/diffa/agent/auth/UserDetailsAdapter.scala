@@ -107,7 +107,7 @@ class UserDetailsAdapter(val systemConfigStore:SystemConfigStore)
     target.enhance(this)
 
     auth.getAuthorities.find {
-      case SpaceAuthority(grantedSpace, grantedDomain, grantedPrivilegeStmt) =>
+      case SpaceAuthority(grantedSpace, grantedSpacePath, grantedPrivilegeStmt) =>
         if (grantedPrivilegeStmt.privilege == privilege.name) {
           privilege.isValidForTarget(grantedSpace, grantedPrivilegeStmt, target)
         } else {
@@ -126,8 +126,8 @@ class UserDetailsAdapter(val systemConfigStore:SystemConfigStore)
   def expandSpaceParents(space: Long) = systemConfigStore.listSuperspaceIds(space)
 }
 
-case class SpaceAuthority(space:Long, domain:String, statement:PolicyStatement) extends GrantedAuthority {
-  def getAuthority = statement + "@" + domain
+case class SpaceAuthority(space:Long, spacePath:String, statement:PolicyStatement) extends GrantedAuthority {
+  def getAuthority = statement + "@" + spacePath
 }
 
 case class UserAuthority(username:String) extends GrantedAuthority {
