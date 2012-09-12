@@ -113,7 +113,7 @@ class SpacePathTest {
 
     val hierarchy = systemConfigStore.listSubspaces(firstParent.id)
 
-    assertEquals(Seq(greatGrandChild, grandChild, firstChild, secondChild, firstParent), hierarchy)
+    assertEquals(List(greatGrandChild, grandChild, firstChild, secondChild, firstParent), hierarchy.toList)
     assertFalse(hierarchy.contains(secondParent))
   }
 
