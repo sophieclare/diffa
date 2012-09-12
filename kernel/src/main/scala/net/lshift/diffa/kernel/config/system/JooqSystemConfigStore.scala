@@ -616,7 +616,7 @@ class JooqSystemConfigStore(jooq:JooqDatabaseFacade,
         join(SPACE_PATHS).
           on(SPACE_PATHS.DESCENDANT.equal(SPACES.ID)).
         where(SPACE_PATHS.ANCESTOR.equal(parent)).
-        orderBy(SPACE_PATHS.DEPTH.desc()).
+        orderBy(SPACE_PATHS.DEPTH.desc(), SPACES.ID.asc()).
         fetch()
 
     if (hierarchy == null) {
