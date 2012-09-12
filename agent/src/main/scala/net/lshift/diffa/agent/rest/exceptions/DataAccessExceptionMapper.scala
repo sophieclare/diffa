@@ -34,7 +34,7 @@ class DataAccessExceptionMapper extends ExceptionMapper[DataAccessException] {
       Response.status(Response.Status.BAD_REQUEST).entity("Inconsistent parameters").`type`("text/plain").build()
     }
     else {
-      log.error(formatAlertCode(DB_ERROR) + " " + x.getMessage)
+      log.error(formatAlertCode(DB_ERROR) + " " + x.getMessage, x)
       Response.status(Response.Status.INTERNAL_SERVER_ERROR).build()
     }
 
