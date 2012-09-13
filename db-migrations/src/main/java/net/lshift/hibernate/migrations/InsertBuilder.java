@@ -68,7 +68,9 @@ public class InsertBuilder extends SingleStatementMigrationElement {
       valuesBuilder.append("?");
 
       Object converted = convertValueType(dialect, entry.getValue());
-      logger.info(String.format("Converted %s field from %s to %s", entry.getKey(), entry.getValue(), converted));
+      if (logger.isTraceEnabled()) {
+        logger.trace(String.format("Converted %s field from %s to %s", entry.getKey(), entry.getValue(), converted));
+      }
 
       orderedValues.add(converted);
     }
