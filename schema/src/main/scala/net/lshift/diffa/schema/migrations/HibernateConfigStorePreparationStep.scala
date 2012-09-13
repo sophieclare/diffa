@@ -138,6 +138,8 @@ class HibernateConfigStorePreparationStep
           val defaultCatalog = props.getProperty(Environment.DEFAULT_CATALOG)
           val defaultSchema = props.getProperty(dialectExtension.schemaPropertyName)
 
+          log.info("Preparing environment: dialect = %s; extension = %s; catalog = %s; schema = %s".format(dialect, dialectExtension.getDialectName, defaultCatalog, defaultSchema))
+
           hasTable = (dbMetadata.getTableMetadata(tableName, defaultSchema, defaultCatalog, false) != null)
         }
       })
