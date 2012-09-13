@@ -107,14 +107,6 @@ The Diffa agent can be run using the Jetty plugin:
     $ cd agent
     $ mvn jetty:run
 
-Booting The Demo Participants
------------------------------
-
-Diffa comes with a demo application that provides two fake participants. This can also be run using the Jetty plugin:
-
-    $ cd participants-web
-    $ mvn jetty:run
-
 License Checking
 ----------------
 

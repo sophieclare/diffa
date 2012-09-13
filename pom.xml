@@ -16,7 +16,6 @@
     <module>client-support</module>
     <module>participants</module>
     <module>participant-support</module>
-    <module>participants-web</module>
     <module>dist</module>
     <module>db-migrations</module>
     <module>schema</module>

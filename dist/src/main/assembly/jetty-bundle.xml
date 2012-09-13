@@ -38,15 +38,6 @@
       </includes>
       <useProjectArtifact>false</useProjectArtifact>
     </dependencySet>
-    <dependencySet>
-      <scope>compile</scope>
-      <unpack>true</unpack>
-      <outputDirectory>webapps/participant-demo/</outputDirectory>
-      <includes>
-        <include>net.lshift.diffa:diffa-participants-web:war</include>
-      </includes>
-      <useProjectArtifact>false</useProjectArtifact>
-    </dependencySet>
 
     <!-- Jetty Booter -->
     <dependencySet>
