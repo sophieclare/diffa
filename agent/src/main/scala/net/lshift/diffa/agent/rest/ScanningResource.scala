@@ -41,6 +41,7 @@ class ScanningResource(val pairPolicyClient:PairPolicyClient,
 
   @GET
   @Path("/states")
+  @Produces(Array("application/json"))
   def getAllPairStates = {
       // Ensure that we're allowed to see at least some pair states
     ensurePrivilege(permissionEvaluator, Privileges.SCAN_STATUS, new SpaceTarget(space))
