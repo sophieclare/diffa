@@ -74,9 +74,8 @@ case class EndpointDef (
 
   def this() = this(name = null)
 
-  if (collation.equals(UnorderedCollationOrdering.name)) {
+  if (collation != null && collation.equals(UnorderedCollationOrdering.name)) {
     validateEntityOrder = EntityOrdering.UNENFORCED
-    collation = AsciiCollationOrdering.name
   }
 
   val DEFAULT_URL_LENGTH_LIMIT = 1024
@@ -150,7 +149,6 @@ case class DomainEndpointDef(
   // This workaround avoids any database schema change at the cost of overloading the meaning of the 'collation'
   // field of the endpoints table.
   if (collation.equals(UnorderedCollationOrdering.name)) {
-    collation = AsciiCollationOrdering.name
     validateEntityOrder = EntityOrdering.UNENFORCED
   }
 
