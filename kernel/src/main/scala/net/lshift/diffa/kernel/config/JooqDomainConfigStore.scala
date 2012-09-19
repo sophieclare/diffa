@@ -140,10 +140,10 @@ class JooqDomainConfigStore(jooq:JooqDatabaseFacade,
   def onDomainRemoved(space: Long) = invalidateAllCaches(space)
 
   def createOrUpdateEndpoint(domain:String, endpointDef: EndpointDef) : DomainEndpointDef = {
-    val ordering = if (endpointDef.validateEntityOrder) {
+    val ordering = if (endpointDef.validateEntityOrder.equals(EntityOrdering.ENFORCED)) {
       endpointDef.collation
     } else {
-      "unordered"
+      EntityOrdering.UNENFORCED
     }
 
     jooq.execute(t => {
@@ -281,35 +281,14 @@ class JooqDomainConfigStore(jooq:JooqDatabaseFacade,
       if (endpoints.isEmpty) {
         throw new MissingObjectException("endpoint")
       } else {
-        val ep = endpoints.head
-        val (validateEntityOrder, collationOrder) = if (ep.collation.equals("unordered")) {
-          (false, "ascii")
-        } else {
-          (true, ep.collation)
-        }
-        DomainEndpointDef(domain = ep.domain,
-          name = ep.name,
-          scanUrl = ep.scanUrl,
-          contentRetrievalUrl = ep.contentRetrievalUrl,
-          versionGenerationUrl = ep.versionGenerationUrl,
-          inboundUrl = ep.inboundUrl,
-          categories = ep.categories,
-          views = ep.views,
-          validateEntityOrder = validateEntityOrder,
-          collation = collationOrder
-        )
+        endpoints.head
       }
-
     })
   }
 
-
-  def listEndpoints(space:Long): Seq[EndpointDef] = {
-
-    val endpoints = cachedEndpoints.readThrough(space, () => JooqConfigStoreCompanion.listEndpoints(jooq, Some(space)))
-    endpoints.map(_.withoutDomain())
-
-  }
+  def listEndpoints(space:Long): Seq[EndpointDef] =
+    cachedEndpoints.readThrough(space, () => JooqConfigStoreCompanion.listEndpoints(jooq, Some(space))).
+      map(_.withoutDomain())
 
   def createOrUpdatePair(space:Long, pair: PairDef) = {
 
