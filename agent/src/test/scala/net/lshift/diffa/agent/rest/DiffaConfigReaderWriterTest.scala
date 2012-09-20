@@ -42,7 +42,6 @@ class DiffaConfigReaderWriterTest {
           inboundUrl = "http://inbound",
           scanUrl = "http://localhost:1234/scan",
           contentRetrievalUrl = "http://localhost:1234/content",
-          validateEntityOrder = EntityOrdering.UNENFORCED,
           collation = UnicodeCollationOrdering.name,
           categories = Map(
             "a" -> new RangeCategoryDescriptor("date", "2009", "2010"),
@@ -63,7 +62,12 @@ class DiffaConfigReaderWriterTest {
           views = List(EndpointViewDef(name = "little-view",
             categories = Map(
               "c" -> new PrefixCategoryDescriptor(2, 5, 1))
-            )))
+            ))),
+        EndpointDef(name = "downstream2",
+          scanUrl = "http://localhost:5436/scan", versionGenerationUrl = "http://localhost:5436/generate-version",
+          categories = Map(
+            "i" -> new RangeCategoryDescriptor("date", "2012", "2013", "individual")
+          ))
         ),
       pairs = Set(
         PairDef("ab", "same", 5, "upstream1", "downstream1", "0 0 0 * 0 0", scanCronEnabled=false,
@@ -98,7 +102,7 @@ class DiffaConfigReaderWriterTest {
         <endpoint name="upstream1"
                   inbound-url="http://inbound"
                   scan-url="http://localhost:1234/scan" content-url="http://localhost:1234/content"
-                  validate-entity-order="unordered" collation="unicode">
+                  collation="unicode">
           <range-category name="a" data-type="date" lower="2009" upper="2010"/>
           <set-category name="b">
             <value>a</value>
@@ -115,12 +119,17 @@ class DiffaConfigReaderWriterTest {
         </endpoint>
         <endpoint name="downstream1"
                   scan-url="http://localhost:5432/scan" version-url="http://localhost:5432/generate-version"
-                  validate-entity-order="ordered" collation="ascii">
+                  collation="ascii">
           <prefix-category name="c" prefix-length="1" max-length="5" step="1"/>
           <prefix-category name="d" prefix-length="1" max-length="6" step="1"/>
           <view name="little-view">
             <prefix-category name="c" prefix-length="2" max-length="5" step="1" />
           </view>
+        </endpoint>
+        <endpoint name="downstream2"
+                  scan-url="http://localhost:5436/scan" version-url="http://localhost:5436/generate-version"
+                  collation="unordered">
+          <range-category name="i" data-type="date" lower="2012" upper="2013" max-granularity="individual" />
         </endpoint>
         <pair key="ab" upstream="upstream1" downstream="downstream1" version-policy="same" matching-timeout="5"
               scan-schedule="0 0 0 * 0 0" scan-schedule-enabled="false">
