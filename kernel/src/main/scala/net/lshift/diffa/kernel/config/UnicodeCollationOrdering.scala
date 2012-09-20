@@ -43,7 +43,7 @@ object CollationOrdering {
     }
   }
 
-  private lazy val namedCollations = Seq(
+  lazy val namedCollations: Set[CollationOrdering] = Set(
     UnorderedCollationOrdering,
     UnicodeCollationOrdering,
     AsciiCollationOrdering

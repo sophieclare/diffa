@@ -74,10 +74,6 @@ case class EndpointDef (
 
   def this() = this(name = null)
 
-  if (collation != null && collation.equals(UnorderedCollationOrdering.name)) {
-    validateEntityOrder = EntityOrdering.UNENFORCED
-  }
-
   val DEFAULT_URL_LENGTH_LIMIT = 1024
 
   /**
@@ -102,8 +98,8 @@ case class EndpointDef (
     ValidationUtil.ensureLengthLimit(endPointPath, "inboundUrl", inboundUrl, DEFAULT_URL_LENGTH_LIMIT)
 
     collation = ValidationUtil.maybeDefault(collation, AsciiCollationOrdering.name)
-    ValidationUtil.ensureMembership(endPointPath, "collation", collation,
-      Set(UnorderedCollationOrdering.name, AsciiCollationOrdering.name, UnicodeCollationOrdering.name))
+    ValidationUtil.ensureMembership(endPointPath, "collation", CollationOrdering.named(collation),
+      CollationOrdering.namedCollations)
 
     Array(scanUrl,
           contentRetrievalUrl,
@@ -115,6 +111,7 @@ case class EndpointDef (
 
       ValidationUtil.requiredAndNotEmpty(categoryPath, "name", k)
       c.validate(categoryPath)
+      c.ensureOrderedOrNotAggregated(path, collation)
     }}
 
     ValidationUtil.ensureUniqueChildren(endPointPath, "views", "name", views.map(v => v.name))
@@ -144,13 +141,6 @@ case class DomainEndpointDef(
   @BeanProperty var validateEntityOrder: String = EntityOrdering.ENFORCED,
   @BeanProperty var collation: String = AsciiCollationOrdering.name) {
   def this() = this(domain = null)
-
-  // This is part of an interim workaround for allowing adapters to report out-of-order entities.
-  // This workaround avoids any database schema change at the cost of overloading the meaning of the 'collation'
-  // field of the endpoints table.
-  if (collation.equals(UnorderedCollationOrdering.name)) {
-    validateEntityOrder = EntityOrdering.UNENFORCED
-  }
 
   @Deprecated def withoutDomain() = EndpointDef(
     name = name,

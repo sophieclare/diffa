@@ -139,7 +139,7 @@ class JooqDomainConfigStore(jooq:JooqDatabaseFacade,
 
   def onDomainRemoved(space: Long) = invalidateAllCaches(space)
 
-  def createOrUpdateEndpoint(domain:String, endpointDef: EndpointDef) : DomainEndpointDef = {
+  def createOrUpdateEndpoint(space: Long, endpointDef: EndpointDef) : DomainEndpointDef = {
     val ordering = if (endpointDef.validateEntityOrder.equals(EntityOrdering.ENFORCED)) {
       endpointDef.collation
     } else {
@@ -148,20 +148,20 @@ class JooqDomainConfigStore(jooq:JooqDatabaseFacade,
 
     jooq.execute(t => {
 
-      t.insertInto(ENDPOINT).
-          set(ENDPOINT.DOMAIN, domain).
-          set(ENDPOINT.NAME, endpointDef.name).
-          set(ENDPOINT.COLLATION_TYPE, ordering).
-          set(ENDPOINT.CONTENT_RETRIEVAL_URL, endpointDef.contentRetrievalUrl).
-          set(ENDPOINT.SCAN_URL, endpointDef.scanUrl).
-          set(ENDPOINT.VERSION_GENERATION_URL, endpointDef.versionGenerationUrl).
-          set(ENDPOINT.INBOUND_URL, endpointDef.inboundUrl).
+      t.insertInto(ENDPOINTS).
+          set(ENDPOINTS.SPACE, space:LONG).
+          set(ENDPOINTS.NAME, endpointDef.name).
+          set(ENDPOINTS.COLLATION_TYPE, ordering).
+          set(ENDPOINTS.CONTENT_RETRIEVAL_URL, endpointDef.contentRetrievalUrl).
+          set(ENDPOINTS.SCAN_URL, endpointDef.scanUrl).
+          set(ENDPOINTS.VERSION_GENERATION_URL, endpointDef.versionGenerationUrl).
+          set(ENDPOINTS.INBOUND_URL, endpointDef.inboundUrl).
         onDuplicateKeyUpdate().
-          set(ENDPOINT.COLLATION_TYPE, ordering).
-          set(ENDPOINT.CONTENT_RETRIEVAL_URL, endpointDef.contentRetrievalUrl).
-          set(ENDPOINT.SCAN_URL, endpointDef.scanUrl).
-          set(ENDPOINT.VERSION_GENERATION_URL, endpointDef.versionGenerationUrl).
-          set(ENDPOINT.INBOUND_URL, endpointDef.inboundUrl).
+          set(ENDPOINTS.COLLATION_TYPE, ordering).
+          set(ENDPOINTS.CONTENT_RETRIEVAL_URL, endpointDef.contentRetrievalUrl).
+          set(ENDPOINTS.SCAN_URL, endpointDef.scanUrl).
+          set(ENDPOINTS.VERSION_GENERATION_URL, endpointDef.versionGenerationUrl).
+          set(ENDPOINTS.INBOUND_URL, endpointDef.inboundUrl).
         execute()
 
       // Don't attempt to update to update any rows per se, just delete every associated
