@@ -65,6 +65,7 @@ class DiffaConfigReaderWriterTest {
             ))),
         EndpointDef(name = "downstream2",
           scanUrl = "http://localhost:5436/scan", versionGenerationUrl = "http://localhost:5436/generate-version",
+          collation = UnorderedCollationOrdering.name,
           categories = Map(
             "i" -> new RangeCategoryDescriptor("date", "2012", "2013", "individual")
           ))

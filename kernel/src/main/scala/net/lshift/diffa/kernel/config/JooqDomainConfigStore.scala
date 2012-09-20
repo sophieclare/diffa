@@ -140,24 +140,18 @@ class JooqDomainConfigStore(jooq:JooqDatabaseFacade,
   def onDomainRemoved(space: Long) = invalidateAllCaches(space)
 
   def createOrUpdateEndpoint(space: Long, endpointDef: EndpointDef) : DomainEndpointDef = {
-    val ordering = if (endpointDef.validateEntityOrder.equals(EntityOrdering.ENFORCED)) {
-      endpointDef.collation
-    } else {
-      EntityOrdering.UNENFORCED
-    }
-
     jooq.execute(t => {
 
       t.insertInto(ENDPOINTS).
           set(ENDPOINTS.SPACE, space:LONG).
           set(ENDPOINTS.NAME, endpointDef.name).
-          set(ENDPOINTS.COLLATION_TYPE, ordering).
+          set(ENDPOINTS.COLLATION_TYPE, endpointDef.collation).
           set(ENDPOINTS.CONTENT_RETRIEVAL_URL, endpointDef.contentRetrievalUrl).
           set(ENDPOINTS.SCAN_URL, endpointDef.scanUrl).
           set(ENDPOINTS.VERSION_GENERATION_URL, endpointDef.versionGenerationUrl).
           set(ENDPOINTS.INBOUND_URL, endpointDef.inboundUrl).
         onDuplicateKeyUpdate().
-          set(ENDPOINTS.COLLATION_TYPE, ordering).
+          set(ENDPOINTS.COLLATION_TYPE, endpointDef.collation).
           set(ENDPOINTS.CONTENT_RETRIEVAL_URL, endpointDef.contentRetrievalUrl).
           set(ENDPOINTS.SCAN_URL, endpointDef.scanUrl).
           set(ENDPOINTS.VERSION_GENERATION_URL, endpointDef.versionGenerationUrl).
@@ -213,7 +207,6 @@ class JooqDomainConfigStore(jooq:JooqDatabaseFacade,
     DomainEndpointDef(
       space = space,
       name = endpointDef.name,
-      validateEntityOrder = endpointDef.validateEntityOrder,
       collation = endpointDef.collation,
       contentRetrievalUrl = endpointDef.contentRetrievalUrl,
       scanUrl = endpointDef.scanUrl,
@@ -567,7 +560,6 @@ class JooqDomainConfigStore(jooq:JooqDatabaseFacade,
       scanUrl = endpointDef.scanUrl,
       versionGenerationUrl = endpointDef.versionGenerationUrl,
       contentRetrievalUrl = endpointDef.contentRetrievalUrl,
-      validateEntityOrder = endpointDef.validateEntityOrder,
       collation = endpointDef.collation,
       categories = endpointDef.categories
     )
