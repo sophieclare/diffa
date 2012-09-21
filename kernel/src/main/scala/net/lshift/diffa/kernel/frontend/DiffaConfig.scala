@@ -110,7 +110,7 @@ case class EndpointDef (
 
       ValidationUtil.requiredAndNotEmpty(categoryPath, "name", k)
       c.validate(categoryPath)
-      c.ensureOrderedOrNotAggregated(path, collation)
+      c.ensureOrderedOrNotAggregated(categoryPath, collation)
     }}
 
     ValidationUtil.ensureUniqueChildren(endPointPath, "views", "name", views.map(v => v.name))
