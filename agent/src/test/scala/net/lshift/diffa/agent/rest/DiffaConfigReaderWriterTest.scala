@@ -103,7 +103,7 @@ class DiffaConfigReaderWriterTest {
         <endpoint name="upstream1"
                   inbound-url="http://inbound"
                   scan-url="http://localhost:1234/scan" content-url="http://localhost:1234/content"
-                  validate-entity-order="unordered" collation="unicode">
+                  collation="unicode">
           <range-category name="a" data-type="date" lower="2009" upper="2010"/>
           <set-category name="b">
             <value>a</value>
@@ -120,7 +120,7 @@ class DiffaConfigReaderWriterTest {
         </endpoint>
         <endpoint name="downstream1"
                   scan-url="http://localhost:5432/scan" version-url="http://localhost:5432/generate-version"
-                  validate-entity-order="ordered" collation="ascii">
+                  collation="ascii">
           <prefix-category name="c" prefix-length="1" max-length="5" step="1"/>
           <prefix-category name="d" prefix-length="1" max-length="6" step="1"/>
           <view name="little-view">

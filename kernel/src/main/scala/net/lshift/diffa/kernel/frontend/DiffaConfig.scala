@@ -102,9 +102,7 @@ case class EndpointDef (
     ValidationUtil.ensureLengthLimit(endPointPath, "inboundUrl", inboundUrl, DEFAULT_URL_LENGTH_LIMIT)
 
     collation = ValidationUtil.maybeDefault(collation, AsciiCollationOrdering.name)
-    ValidationUtil.ensureMembership(endPointPath, "collation", collation,
-
-    CollationOrdering.namedCollations.map(_.name))
+    ValidationUtil.ensureMembership(endPointPath, "collation", collation, CollationOrdering.namedCollations.map(_.name))
 
     Array(scanUrl,
           contentRetrievalUrl,
