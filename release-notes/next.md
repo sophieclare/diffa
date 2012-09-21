@@ -7,6 +7,7 @@
 ## New Features
 
 * [255] - Introduce sub spaces.
+* [267] - Support for disabling validation of Entity ordering.
 
 ## General Maintenance
 
