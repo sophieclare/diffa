@@ -37,10 +37,10 @@ task :release => :prepare do
       url = "https://oss.sonatype.org/service/local/staging/deploy/maven2/"
       repoId = "sonatype-nexus-staging"
 
-      chdir('participant-support') do
-        sh "mvn gpg:sign-and-deploy-file -Dgpg.passphrase=xxxxxxx -Durl=#{url} -DrepositoryId=#{repoId} -DpomFile=pom.xml -Dfile=target/participant-support-#{@version}.jar"
-        sh "mvn gpg:sign-and-deploy-file -Dgpg.passphrase=xxxxxxx -Durl=#{url} -DrepositoryId=#{repoId} -DpomFile=pom.xml -Dfile=target/participant-support-#{@version}-sources.jar -Dclassifier=sources"
-        sh "mvn gpg:sign-and-deploy-file -Dgpg.passphrase=xxxxxxx -Durl=#{url} -DrepositoryId=#{repoId} -DpomFile=pom.xml -Dfile=target/participant-support-#{@version}-javadoc.jar -Dclassifier=javadoc"
+      chdir('adapter-support') do
+        sh "mvn gpg:sign-and-deploy-file -Dgpg.passphrase=xxxxxxx -Durl=#{url} -DrepositoryId=#{repoId} -DpomFile=pom.xml -Dfile=target/adapter-support-#{@version}.jar"
+        sh "mvn gpg:sign-and-deploy-file -Dgpg.passphrase=xxxxxxx -Durl=#{url} -DrepositoryId=#{repoId} -DpomFile=pom.xml -Dfile=target/adapter-support-#{@version}-sources.jar -Dclassifier=sources"
+        sh "mvn gpg:sign-and-deploy-file -Dgpg.passphrase=xxxxxxx -Durl=#{url} -DrepositoryId=#{repoId} -DpomFile=pom.xml -Dfile=target/adapter-support-#{@version}-javadoc.jar -Dclassifier=javadoc"
       end
 
       puts "Deploying release war to s3"
