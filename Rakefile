@@ -50,7 +50,7 @@ task :release => :prepare do
 
       puts "Deploying release zip to s3"
       chdir('dist') do
-        sh "s3cmd put target/diffa-*.zip s3://diffa-packages/releases"
+        sh "s3cmd put target/diffa-*.zip s3://diffa-releases"
       end
 
     end
