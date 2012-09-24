@@ -20,10 +20,10 @@ import org.junit.Test
 import org.hamcrest.Matchers._
 import org.junit.Assert._
 import java.io.{InputStreamReader, BufferedReader, InputStream, ByteArrayInputStream}
-import net.lshift.diffa.participant.scanning.{OutOfOrderException, AsciiCollation, Collation, ScanResultEntry}
+import net.lshift.diffa.adapter.scanning.{OutOfOrderException, AsciiCollation, Collation, ScanResultEntry}
 import org.joda.time.{DateTimeZone, DateTime}
 import scala.collection.JavaConversions._
-import net.lshift.diffa.participant.common.ScanEntityValidator
+import net.lshift.diffa.adapter.common.ScanEntityValidator
 import org.easymock.EasyMock._
 import net.lshift.diffa.kernel.config.{PairRef, PairServiceLimitsView}
 import net.lshift.diffa.schema.servicelimits.ScanResponseSizeLimit

@@ -27,7 +27,7 @@ import org.slf4j.LoggerFactory
 import net.lshift.diffa.kernel.config._
 
 /**
- * JSON/REST content participant client.
+ * JSON/REST content adapter client.
  */
 class ContentParticipantRestClient(pair: PairRef,
                                    scanUrl: String,

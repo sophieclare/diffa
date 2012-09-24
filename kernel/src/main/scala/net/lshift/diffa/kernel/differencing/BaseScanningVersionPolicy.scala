@@ -22,13 +22,13 @@ import net.lshift.diffa.kernel.alerting.Alerter
 import org.slf4j.LoggerFactory
 import concurrent.SyncVar
 import net.lshift.diffa.kernel.config.system.SystemConfigStore
-import net.lshift.diffa.participant.common.JSONHelper
+import net.lshift.diffa.adapter.common.JSONHelper
 import net.lshift.diffa.kernel.config.{PairRef, DomainConfigStore, DiffaPairRef, Endpoint}
 import org.joda.time.{DateTimeZone, DateTime, Interval}
 import org.joda.time.format.DateTimeFormat
 import java.io.{OutputStream, PrintWriter}
 import net.lshift.diffa.kernel.diag.{DiagnosticsManager, DiagnosticLevel}
-import net.lshift.diffa.participant.scanning._
+import net.lshift.diffa.adapter.scanning._
 import collection.JavaConversions._
 import net.lshift.diffa.kernel.util.{CategoryUtil, DownstreamEndpoint, EndpointSide, UpstreamEndpoint}
 
@@ -46,7 +46,7 @@ abstract class BaseScanningVersionPolicy(val stores:VersionCorrelationStoreFacto
   val fileNameFormatter = DateTimeFormat.forPattern(DiagnosticsManager.fileSystemFriendlyDateFormat)
 
   /**
-   * Handles a participant change. Due to the need to later correlate data, event information is cached to the
+   * Handles a adapter change. Due to the need to later correlate data, event information is cached to the
    * version correlation store.
    */
   def onChange(writer: LimitedVersionCorrelationWriter, evt: PairChangeEvent) = {
@@ -84,7 +84,7 @@ abstract class BaseScanningVersionPolicy(val stores:VersionCorrelationStoreFacto
   }
 
   /**
-   * Handles an inventory arriving from a participant.
+   * Handles an inventory arriving from a adapter.
    */
   def processInventory(pairRef:PairRef, endpoint:Endpoint, writer: LimitedVersionCorrelationWriter, side:EndpointSide,
                        constraints:Seq[ScanConstraint], aggregations:Seq[ScanAggregation], entries:Seq[ScanResultEntry]) = {
@@ -186,7 +186,7 @@ abstract class BaseScanningVersionPolicy(val stores:VersionCorrelationStoreFacto
 
       val localDigests = getAggregates(pair, bucketing, constraints)
 
-      // Generate a diagnostic object detailing the response provided by the participant
+      // Generate a diagnostic object detailing the response provided by the adapter
       diagnostics.writePairExplanationObject(Some(scanId), pair, "Version Policy", name + "-Aggregates-" + fileNameFormatter.print(requestTimestamp)  + ".json", os => {
         val pw = new PrintWriter(os)
         writeCommonHeader(pw, pair, endpoint, requestTimestamp, responseTimestamp)
@@ -223,7 +223,7 @@ abstract class BaseScanningVersionPolicy(val stores:VersionCorrelationStoreFacto
 
       val cachedVersions = getEntities(pair, constraints)
 
-      // Generate a diagnostic object detailing the response provided by the participant
+      // Generate a diagnostic object detailing the response provided by the adapter
       diagnostics.writePairExplanationObject(Some(scanId), pair, "Version Policy", name + "-Entities-" + fileNameFormatter.print(requestTimestamp) + ".json", os => {
         val pw = new PrintWriter(os)
         writeCommonHeader(pw, pair, endpoint, requestTimestamp, responseTimestamp)

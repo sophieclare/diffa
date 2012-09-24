@@ -21,7 +21,7 @@ import java.util.{TimerTask, Timer}
 import java.io.{Closeable, FileFilter, File}
 
 /**
- * Directory watcher for implementing a filesystem backed participant.
+ * Directory watcher for implementing a filesystem backed adapter.
  */
 class DirWatcher(val dir:String, val listener:(File) => Unit, val delay:Int = 100) extends Closeable {
   val seenFiles = new HashMap[String, Long]

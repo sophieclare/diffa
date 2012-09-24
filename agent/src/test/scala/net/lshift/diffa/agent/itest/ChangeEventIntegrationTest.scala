@@ -18,7 +18,7 @@ package net.lshift.diffa.agent.itest
 import org.junit.{Before, Test}
 import org.junit.Assert._
 import support.TestConstants._
-import net.lshift.diffa.participant.changes.ChangeEvent
+import net.lshift.diffa.adapter.changes.ChangeEvent
 import net.lshift.diffa.kernel.frontend.EndpointDef
 import net.lshift.diffa.agent.client.ConfigurationRestClient
 import net.lshift.diffa.client.{InvalidChangeEventException, ChangesRestClient}

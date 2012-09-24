@@ -18,9 +18,9 @@ package net.lshift.diffa.agent.amqp
 
 import net.lshift.diffa.kernel.client.ChangesClient
 import org.slf4j.LoggerFactory
-import net.lshift.diffa.participant.changes.ChangeEvent
+import net.lshift.diffa.adapter.changes.ChangeEvent
 import java.io.ByteArrayOutputStream
-import net.lshift.diffa.participant.common.JSONHelper
+import net.lshift.diffa.adapter.common.JSONHelper
 import net.lshift.accent.AccentConnection
 
 /**

@@ -18,10 +18,10 @@ package net.lshift.diffa.agent.rest
 import net.lshift.diffa.kernel.frontend.Changes
 import javax.ws.rs.core.Response
 import javax.ws.rs._
-import net.lshift.diffa.participant.changes.ChangeEvent
+import net.lshift.diffa.adapter.changes.ChangeEvent
 import net.lshift.diffa.schema.servicelimits.ChangeEventRate
 import net.lshift.diffa.kernel.limiting.{DomainRateLimiterFactory, ServiceLimiterKey, ServiceLimiterRegistry}
-import net.lshift.diffa.participant.common.{InvalidEntityException, ScanEntityValidator}
+import net.lshift.diffa.adapter.common.{InvalidEntityException, ScanEntityValidator}
 import net.lshift.diffa.kernel.differencing.EntityValidator
 import org.springframework.security.access.PermissionEvaluator
 import net.lshift.diffa.agent.rest.PermissionUtils._

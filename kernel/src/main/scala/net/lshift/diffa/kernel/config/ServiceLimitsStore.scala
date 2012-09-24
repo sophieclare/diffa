@@ -20,14 +20,14 @@ package net.lshift.diffa.kernel.config
  * Interface to the administration of Service Limits.
  *
  * Limits may be applied to any operation supported by the real-time event,
- * participant scanning or inventory submission services.  The meaning of any
+ * adapter scanning or inventory submission services.  The meaning of any
  * limit is tied to the limiter that uses it, which is outside the
  * responsibility of the ServiceLimitsStore.
  * The responsibilities of a ServiceLimitsStore are to: provide mechanisms to
  * define new limits, set limits at each scope (see below), cascade hard limit
  * changes down through the chain, and report the effective limit value -
  * typically with respect to a pair associated with the report from the
- * representative of the client application (e.g. scan participant).
+ * representative of the client application (e.g. scan adapter).
  *
  * There are three scopes for limits: System, Domain and Pair.
  *

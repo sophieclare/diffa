@@ -21,7 +21,7 @@ import net.jcip.annotations.NotThreadSafe
 import net.lshift.diffa.kernel.participants.{UpstreamParticipant, DownstreamParticipant}
 import net.lshift.diffa.kernel.config.{PairRef, Endpoint, DiffaPairRef}
 import net.lshift.diffa.kernel.util.EndpointSide
-import net.lshift.diffa.participant.scanning.{ScanAggregation, ScanRequest, ScanResultEntry, ScanConstraint}
+import net.lshift.diffa.adapter.scanning.{ScanAggregation, ScanRequest, ScanResultEntry, ScanConstraint}
 
 /**
  * Policy implementations of this trait provide different mechanism for handling the matching of upstream
@@ -36,7 +36,7 @@ import net.lshift.diffa.participant.scanning.{ScanAggregation, ScanRequest, Scan
 trait VersionPolicy {
 
   /**
-   * Indicates to the policy that a change has occurred within a participant.
+   * Indicates to the policy that a change has occurred within a adapter.
    */
   def onChange(writer: LimitedVersionCorrelationWriter, evt:PairChangeEvent) : Unit
 
@@ -93,7 +93,7 @@ trait FeedbackHandle {
 class ScanCancelledException(pair:PairRef) extends Exception(pair.identifier)
 
 /**
- * Thrown when a participant driver encounters an issue that it can't solve, but is well known, so it uses this
+ * Thrown when a adapter driver encounters an issue that it can't solve, but is well known, so it uses this
  * exception to keep the logging less noisy.
  * The reason is exposed through the UI.
  */

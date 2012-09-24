@@ -20,7 +20,7 @@ import java.io.Closeable
 import net.lshift.diffa.kernel.events.VersionID
 import org.joda.time.{LocalDate, DateTimeZone, DateTime}
 import org.slf4j.LoggerFactory
-import net.lshift.diffa.participant.scanning.ScanConstraint
+import net.lshift.diffa.adapter.scanning.ScanConstraint
 import net.lshift.diffa.kernel.config.PairRef
 import net.lshift.diffa.kernel.util.{CategoryChange, EndpointSide}
 
@@ -34,7 +34,7 @@ trait VersionCorrelationStore extends Closeable {
   type DownstreamVersionHandler = (VersionID, Map[String, String], DateTime, String, String) => Unit
 
   /**
-   * The unique key for the upstream and downstream participant pair
+   * The unique key for the upstream and downstream adapter pair
    */
   val pair: PairRef
 
@@ -45,8 +45,8 @@ trait VersionCorrelationStore extends Closeable {
 
   /**
    * Retrieves all of the unmatched version that have been stored.
-   * @param usConstraints constraints on the upstream participant's entities
-   * @param dsConstraints constraints on the downstream participant's entities
+   * @param usConstraints constraints on the upstream adapter's entities
+   * @param dsConstraints constraints on the downstream adapter's entities
    */
   def unmatchedVersions(usConstraints:Seq[ScanConstraint], dsConstraints:Seq[ScanConstraint], fromVersion:Option[Long]) : Iterable[Correlation]
 

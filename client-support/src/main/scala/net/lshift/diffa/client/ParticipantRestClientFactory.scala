@@ -19,7 +19,7 @@ package net.lshift.diffa.client
 import net.lshift.diffa.kernel.participants._
 import net.lshift.diffa.kernel.config._
 import java.io.InputStream
-import net.lshift.diffa.participant.scanning.ScanResultEntry
+import net.lshift.diffa.adapter.scanning.ScanResultEntry
 import net.lshift.diffa.kernel.differencing.EntityValidator
 import net.lshift.diffa.schema.servicelimits.{ScanReadTimeout, ScanConnectTimeout}
 import net.lshift.diffa.kernel.config.PairRef

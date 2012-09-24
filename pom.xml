@@ -15,7 +15,7 @@
     <module>kernel</module>
     <module>client-support</module>
     <module>participants</module>
-    <module>participant-support</module>
+    <module>adapter-support</module>
     <module>dist</module>
     <module>db-migrations</module>
     <module>schema</module>

@@ -16,7 +16,7 @@
 package net.lshift.diffa.client
 
 import java.io.{IOException, InputStream}
-import net.lshift.diffa.participant.common.JSONHelper
+import net.lshift.diffa.adapter.common.JSONHelper
 import net.lshift.diffa.schema.servicelimits.ScanResponseSizeLimit
 import net.lshift.diffa.kernel.differencing.ScanLimitBreachedException
 import net.lshift.diffa.kernel.config.{PairServiceLimitsView, PairRef}

@@ -24,7 +24,7 @@ import com.sun.jersey.core.util.MultivaluedMapImpl
 import net.lshift.diffa.client.{BadRequestException, RestClientParams}
 
 /**
- * A RESTful client to manage participant scanning.
+ * A RESTful client to manage adapter scanning.
  */
 class ScanningRestClient(serverRootUrl:String, domain:String, params: RestClientParams = RestClientParams.default)
     extends DomainAwareRestClient(serverRootUrl, domain, "spaces/{domain}/scanning/", params) {

@@ -17,11 +17,11 @@
 package net.lshift.diffa.kernel.participants
 
 import collection.mutable.ListBuffer
-import net.lshift.diffa.participant.scanning.ScanConstraint
+import net.lshift.diffa.adapter.scanning.ScanConstraint
 import net.lshift.diffa.kernel.config.{PairRef, Endpoint}
 
 /**
- * Factory that will resolve participant addresses to participant instances for querying.
+ * Factory that will resolve adapter addresses to adapter instances for querying.
  */
 class ParticipantFactory() {
 
@@ -99,6 +99,6 @@ class ParticipantFactory() {
 }
 
 class InvalidParticipantAddressException(addr:String)
-    extends Exception("The address " + addr + " is not a valid participant address")
+    extends Exception("The address " + addr + " is not a valid adapter address")
 class InvalidParticipantOperationException(partName:String, op:String)
-    extends Exception("The participant " + partName + " does not support " + op)
+    extends Exception("The adapter " + partName + " does not support " + op)

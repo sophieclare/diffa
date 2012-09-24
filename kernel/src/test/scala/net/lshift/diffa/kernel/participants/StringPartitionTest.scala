@@ -19,7 +19,7 @@ package net.lshift.diffa.kernel.participants
 import org.junit.Test
 import org.junit.Assert._
 import scala.collection.JavaConversions._
-import net.lshift.diffa.participant.scanning.{InvalidAttributeValueException, ScanConstraint, SetConstraint, StringPrefixConstraint}
+import net.lshift.diffa.adapter.scanning.{InvalidAttributeValueException, ScanConstraint, SetConstraint, StringPrefixConstraint}
 
 class StringPartitionTest {
 

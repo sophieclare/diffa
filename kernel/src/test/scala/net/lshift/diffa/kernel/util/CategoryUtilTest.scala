@@ -4,7 +4,7 @@ import org.junit.Test
 import org.junit.Assert._
 import scala.collection.JavaConversions._
 import org.springframework.mock.web.MockHttpServletRequest
-import net.lshift.diffa.participant.scanning._
+import net.lshift.diffa.adapter.scanning._
 import net.lshift.diffa.kernel.config._
 
 class CategoryUtilTest {

@@ -26,7 +26,7 @@ import collection.mutable.HashMap
 import org.joda.time.DateTime
 import net.lshift.diffa.kernel.config.RangeCategoryDescriptor
 import scala.collection.JavaConversions._
-import net.lshift.diffa.participant.scanning.{TimeRangeConstraint, ScanResultEntry}
+import net.lshift.diffa.adapter.scanning.{TimeRangeConstraint, ScanResultEntry}
 
 /**
  * Test cases for the DigestDifferencingUtils object.

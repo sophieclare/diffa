@@ -20,11 +20,11 @@ import org.hamcrest.CoreMatchers.instanceOf
 import org.junit.Assert._
 import org.hamcrest.Matchers._
 import org.junit.matchers.JUnitMatchers.containsString
-import net.lshift.diffa.participant.scanning.ScanResultEntry
+import net.lshift.diffa.adapter.scanning.ScanResultEntry
 import scala.collection.JavaConversions._
 import org.hamcrest.Matcher
-import net.lshift.diffa.participant.common.InvalidEntityException
-import net.lshift.diffa.participant.changes.ChangeEvent
+import net.lshift.diffa.adapter.common.InvalidEntityException
+import net.lshift.diffa.adapter.changes.ChangeEvent
 
 class ScanResultEntityValidatorTest extends EntityValidatorTestChecks[ScanResultEntry] {
   val validator = EntityValidator

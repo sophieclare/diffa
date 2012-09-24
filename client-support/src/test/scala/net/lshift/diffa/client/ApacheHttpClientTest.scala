@@ -26,7 +26,7 @@ import scala.collection.JavaConversions._
 import java.net.{ConnectException, URI}
 import org.apache.commons.codec.binary.Base64
 import java.io.InputStream
-import net.lshift.diffa.participant.scanning.ScanResultEntry
+import net.lshift.diffa.adapter.scanning.ScanResultEntry
 import net.lshift.diffa.kernel.differencing.ScanFailedException
 
 class ApacheHttpClientTest {

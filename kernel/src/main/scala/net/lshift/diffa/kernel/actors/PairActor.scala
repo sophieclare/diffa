@@ -37,7 +37,7 @@ import net.lshift.diffa.kernel.util.StoreSynchronizationUtils._
 import org.slf4j.{LoggerFactory, Logger}
 import net.lshift.diffa.kernel.config.{DomainConfigStore, Endpoint}
 import net.lshift.diffa.kernel.util.{EndpointSide, DownstreamEndpoint, UpstreamEndpoint}
-import net.lshift.diffa.participant.scanning.{ScanAggregation, ScanRequest, ScanResultEntry, ScanConstraint}
+import net.lshift.diffa.adapter.scanning.{ScanAggregation, ScanRequest, ScanResultEntry, ScanConstraint}
 import akka.util.Timeout
 import akka.util.duration._
 import net.lshift.diffa.kernel.frontend.DomainPairDef
@@ -435,7 +435,7 @@ case class PairActor(pair:DomainPairDef,
       writer.flush()
 
       // Allocate a feedback handle, and capture it into a local variable. This prevents us having problems
-      // later if one participant fails _really_ fast (ie, before the other has even made the scan* call).
+      // later if one adapter fails _really_ fast (ie, before the other has even made the scan* call).
       feedbackHandle = new ScanningFeedbackHandle
       val currentFeedbackHandle = feedbackHandle
 

@@ -19,7 +19,7 @@ package net.lshift.diffa.kernel.participants
 import org.junit.Test
 import org.junit.Assert._
 import net.lshift.diffa.kernel.config.{DateTimeTypeDescriptor, DateTypeDescriptor}
-import net.lshift.diffa.participant.scanning.{InvalidAttributeValueException, DateRangeConstraint, TimeRangeConstraint}
+import net.lshift.diffa.adapter.scanning.{InvalidAttributeValueException, DateRangeConstraint, TimeRangeConstraint}
 import org.junit.experimental.theories.DataPoint
 import org.joda.time.{DateTime, DateTimeZone, LocalDate}
 

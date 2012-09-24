@@ -26,7 +26,7 @@ import net.lshift.diffa.kernel.frontend.FrontendConversions._
 import net.lshift.diffa.kernel.frontend.{SystemConfiguration, UserDef, DomainDef}
 import org.springframework.security.access.prepost.PreAuthorize
 import javax.servlet.http.HttpServletRequest
-import net.lshift.diffa.participant.scanning._
+import net.lshift.diffa.adapter.scanning._
 import scala.collection.JavaConversions._
 
 /**

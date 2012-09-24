@@ -19,7 +19,7 @@ import org.junit.Test
 import org.junit.Assert._
 import net.lshift.diffa.kernel.config.{SetCategoryDescriptor, RangeCategoryDescriptor, PrefixCategoryDescriptor}
 import scala.collection.JavaConversions._
-import net.lshift.diffa.participant.scanning._
+import net.lshift.diffa.adapter.scanning._
 import org.joda.time.{DateTimeZone, LocalDate, DateTime}
 
 class AttributesUtilTest {

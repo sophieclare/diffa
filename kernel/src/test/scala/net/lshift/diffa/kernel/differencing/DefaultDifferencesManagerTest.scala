@@ -24,7 +24,7 @@ import net.lshift.diffa.kernel.participants._
 import net.lshift.diffa.kernel.matching.{MatchingStatusListener, EventMatcher, MatchingManager}
 import net.lshift.diffa.kernel.actors.PairPolicyClient
 import org.easymock.EasyMock
-import net.lshift.diffa.participant.scanning.ScanConstraint
+import net.lshift.diffa.adapter.scanning.ScanConstraint
 import net.lshift.diffa.kernel.config.{PairRef, Domain, Endpoint, DomainConfigStore}
 import net.lshift.diffa.kernel.config.system.SystemConfigStore
 import net.lshift.diffa.kernel.frontend.FrontendConversions._
@@ -35,7 +35,7 @@ import net.lshift.diffa.kernel.escalation.EscalationHandler
 import net.lshift.diffa.kernel.util.EasyMockScalaUtils._
 
 /**
- * Test cases for the participant protocol factory.
+ * Test cases for the adapter protocol factory.
  */
 class StubParticipantProtocolFactory
     extends ScanningParticipantFactory {

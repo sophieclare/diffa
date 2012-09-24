@@ -21,7 +21,7 @@ import org.junit.experimental.theories.{Theories, Theory, DataPoint}
 import org.junit.runner.RunWith
 import org.junit.Assert._
 import scala.collection.JavaConversions._
-import net.lshift.diffa.participant.scanning.{SetConstraint, ScanConstraint}
+import net.lshift.diffa.adapter.scanning.{SetConstraint, ScanConstraint}
 
 @RunWith(classOf[Theories])
 class ConstraintGroupingTest {

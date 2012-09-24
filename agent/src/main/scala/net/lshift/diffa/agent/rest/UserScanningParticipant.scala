@@ -5,7 +5,7 @@ import net.lshift.diffa.kernel.participants.CategoryFunction
 import net.lshift.diffa.kernel.config.User
 import scala.collection.JavaConversions._
 import net.lshift.diffa.kernel.frontend.SystemConfiguration
-import net.lshift.diffa.participant.scanning.{ScanAggregation, ScanResultEntry, ScanConstraint}
+import net.lshift.diffa.adapter.scanning.{ScanAggregation, ScanResultEntry, ScanConstraint}
 
 
 /**

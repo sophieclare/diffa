@@ -16,7 +16,7 @@
 
 package net.lshift.diffa.kernel.participants
 
-import net.lshift.diffa.participant.scanning.ScanConstraint
+import net.lshift.diffa.adapter.scanning.ScanConstraint
 
 /**
  * Specifies the next action to take when building a digest tree.

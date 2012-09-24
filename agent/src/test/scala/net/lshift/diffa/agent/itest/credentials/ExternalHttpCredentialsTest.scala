@@ -27,7 +27,7 @@ import java.util.List
 import net.lshift.diffa.agent.itest.support.ScanningHelper
 import net.lshift.diffa.kernel.differencing.PairScanState
 import scala.collection.JavaConversions._
-import net.lshift.diffa.participant.scanning._
+import net.lshift.diffa.adapter.scanning._
 import net.lshift.diffa.kernel.frontend.{InboundExternalHttpCredentialsDef, PairDef, EndpointDef}
 import net.lshift.diffa.kernel.config.ExternalHttpCredentials
 import org.junit.experimental.theories.{DataPoints, Theories, Theory}
@@ -112,7 +112,7 @@ class ExternalHttpCredentialsTest extends IsolatedDomainTest {
   private def withRunningServer(server: ParticipantRpcServer, verify: => Unit) {
     try {
 
-      log.info("Starting participant server on port " + server.port)
+      log.info("Starting adapter server on port " + server.port)
       server.start
       log.info("Participant server on port " + server.port + " started")
 
@@ -120,7 +120,7 @@ class ExternalHttpCredentialsTest extends IsolatedDomainTest {
     }
     finally {
 
-      log.info("Stopping participant server on port " + server.port)
+      log.info("Stopping adapter server on port " + server.port)
       server.stop
       log.info("Participant server on port " + server.port + " stopped")
 

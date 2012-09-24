@@ -17,7 +17,7 @@
 package net.lshift.diffa.kernel.participants
 
 import java.lang.Integer.parseInt
-import net.lshift.diffa.participant.scanning.{InvalidAttributeValueException, IntegerRangeConstraint, ScanConstraint, IntegerAggregation}
+import net.lshift.diffa.adapter.scanning.{InvalidAttributeValueException, IntegerRangeConstraint, ScanConstraint, IntegerAggregation}
 
 /**
  * This function partitions by groups of size `denominator`.

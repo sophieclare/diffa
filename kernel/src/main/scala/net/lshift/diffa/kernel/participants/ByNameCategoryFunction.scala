@@ -16,7 +16,7 @@
 
 package net.lshift.diffa.kernel.participants
 
-import net.lshift.diffa.participant.scanning.{SetConstraint, ScanConstraint, ByNameAggregation}
+import net.lshift.diffa.adapter.scanning.{SetConstraint, ScanConstraint, ByNameAggregation}
 import scala.collection.JavaConversions._
 
 /**

@@ -17,8 +17,8 @@
 package net.lshift.diffa.kernel.participants
 
 import java.io.Closeable
-import net.lshift.diffa.participant.correlation.ProcessingResponse
-import net.lshift.diffa.participant.scanning.{ScanConstraint, ScanResultEntry}
+import net.lshift.diffa.adapter.correlation.ProcessingResponse
+import net.lshift.diffa.adapter.scanning.{ScanConstraint, ScanResultEntry}
 
 /**
  * Trait supported by various RPC bindings providing communications with participants.
@@ -26,12 +26,12 @@ import net.lshift.diffa.participant.scanning.{ScanConstraint, ScanResultEntry}
 trait Participant
 {
   /**
-   * Scans this participant with the given constraints and aggregations.
+   * Scans this adapter with the given constraints and aggregations.
    */
   def scan(constraints:Seq[ScanConstraint], aggregations:Seq[CategoryFunction]): Seq[ScanResultEntry]
 
   /**
-   * Requests that the participant return a serialized form of the item with the given identifier.
+   * Requests that the adapter return a serialized form of the item with the given identifier.
    */
   def retrieveContent(identifier:String): String
 }
@@ -40,8 +40,8 @@ trait UpstreamParticipant extends Participant {}
 
 trait DownstreamParticipant extends Participant {
   /**
-   * Requests that the participant generate a processing response based on the given incoming entity data. The downstream
-   * participant is not expected to re-admit the data into its system - it should simply parse the data so as to be able
+   * Requests that the adapter generate a processing response based on the given incoming entity data. The downstream
+   * adapter is not expected to re-admit the data into its system - it should simply parse the data so as to be able
    * to determine it's own version information.
    */
   def generateVersion(entityBody: String): ProcessingResponse

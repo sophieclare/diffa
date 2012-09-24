@@ -20,7 +20,7 @@ import org.junit.Test
 import org.junit.Assert._
 
 import net.lshift.diffa.kernel.participants.IntegerCategoryFunction._
-import net.lshift.diffa.participant.scanning.{InvalidAttributeValueException, IntegerRangeConstraint}
+import net.lshift.diffa.adapter.scanning.{InvalidAttributeValueException, IntegerRangeConstraint}
 
 class IntegerPartitionTest {
 

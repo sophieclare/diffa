@@ -17,7 +17,7 @@
 package net.lshift.diffa.kernel.config;
 
 import net.lshift.diffa.kernel.util.InvalidConstraintException;
-import net.lshift.diffa.participant.scanning.ScanConstraint;
+import net.lshift.diffa.adapter.scanning.ScanConstraint;
 import org.codehaus.jackson.annotate.JsonSubTypes;
 import org.codehaus.jackson.annotate.JsonTypeInfo;
 

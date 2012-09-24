@@ -23,12 +23,12 @@ import net.lshift.diffa.kernel.util.EasyMockScalaUtils._
 import org.junit.experimental.theories.{Theories, Theory, DataPoint}
 import org.junit.runner.RunWith
 import scala.collection.JavaConversions._
-import net.lshift.diffa.participant.correlation.ProcessingResponse
-import net.lshift.diffa.participant.scanning.{ScanConstraint, ScanResultEntry}
+import net.lshift.diffa.adapter.correlation.ProcessingResponse
+import net.lshift.diffa.adapter.scanning.{ScanConstraint, ScanResultEntry}
 import net.lshift.diffa.kernel.config.{PairRef, Endpoint}
 
 /**
- * Test cases for the participant factory.
+ * Test cases for the adapter factory.
  */
 @RunWith(classOf[Theories])
 class ParticipantFactoryTest {

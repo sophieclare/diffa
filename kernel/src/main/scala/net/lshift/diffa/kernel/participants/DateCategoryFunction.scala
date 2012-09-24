@@ -17,7 +17,7 @@
 package net.lshift.diffa.kernel.participants
 
 import org.joda.time.format.{DateTimeFormatter, DateTimeFormat}
-import net.lshift.diffa.participant.scanning._
+import net.lshift.diffa.adapter.scanning._
 import java.lang.IllegalArgumentException
 import org.joda.time.{DateTimeZone, DateTime, LocalDate}
 

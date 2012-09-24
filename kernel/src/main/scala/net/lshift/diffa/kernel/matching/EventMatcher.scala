@@ -31,7 +31,7 @@ trait EventMatcher {
   type AckCallback = Function0[Unit]
 
   /**
-   * Handles an event that has been received from a participant. When a match has occurred, or the event has
+   * Handles an event that has been received from a adapter. When a match has occurred, or the event has
    * expired, the acknowledgement callback will be invoked to inform the message origin that the message no longer
    * needs to be retained.
    */

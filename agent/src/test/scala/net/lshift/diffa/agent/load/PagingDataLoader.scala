@@ -24,7 +24,7 @@ import net.lshift.diffa.kernel.differencing.{ExternalDifferenceEvent, Difference
 import com.eaio.uuid.UUID
 import net.lshift.diffa.kernel.config.RangeCategoryDescriptor
 import net.lshift.diffa.kernel.frontend.{EndpointDef, PairDef}
-import net.lshift.diffa.participant.changes.ChangeEvent
+import net.lshift.diffa.adapter.changes.ChangeEvent
 
 /**
  * Utility class to load lots of unmatched events into the agent.

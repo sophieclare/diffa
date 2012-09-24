@@ -19,7 +19,7 @@ package net.lshift.diffa.kernel.frontend.wire
 import reflect.BeanProperty
 
 /**
- * This is the wire format for invoking an action against a participant
+ * This is the wire format for invoking an action against a adapter
  */
 case class ActionInvocation (
   @BeanProperty var actionId:String,

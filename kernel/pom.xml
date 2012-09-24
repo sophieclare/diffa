@@ -31,7 +31,7 @@
     </dependency>
     <dependency>
       <groupId>net.lshift.diffa</groupId>
-      <artifactId>participant-support</artifactId>
+      <artifactId>adapter-support</artifactId>
       <version>${project.version}</version>
     </dependency>
     <dependency>

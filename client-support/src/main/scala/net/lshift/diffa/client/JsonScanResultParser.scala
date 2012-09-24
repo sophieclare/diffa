@@ -16,7 +16,7 @@
 
 package net.lshift.diffa.client
 
-import net.lshift.diffa.participant.scanning.ScanResultEntry
+import net.lshift.diffa.adapter.scanning.ScanResultEntry
 import java.io.InputStream
 
 /**

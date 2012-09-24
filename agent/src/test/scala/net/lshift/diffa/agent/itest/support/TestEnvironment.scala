@@ -32,13 +32,13 @@ import org.restlet.{Application, Component}
 import collection.mutable.HashMap
 import net.lshift.diffa.agent.client._
 import java.util.List
-import net.lshift.diffa.participant.scanning.{ScanAggregation, ScanConstraint}
+import net.lshift.diffa.adapter.scanning.{ScanAggregation, ScanConstraint}
 import net.lshift.diffa.kernel.frontend._
-import net.lshift.diffa.participant.changes.ChangeEvent
+import net.lshift.diffa.adapter.changes.ChangeEvent
 import net.lshift.diffa.kernel.limiting.SystemClock
 
 /**
- * An assembled environment consisting of a downstream and upstream participant. Provides a factory for the
+ * An assembled environment consisting of a downstream and upstream adapter. Provides a factory for the
  * various parts, along with convenience methods for making the configuration valid.
  */
 class TestEnvironment(val pairKey: String,

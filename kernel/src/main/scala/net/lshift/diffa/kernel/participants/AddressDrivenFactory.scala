@@ -27,7 +27,7 @@ trait AddressDrivenFactory[T] {
   def supports(endpoint:Endpoint):Boolean
 
   /**
-   * Creates a participant reference using the given address. It is expected the factory has
+   * Creates a adapter reference using the given address. It is expected the factory has
    * already been checked for compatibility via supportsAddress. The behaviour when calling this method without
    * previously checking is undefined, and the factory implementation may return a non-functional proxy.
    */

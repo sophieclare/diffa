@@ -19,7 +19,7 @@ import org.junit.Test
 import org.junit.Assert._
 import scala.collection.JavaConversions._
 import java.util.{HashSet, ArrayList}
-import net.lshift.diffa.participant.scanning._
+import net.lshift.diffa.adapter.scanning._
 
 class ScanRequestWriterTest {
   @Test

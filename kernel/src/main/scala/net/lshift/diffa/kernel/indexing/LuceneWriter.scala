@@ -238,7 +238,7 @@ class LuceneWriter(index: Directory, diagnostics:DiagnosticsManager,
       updateStoreVersion(doc)
       f(doc)
 
-      // If the participant does not supply a timestamp, then create one on the fly
+      // If the adapter does not supply a timestamp, then create one on the fly
       val lastUpdated = lastUpdatedIn match {
         case null => new DateTime
         case d    => d
@@ -284,7 +284,7 @@ class LuceneWriter(index: Directory, diagnostics:DiagnosticsManager,
 
         diagnostics.logPairExplanation(scanId, id.pair, "Correlation Store", "Updating %s to remove %s".format(id.id, sectionName))
 
-        // Update the match status of the document. A document with neither participant is matched (and will be seen
+        // Update the match status of the document. A document with neither adapter is matched (and will be seen
         // as a tombstone)
         updateField(doc, boolField("isMatched", !hasUpstream(doc) && !hasDownstream(doc)))
 

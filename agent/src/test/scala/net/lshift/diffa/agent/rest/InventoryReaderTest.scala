@@ -18,12 +18,12 @@ package net.lshift.diffa.agent.rest
 import org.junit.Test
 import org.junit.Assert._
 import java.io.ByteArrayInputStream
-import net.lshift.diffa.participant.scanning.ScanResultEntry
+import net.lshift.diffa.adapter.scanning.ScanResultEntry
 import org.joda.time.{DateTimeZone, DateTime}
 import java.util.HashMap
 import scala.collection.JavaConversions._
 import net.lshift.diffa.kernel.frontend.InvalidInventoryException
-import net.lshift.diffa.participant.common.ScanEntityValidator
+import net.lshift.diffa.adapter.common.ScanEntityValidator
 import org.easymock.EasyMock._
 import org.hamcrest.Matchers._
 

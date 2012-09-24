@@ -18,7 +18,7 @@ package net.lshift.diffa.kernel.config;
 
 
 import net.lshift.diffa.kernel.util.InvalidConstraintException;
-import net.lshift.diffa.participant.scanning.*;
+import net.lshift.diffa.adapter.scanning.*;
 
 /**
  * This describes a category that can be constrained by range.

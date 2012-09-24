@@ -17,7 +17,7 @@
 package net.lshift.diffa.client
 
 import net.lshift.diffa.kernel.config._
-import net.lshift.diffa.participant.scanning._
+import net.lshift.diffa.adapter.scanning._
 import javax.servlet.http.HttpServletRequest
 import org.junit.experimental.theories.{Theory, Theories, DataPoint}
 import net.lshift.diffa.schema.servicelimits.ServiceLimit

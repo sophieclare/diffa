@@ -18,7 +18,7 @@ package net.lshift.diffa.agent.itest
 import support.TestConstants.{ agentURL, yesterday }
 import net.lshift.diffa.agent.client.ConfigurationRestClient
 import net.lshift.diffa.kernel.frontend.EndpointDef
-import net.lshift.diffa.participant.changes.ChangeEvent
+import net.lshift.diffa.adapter.changes.ChangeEvent
 
 import org.junit.Assert.fail
 import net.lshift.diffa.client.{RateLimitExceededException, ChangesRestClient}

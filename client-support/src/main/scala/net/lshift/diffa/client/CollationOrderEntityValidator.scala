@@ -16,10 +16,10 @@
 
 package net.lshift.diffa.client
 
-import net.lshift.diffa.participant.scanning.{ScanResultEntry, Collation, OutOfOrderException}
+import net.lshift.diffa.adapter.scanning.{ScanResultEntry, Collation, OutOfOrderException}
 import java.io.InputStream
-import net.lshift.diffa.participant.common.ScanEntityValidator
-import net.lshift.diffa.participant.changes.ChangeEvent
+import net.lshift.diffa.adapter.common.ScanEntityValidator
+import net.lshift.diffa.adapter.changes.ChangeEvent
 
 
 class CollationOrderEntityValidator(collation: Collation, private val next: ScanEntityValidator = null) extends ScanEntityValidator {

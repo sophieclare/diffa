@@ -31,7 +31,7 @@ import org.junit.runner.RunWith
 import org.junit.experimental.theories.{DataPoints, Theory, DataPoint, Theories}
 import org.easymock.EasyMock
 import org.joda.time.{LocalDate, DateTime}
-import net.lshift.diffa.participant.scanning._
+import net.lshift.diffa.adapter.scanning._
 import net.lshift.diffa.kernel.config.system.SystemConfigStore
 import org.slf4j.LoggerFactory
 import net.lshift.diffa.kernel.diag.DiagnosticsManager

@@ -19,7 +19,7 @@ package net.lshift.diffa.client
 import javax.servlet.http.HttpServletRequest
 import org.easymock.EasyMock._
 import net.lshift.diffa.kernel.config._
-import net.lshift.diffa.participant.scanning._
+import net.lshift.diffa.adapter.scanning._
 import org.junit.{Test, Before}
 import net.lshift.diffa.schema.servicelimits.{ScanReadTimeout, ScanConnectTimeout, ScanResponseSizeLimit}
 import scala.collection.JavaConversions._

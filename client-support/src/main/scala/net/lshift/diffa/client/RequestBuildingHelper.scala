@@ -18,7 +18,7 @@ package net.lshift.diffa.client
 import javax.ws.rs.core.MultivaluedMap
 import net.lshift.diffa.kernel.participants.{StringPrefixCategoryFunction, CategoryFunction}
 import scala.collection.JavaConversions._
-import net.lshift.diffa.participant.scanning._
+import net.lshift.diffa.adapter.scanning._
 
 /**
  * Helper for building requests. Provides support for serialising various data types into request semantics.

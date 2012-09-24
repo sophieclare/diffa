@@ -17,7 +17,7 @@
 package net.lshift.diffa.kernel.limiting
 
 import org.easymock.EasyMock.{ createMock, expect, replay, reset }
-import net.lshift.diffa.participant.changes.ChangeEvent
+import net.lshift.diffa.adapter.changes.ChangeEvent
 import org.joda.time.DateTime
 import org.junit.{Before, Test, Assert}
 import org.junit.runner.RunWith

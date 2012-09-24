@@ -31,7 +31,7 @@ import org.easymock.{IAnswer, EasyMock}
 import net.lshift.diffa.kernel.events.VersionID
 import net.lshift.diffa.kernel.config._
 import concurrent.SyncVar
-import net.lshift.diffa.participant.scanning._
+import net.lshift.diffa.adapter.scanning._
 import net.lshift.diffa.kernel.diag.DiagnosticsManager
 import org.junit.Assume._
 import org.junit.Assert._
@@ -54,8 +54,8 @@ abstract class AbstractDataDrivenPolicyTest {
   // The various mocks for listeners and participants
   val usMock = createStrictMock("us", classOf[UpstreamParticipant])
   val dsMock = createStrictMock("ds", classOf[DownstreamParticipant])
-  EasyMock.checkOrder(usMock, false)   // Not all participant operations are going to be strictly ordered
-  EasyMock.checkOrder(dsMock, false)   // Not all participant operations are going to be strictly ordered
+  EasyMock.checkOrder(usMock, false)   // Not all adapter operations are going to be strictly ordered
+  EasyMock.checkOrder(dsMock, false)   // Not all adapter operations are going to be strictly ordered
 
   val nullListener = new NullDifferencingListener
   val diagnostics = createStrictMock("diagnostics", classOf[DiagnosticsManager])
@@ -73,7 +73,7 @@ abstract class AbstractDataDrivenPolicyTest {
   val feedbackHandle = new NonCancellingFeedbackHandle
 
   val listener = createStrictMock("listener", classOf[DifferencingListener])
-  EasyMock.checkOrder(listener, false)   // Not all participant operations are going to be strictly ordered
+  EasyMock.checkOrder(listener, false)   // Not all adapter operations are going to be strictly ordered
 
   val diffWriter = createStrictMock("diffWriter", classOf[DifferenceWriter])
   EasyMock.checkOrder(diffWriter, false)  // Not all match write operations are going to be strictly ordered

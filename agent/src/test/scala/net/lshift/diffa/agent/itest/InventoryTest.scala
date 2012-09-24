@@ -23,7 +23,7 @@ import net.lshift.diffa.kernel.differencing.{MatchState, ExternalDifferenceEvent
 import support.{IncludesObjId, DoesntIncludeObjId, DiffCount, TestEnvironments}
 import scala.collection.JavaConversions._
 import net.lshift.diffa.kernel.frontend.InvalidInventoryException
-import net.lshift.diffa.participant.scanning.{DateGranularityEnum, DateAggregation, SetConstraint}
+import net.lshift.diffa.adapter.scanning.{DateGranularityEnum, DateAggregation, SetConstraint}
 
 class InventoryTest extends AbstractEnvironmentTest {
   val envFactory = TestEnvironments.same _

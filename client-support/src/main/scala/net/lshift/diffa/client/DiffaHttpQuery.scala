@@ -16,7 +16,7 @@
 
 package net.lshift.diffa.client
 
-import net.lshift.diffa.participant.scanning.{ScanAggregation, ScanConstraint}
+import net.lshift.diffa.adapter.scanning.{ScanAggregation, ScanConstraint}
 import javax.ws.rs.core.MultivaluedMap
 import com.sun.jersey.core.util.MultivaluedMapImpl
 import java.net.URI

@@ -14,7 +14,7 @@ import net.lshift.diffa.agent.rest.UserScanningParticipantTest.Scenario
 import net.lshift.diffa.kernel.config.User
 import org.junit.{Before, Test}
 import net.lshift.diffa.kernel.participants.{StringPrefixCategoryFunction, CategoryFunction}
-import net.lshift.diffa.participant.scanning.{StringPrefixConstraint, ScanConstraint, ScanResultEntry}
+import net.lshift.diffa.adapter.scanning.{StringPrefixConstraint, ScanConstraint, ScanResultEntry}
 import net.lshift.diffa.kernel.frontend.{UserDef, SystemConfiguration}
 import java.security.MessageDigest
 import scala.Predef._

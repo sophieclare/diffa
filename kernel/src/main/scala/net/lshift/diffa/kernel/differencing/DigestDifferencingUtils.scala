@@ -20,7 +20,7 @@ import collection.mutable.{ListBuffer, HashMap}
 import net.lshift.diffa.kernel.participants._
 import net.lshift.diffa.kernel.config.CategoryDescriptor
 import scala.collection.JavaConversions._
-import net.lshift.diffa.participant.scanning.{ScanConstraint, ScanResultEntry}
+import net.lshift.diffa.adapter.scanning.{ScanConstraint, ScanResultEntry}
 
 /**
  * Utility methods for differencing sequences of digests.

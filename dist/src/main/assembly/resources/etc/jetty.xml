@@ -174,7 +174,7 @@
 
   </New>
 
-  <!-- 2. Boot the demo participant -->
+  <!-- 2. Boot the demo adapter -->
   <New class="org.eclipse.jetty.webapp.WebAppContext">
     <Arg>
       <Ref id="Contexts"/>

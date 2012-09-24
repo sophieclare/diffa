@@ -24,8 +24,8 @@ import net.lshift.accent.AccentConnection
 import com.rabbitmq.client.ConnectionFactory
 import com.eaio.uuid.UUID
 import net.lshift.diffa.kernel.frontend.Changes
-import net.lshift.diffa.participant.changes.ChangeEvent
-import net.lshift.diffa.participant.common.JSONHelper
+import net.lshift.diffa.adapter.changes.ChangeEvent
+import net.lshift.diffa.adapter.common.JSONHelper
 import org.joda.time.{DateTimeZone, DateTime}
 
 class AmqpProducerConsumerTest {

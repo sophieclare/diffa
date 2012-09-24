@@ -21,7 +21,7 @@ import java.net.URLDecoder
 import javax.servlet.http.{HttpServletResponse, HttpServletRequest}
 import net.lshift.diffa.kernel.config._
 import net.lshift.diffa.schema.servicelimits.ServiceLimit
-import net.lshift.diffa.participant.scanning.{ScanningParticipantDelegator, ScanningParticipantHandler}
+import net.lshift.diffa.adapter.scanning.{ScanningParticipantDelegator, ScanningParticipantHandler}
 import org.eclipse.jetty.server.handler.AbstractHandler
 import org.eclipse.jetty.server.{Request, Server}
 import org.junit.runner.RunWith

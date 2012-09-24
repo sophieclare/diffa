@@ -18,7 +18,7 @@ package net.lshift.diffa.kernel.differencing
 
 import org.joda.time.format.ISODateTimeFormat
 import net.lshift.diffa.kernel.config._
-import net.lshift.diffa.participant.scanning._
+import net.lshift.diffa.adapter.scanning._
 import scala.Option._
 import scala.collection.JavaConversions._
 

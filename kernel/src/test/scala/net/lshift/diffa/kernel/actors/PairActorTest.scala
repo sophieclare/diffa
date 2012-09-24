@@ -36,7 +36,7 @@ import net.lshift.diffa.kernel.config.{Space, DomainConfigStore, PairRef, Endpoi
 import java.util.concurrent.LinkedBlockingQueue
 import scala.collection.JavaConversions._
 import net.lshift.diffa.kernel.util._
-import net.lshift.diffa.participant.scanning._
+import net.lshift.diffa.adapter.scanning._
 import akka.dispatch.{ExecutionContext, Future}
 import org.junit.runner.RunWith
 import org.junit.experimental.theories.{DataPoint, Theories, Theory}
@@ -540,7 +540,7 @@ class PairActorTest {
 
     supervisor.startActor(pair.asRef)
     supervisor.scanPair(pair.asRef, None, None)
-    assertTrue(wasMarkedAsCancelled.get(4000).getOrElse(throw new Exception("Feedback handle check never reached in participant stub")))
+    assertTrue(wasMarkedAsCancelled.get(4000).getOrElse(throw new Exception("Feedback handle check never reached in adapter stub")))
     verify(versionPolicy, scanListener, diagnostics)
   }
 

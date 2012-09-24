@@ -21,7 +21,7 @@ import org.quartz.CronExpression
 import java.util.HashMap
 import scala.collection.JavaConversions._
 import net.lshift.diffa.kernel.util.{DownstreamEndpoint, UpstreamEndpoint, EndpointSide}
-import net.lshift.diffa.participant.scanning.Collation
+import net.lshift.diffa.adapter.scanning.Collation
 import net.lshift.diffa.kernel.escalation.EscalationManager
 import java.lang
 

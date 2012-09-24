@@ -22,7 +22,7 @@ import org.junit.Test
 import java.io.ByteArrayInputStream
 import org.junit.Assert._
 import org.hamcrest.CoreMatchers._
-import net.lshift.diffa.participant.scanning.{ScanConstraint, StringPrefixConstraint, ScanResultEntry}
+import net.lshift.diffa.adapter.scanning.{ScanConstraint, StringPrefixConstraint, ScanResultEntry}
 import org.joda.time.DateTime
 import net.lshift.diffa.kernel.participants.CategoryFunction
 import java.net.{SocketTimeoutException, SocketException, ConnectException, URI}

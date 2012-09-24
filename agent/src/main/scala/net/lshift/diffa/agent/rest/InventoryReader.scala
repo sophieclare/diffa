@@ -21,7 +21,7 @@ import java.lang.reflect.Type
 import java.lang.annotation.Annotation
 import javax.ws.rs.core.{MultivaluedMap, MediaType}
 import java.lang.{String, Class}
-import net.lshift.diffa.participant.scanning.ScanResultEntry
+import net.lshift.diffa.adapter.scanning.ScanResultEntry
 import au.com.bytecode.opencsv.CSVReader
 import java.io.{InputStreamReader, InputStream}
 import collection.mutable.ListBuffer
@@ -29,7 +29,7 @@ import org.joda.time.format.ISODateTimeFormat
 import java.util.HashMap
 import net.lshift.diffa.kernel.frontend.InvalidInventoryException
 import net.lshift.diffa.kernel.differencing.EntityValidator
-import net.lshift.diffa.participant.common.{InvalidEntityException, ScanEntityValidator}
+import net.lshift.diffa.adapter.common.{InvalidEntityException, ScanEntityValidator}
 
 /**
  * Provider for encoding and decoding Diffa inventory submissions blocks.

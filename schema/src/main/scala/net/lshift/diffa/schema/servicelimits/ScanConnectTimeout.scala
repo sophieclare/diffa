@@ -17,7 +17,7 @@ package net.lshift.diffa.schema.servicelimits
 
 object ScanConnectTimeout extends ServiceLimit {
   def key = "scan.connect.timeout"
-  def description = "When attempting to open a connection to scan a participant, timeout after this many milliseconds"
+  def description = "When attempting to open a connection to scan a adapter, timeout after this many milliseconds"
   def defaultLimit = secondsToMs(30)
   def hardLimit = minutesToMs(2)
 }
