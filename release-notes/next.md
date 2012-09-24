@@ -19,8 +19,8 @@
 
 ## Library Upgrades
 
-* Upgraded to JOOQ 2.5.0
-* Upgraded to Hazelcast 2.2
+* Upgraded to JOOQ 2.5.1
+* Upgraded to Hazelcast 2.3.1
 * Upgraded to Lucene 3.6.1
 * Upgraded to Spring Security 3.1.2
 * Downgraded to HSQLDB 2.2.8 (only relevant for testing purposes)
