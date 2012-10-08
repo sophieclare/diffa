@@ -25,23 +25,39 @@
       <New class="com.jolbox.bonecp.BoneCPDataSource">
         <Arg>
           <New class="com.jolbox.bonecp.BoneCPConfig">
+            <Set name="jdbcUrl">jdbc:oracle:thin:@(description=(address_list=(address=(protocol=tcp)(port=1521)(host=oracledev)))(connect_data=(sid=orcl)))</Set>
+<!--
             <Set name="jdbcUrl">jdbc:hsqldb:target/webapp-data/diffa-data</Set>
+-->
+            <Set name="username">diffant</Set>
+            <Set name="password">diffapass</Set>
+<!--
+-->
           </New>
         </Arg>
+        <Set name="driverClass">oracle.jdbc.OracleDriver</Set>
+<!--
         <Set name="driverClass">org.hsqldb.jdbc.JDBCDriver</Set>
+-->
       </New>
     </Arg>
   </New>
   <New class="org.eclipse.jetty.plus.jndi.EnvEntry">
     <Arg></Arg>
     <Arg>diffaHibernateDialect</Arg>
+    <Arg type="java.lang.String">org.hibernate.dialect.Oracle10gDialect</Arg>
+<!--
     <Arg type="java.lang.String">org.hibernate.dialect.HSQLDialect</Arg>
+-->
     <Arg type="boolean">true</Arg>
   </New>
   <New class="org.eclipse.jetty.plus.jndi.EnvEntry">
     <Arg></Arg>
     <Arg>diffaJooqDialect</Arg>
+    <Arg type="java.lang.String">ORACLE</Arg>
+<!--
     <Arg type="java.lang.String">HSQLDB</Arg>
+-->
     <Arg type="boolean">true</Arg>
   </New>
   <New id="mail" class="org.eclipse.jetty.plus.jndi.Resource">
