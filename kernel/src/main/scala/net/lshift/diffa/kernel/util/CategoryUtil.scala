@@ -15,7 +15,6 @@
  */
 package net.lshift.diffa.kernel.util
 
-import net.lshift.diffa.kernel.participants.StringPrefixCategoryFunction._
 import scala.Option._
 import net.lshift.diffa.kernel.config._
 import scala.collection.JavaConversions._
