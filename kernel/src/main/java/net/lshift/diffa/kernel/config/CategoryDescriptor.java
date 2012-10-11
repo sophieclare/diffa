@@ -30,6 +30,7 @@ import java.io.Serializable;
 @JsonTypeInfo(use=JsonTypeInfo.Id.NAME, include= JsonTypeInfo.As.PROPERTY, property="@type")
 @JsonSubTypes({
   @JsonSubTypes.Type(value = RangeCategoryDescriptor.class, name = "range"),
+  @JsonSubTypes.Type(value = RollingWindowCategoryDescriptor.class, name = "rolling"),
   @JsonSubTypes.Type(value = SetCategoryDescriptor.class, name = "set"),
   @JsonSubTypes.Type(value = PrefixCategoryDescriptor.class, name = "prefix")
 })
