@@ -18,12 +18,19 @@ package net.lshift.diffa.kernel.config;
 
 
 import net.lshift.diffa.kernel.util.InvalidConstraintException;
-import net.lshift.diffa.participant.scanning.*;
+import net.lshift.diffa.participant.scanning.ScanConstraint;
+import net.lshift.diffa.participant.scanning.RangeConstraint;
+import net.lshift.diffa.participant.scanning.DateRangeConstraint;
+import net.lshift.diffa.participant.scanning.TimeRangeConstraint;
+import net.lshift.diffa.participant.scanning.IntegerRangeConstraint;
+import org.joda.time.DateTime;
+import org.joda.time.format.DateTimeFormatter;
+import org.joda.time.format.ISODateTimeFormat;
 
 /**
  * This describes a category that can be constrained by range.
  */
-public class RangeCategoryDescriptor extends CategoryDescriptor {
+public class RangeCategoryDescriptor extends AggregatingCategoryDescriptor {
 
   public RangeCategoryDescriptor() {
   }
@@ -62,7 +69,6 @@ public class RangeCategoryDescriptor extends CategoryDescriptor {
    * The coarsest granularity that should be applied to a top level query.
    */
   public String maxGranularity;
-
 
   public String getMaxGranularity() {
     return maxGranularity;
@@ -135,6 +141,13 @@ public class RangeCategoryDescriptor extends CategoryDescriptor {
       }
 
       return true;
+    } else if (other instanceof RollingWindowFilter) {
+      RollingWindowFilter filter = (RollingWindowFilter) other;
+
+      if (dataType.equals("datetime") || dataType.equals("date")) {
+        WindowRefiner refiner = WindowRefiner.forPeriodExpression(filter.periodExpression).withOffset(filter.offsetDurationExpression);
+        return refiner.isRefinementOf(this.lower, this.upper);
+      }
     }
 
     return false;
@@ -142,14 +155,44 @@ public class RangeCategoryDescriptor extends CategoryDescriptor {
 
   @Override
   public CategoryDescriptor applyRefinement(CategoryDescriptor refinement) {
-    if (!isRefinement(refinement)) throw new IllegalArgumentException(refinement + " is not a refinement of " + this);
-    RangeCategoryDescriptor refinedRange = (RangeCategoryDescriptor) refinement;
+    CategoryDescriptor refinedCategory;
 
-    return new RangeCategoryDescriptor(
-      this.dataType,
-      refinedRange.lower != null ? refinedRange.lower : this.lower,
-      refinedRange.upper != null ? refinedRange.upper : this.upper,
-      refinedRange.maxGranularity != null ? refinedRange.maxGranularity : this.maxGranularity);
+    if (!isRefinement(refinement)) throw new IllegalArgumentException(refinement + " is not a refinement of " + this);
+    if (refinement instanceof RangeCategoryDescriptor) {
+      RangeCategoryDescriptor refinedRange = (RangeCategoryDescriptor) refinement;
+
+      refinedCategory = new RangeCategoryDescriptor(
+          this.dataType,
+          refinedRange.lower != null ? refinedRange.lower : this.lower,
+          refinedRange.upper != null ? refinedRange.upper : this.upper,
+          refinedRange.maxGranularity != null ? refinedRange.maxGranularity : this.maxGranularity);
+    } else if (refinement instanceof RollingWindowFilter) {
+      RollingWindowFilter filter = (RollingWindowFilter) refinement;
+      WindowRefiner refiner = WindowRefiner.forPeriodExpression(filter.periodExpression).
+          withOffset(filter.offsetDurationExpression);
+
+      WindowRefiner.TimeInterval interval = refiner.refineInterval(this.lower, this.upper);
+      DateTimeFormatter dateTimeParser = ISODateTimeFormat.dateOptionalTimeParser();
+      DateTime start = dateTimeParser.parseDateTime(interval.start);
+      DateTime end = dateTimeParser.parseDateTime(interval.end);
+      DateTimeFormatter formatter;
+
+      if (dataType.equals("date")) {
+        formatter = ISODateTimeFormat.date();
+      } else /* dataType.equals("datetime") */ {
+        formatter = ISODateTimeFormat.dateTime();
+      }
+
+      refinedCategory = new RangeCategoryDescriptor(
+          this.dataType,
+          start.toString(formatter),
+          end.toString(formatter),
+          this.maxGranularity);
+    } else {
+      refinedCategory = null; // isRefinement guards against this condition.
+    }
+
+    return refinedCategory;
   }
 
   public RangeConstraint toConstraint(String name) {

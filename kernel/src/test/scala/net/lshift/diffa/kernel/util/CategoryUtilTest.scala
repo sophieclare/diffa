@@ -1,3 +1,19 @@
+/**
+ * Copyright (C) 2010-2012 LShift Ltd.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *         http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package net.lshift.diffa.kernel.util
 
 import org.junit.Test
@@ -62,11 +78,11 @@ class CategoryUtilTest {
     val unboundedUpperDateCategory = Map("someDate" -> new RangeCategoryDescriptor("date", "2011-01-01", null, "individual"))
     val unboundedLowerDateCategory = Map("someDate" -> new RangeCategoryDescriptor("date", null, "2011-12-31", "individual"))
 
-    val undoundedLowerView = Seq(EndpointView(name = "dates", categories = unboundedLowerDateCategory))
-    val undoundedUpperView = Seq(EndpointView(name = "dates", categories = unboundedUpperDateCategory))
+    val unboundedLowerView = Seq(EndpointView(name = "dates", categories = unboundedLowerDateCategory))
+    val unboundedUpperView = Seq(EndpointView(name = "dates", categories = unboundedUpperDateCategory))
 
-    val fusedForwards = CategoryUtil.fuseViewCategories(unboundedUpperDateCategory, undoundedLowerView, Some("dates"))
-    val fusedBackwards = CategoryUtil.fuseViewCategories(unboundedLowerDateCategory, undoundedUpperView, Some("dates"))
+    val fusedForwards = CategoryUtil.fuseViewCategories(unboundedUpperDateCategory, unboundedLowerView, Some("dates"))
+    val fusedBackwards = CategoryUtil.fuseViewCategories(unboundedLowerDateCategory, unboundedUpperView, Some("dates"))
 
     assertEquals(
       Map("someDate" -> new RangeCategoryDescriptor("date", "2011-01-01", "2011-12-31", "individual")),
@@ -239,7 +255,7 @@ class CategoryUtilTest {
       CategoryUtil.differenceCategories(Map("someSet" -> sc), Map("someSet" -> sc2)))
   }
 
-  private def expectConstraintException(categories:Map[String, CategoryDescriptor], constraints:Seq[ScanConstraint], message:String) {
+  private def expectConstraintException(categories:Map[String, AggregatingCategoryDescriptor], constraints:Seq[ScanConstraint], message:String) {
     try {
       CategoryUtil.mergeAndValidateConstraints(categories, constraints)
     } catch {

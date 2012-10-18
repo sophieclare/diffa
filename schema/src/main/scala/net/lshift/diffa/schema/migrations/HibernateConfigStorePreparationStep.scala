@@ -189,6 +189,7 @@ object HibernateConfigStorePreparationStep {
    */
   val migrationSteps = Seq(
     Step0051,
-    Step0052
+    Step0052,
+    Step0053
   )
 }

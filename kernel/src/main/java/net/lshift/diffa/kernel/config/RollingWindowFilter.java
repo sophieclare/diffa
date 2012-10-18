@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2010-2011 LShift Ltd.
+ * Copyright (C) 2010-2012 LShift Ltd.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,42 +23,13 @@ import net.lshift.diffa.participant.scanning.ScanConstraint;
 
 import net.lshift.diffa.participant.scanning.TimeRangeConstraint;
 import org.joda.time.DateTime;
-import org.joda.time.Duration;
-import org.joda.time.Period;
-import org.joda.time.format.DateTimeFormatter;
-import org.joda.time.format.ISODateTimeFormat;
-import org.joda.time.format.ISOPeriodFormat;
-import org.joda.time.format.PeriodFormatter;
 
 /**
  * A category that is constrained by a moving window that behaves as a dynamically computed range category.
  */
-public class RollingWindowCategoryDescriptor extends CategoryDescriptor {
-  private static final PeriodFormatter periodFormatter = ISOPeriodFormat.standard();
-  private static final DateTimeFormatter dateTimeFormatter = ISODateTimeFormat.dateTime();
-
-  private final boolean isOffset;
-  private final String offsetDurationExpression;
-  private final String periodExpression;
-  private Period window; // take into account time changes such as those due to daylight savings.
-  private Duration offset; // do not adjust for daylight savings (Duration vs Period).
-  private DateTime _now = null;
-
-  void setClock(DateTime now) {
-    this._now = now;
-  }
-
-  private DateTime now() {
-    if (this._now == null) {
-      return DateTime.now();
-    } else {
-      return this._now;
-    }
-  }
-
-  public String getDataType() {
-    return "datetime";
-  }
+public class RollingWindowFilter extends CategoryDescriptor {
+  public String offsetDurationExpression;
+  public String periodExpression;
 
   /**
    * At scan time, the interval (described by periodText) is used to effectively produce a Range Category as follows:
@@ -69,9 +40,10 @@ public class RollingWindowCategoryDescriptor extends CategoryDescriptor {
    *                   Examples: 3 months = P3M, 1 week = P1W, 1 day = P1D, 12 hours = PT12H.
    *
    * @see org.joda.time.Period (http://joda-time.sourceforge.net/api-release/index.html?org/joda/time/Period.html)
+   * TODO: link in user docs to http://en.wikipedia.org/wiki/ISO_8601#Durations
    */
-  public RollingWindowCategoryDescriptor(String periodText) {
-    this(periodText, "", false);
+  public RollingWindowFilter(String periodText) {
+    this(periodText, "");
   }
 
   /**
@@ -83,32 +55,42 @@ public class RollingWindowCategoryDescriptor extends CategoryDescriptor {
    * @param periodExpression An extended ISO period specification, as defined in ISO 8601.
    * @param offsetDurationExpression A Duration representing the offset from the beginning of the day, as described above.
    */
-  public RollingWindowCategoryDescriptor(String periodExpression, String offsetDurationExpression) {
-    this(periodExpression, offsetDurationExpression, true);
-  }
-
-  private RollingWindowCategoryDescriptor(String periodExpression, String offsetDurationExpression, boolean isOffset) {
+  public RollingWindowFilter(String periodExpression, String offsetDurationExpression) {
     this.periodExpression = periodExpression;
     this.offsetDurationExpression = offsetDurationExpression;
-    this.isOffset = isOffset;
   }
 
-  // We want to defer initialization until validation so that it will report faulty period expressions.
-  private void ensureInitialized() {
-    if (window == null) initialize();
+  public RollingWindowFilter() {
+    this("");
   }
 
-  private void initialize() {
-    window = periodFormatter.parsePeriod(periodExpression);
-    if (isOffset) {
-      offset = periodFormatter.parsePeriod(offsetDurationExpression).toStandardDuration();
-    }
+  public void setPeriod(String periodExpression) {
+    this.periodExpression = periodExpression;
+  }
+
+  public void setOffset(String offsetDurationExpression) {
+    this.offsetDurationExpression = offsetDurationExpression;
+  }
+
+  public String getPeriod() {
+    return this.periodExpression;
+  }
+
+  public String getOffset() {
+    return this.offsetDurationExpression;
+  }
+
+  public TimeRangeConstraint toConstraint(String name) {
+    WindowRefiner refiner = WindowRefiner.forPeriodExpression(periodExpression).withOffset(offsetDurationExpression);
+    WindowRefiner.TimeInterval interval = refiner.refineInterval(null, null);
+
+    return new TimeRangeConstraint(name, interval.start, interval.end);
   }
 
   @Override
   public void validate(String path) {
     try {
-      initialize();
+      WindowRefiner.forPeriodExpression(periodExpression).withOffset(offsetDurationExpression);
     } catch (Exception ex) {
       throw new ConfigValidationException(path,
           String.format("Invalid period or offset specified for Rolling Window: %s", ex.getLocalizedMessage()));
@@ -117,30 +99,12 @@ public class RollingWindowCategoryDescriptor extends CategoryDescriptor {
 
   @Override
   public boolean isSameType(CategoryDescriptor other) {
-    return other instanceof RollingWindowCategoryDescriptor;
-  }
-
-  @Override
-  public boolean isRefinement(CategoryDescriptor other) {
-    if (isSameType(other)) {
-      ensureInitialized();
-      RollingWindowCategoryDescriptor otherDesc = (RollingWindowCategoryDescriptor) other;
-      DateTime now = now();
-      Duration myDuration = window.toDurationTo(now);
-      Duration otherDuration = otherDesc.window.toDurationTo(now);
-      if (myDuration.isLongerThan(otherDuration)) {
-        return true;
-      }
-    }
-
-    return false;
+    return other instanceof RollingWindowFilter;
   }
 
   @Override
   public CategoryDescriptor applyRefinement(CategoryDescriptor refinement) {
-    if (!isRefinement(refinement)) throw new IllegalArgumentException(refinement + " is not a refinement of " + this);
-
-    return refinement;
+    throw new IllegalArgumentException(refinement + " is not a refinement of " + this);
   }
 
   @Override
@@ -157,7 +121,7 @@ public class RollingWindowCategoryDescriptor extends CategoryDescriptor {
           requestedConstraint.getEnd());
     } else {
       throw new InvalidConstraintException(constraint.getAttributeName(),
-          "Rolling Window Categories only support Date and Time Range Constraints - provided constraint was " +
+          "Rolling Window Categories only provide Date and Time Range Constraints - requested constraint was " +
               constraint.getClass().getName());
     }
   }
@@ -170,20 +134,9 @@ public class RollingWindowCategoryDescriptor extends CategoryDescriptor {
     }
   }
 
-  private TimeRangeConstraint toConstraint(String name) {
-    ensureInitialized();
-    DateTime end = now();
-    DateTime start = end.minus(window.toDurationTo(end));
-
-    if (isOffset) {
-      end = offsetFromMidnight(end, offset);
-      start = offsetFromMidnight(start, offset);
-    }
-
-    return new TimeRangeConstraint(name, dateTimeFormatter.print(start), dateTimeFormatter.print(end));
-  }
-
-  private DateTime offsetFromMidnight(DateTime time, Duration offsetFromMidnight) {
-    return time.toDateMidnight().toInterval().getStart().plus(offsetFromMidnight);
+  @Override
+  public String toString() {
+    return String.format("RollingWindowFilter{ period='%s', offset='%s' }",
+        periodExpression, offsetDurationExpression);
   }
 }
