@@ -18,10 +18,10 @@ package net.lshift.diffa.kernel.participants
 
 import java.lang.String
 import net.lshift.diffa.kernel.differencing.AttributesUtil
-import net.lshift.diffa.participant.correlation.{ProcessingResponse, VersioningParticipantHandler}
+import net.lshift.diffa.adapter.correlation.{ProcessingResponse, VersioningParticipantHandler}
 import scala.collection.JavaConversions._
 /**
- * Downstream participant stub for use in test cases.
+ * Downstream adapter stub for use in test cases.
  */
 class DownstreamMemoryParticipant(val uvsnGen: String => String, val dvsnGen: String => String)
         extends MemoryParticipantBase(dvsnGen)

@@ -15,7 +15,7 @@
  */
 package net.lshift.diffa.agent.rest
 
-import net.lshift.diffa.participant.scanning.ScanRequest
+import net.lshift.diffa.adapter.scanning.ScanRequest
 import com.sun.jersey.core.util.MultivaluedMapImpl
 import net.lshift.diffa.client.RequestBuildingHelper
 import java.net.URLEncoder

@@ -23,9 +23,9 @@ import net.lshift.diffa.kernel.differencing.AttributesUtil
 import javax.servlet.http.HttpServletRequest
 import scala.collection.JavaConversions._
 import java.util.ArrayList
-import net.lshift.diffa.participant.scanning._
-import net.lshift.diffa.participant.content.ContentParticipantHandler
-import net.lshift.diffa.participant.correlation.VersioningParticipantHandler
+import net.lshift.diffa.adapter.scanning._
+import net.lshift.diffa.adapter.content.ContentParticipantHandler
+import net.lshift.diffa.adapter.correlation.VersioningParticipantHandler
 
 /**
  * Base class for test participants.
@@ -41,7 +41,7 @@ class MemoryParticipantBase(nativeVsnGen: String => String)
   def entityIds: Seq[String] = entities.keys.toList
 
   /**
-   * Scans this participant with the given constraints and aggregations.
+   * Scans this adapter with the given constraints and aggregations.
    */
   def scan(constraints:Seq[ScanConstraint], aggregations:Seq[CategoryFunction]): Seq[ScanResultEntry] =
     doQuery(constraints, aggregations).toSeq
@@ -82,10 +82,10 @@ class MemoryParticipantBase(nativeVsnGen: String => String)
   protected def doQuery(constraints: java.util.List[ScanConstraint], aggregations: java.util.List[ScanAggregation]):java.util.List[ScanResultEntry] = {
     val entitiesInRange = entities.values.filter(e => {
       constraints.forall {
-        case drc:net.lshift.diffa.participant.scanning.TimeRangeConstraint =>
+        case drc:net.lshift.diffa.adapter.scanning.TimeRangeConstraint =>
           (drc.getStart == null || !e.someDate.isBefore(drc.getStart)) &&
               (drc.getEnd == null || !e.someDate.isAfter(drc.getEnd))
-        case sc:net.lshift.diffa.participant.scanning.SetConstraint =>
+        case sc:net.lshift.diffa.adapter.scanning.SetConstraint =>
           sc.getValues.contains(e.someString)
         case _ =>
           false   // We can't satisfy other constraints

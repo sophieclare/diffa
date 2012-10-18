@@ -22,7 +22,7 @@ import net.lshift.diffa.kernel.differencing.AttributesUtil
 import scala.Option._
 import net.lshift.diffa.kernel.frontend._
 import net.lshift.diffa.kernel.util.{EndpointSide, UpstreamEndpoint, DownstreamEndpoint, CategoryUtil}
-import net.lshift.diffa.participant.scanning.{AggregationBuilder, ConstraintsBuilder, SetConstraint, ScanConstraint}
+import net.lshift.diffa.adapter.scanning.{AggregationBuilder, ConstraintsBuilder, SetConstraint, ScanConstraint}
 import java.util.HashMap
 import net.lshift.diffa.kernel.participants._
 import system.PolicyKey
@@ -138,6 +138,10 @@ case class Endpoint(
   @BeanProperty var views: java.util.Set[EndpointView] = new java.util.HashSet[EndpointView]
 
   def this() = this(name = null)
+
+  if (collation.equals(UnorderedCollationOrdering.name)) {
+    validateEntityOrder = EntityOrdering.UNENFORCED
+  }
 
   def defaultView = views.find(v => v.name == "default").get
 

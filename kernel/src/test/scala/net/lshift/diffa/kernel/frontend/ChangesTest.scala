@@ -21,7 +21,7 @@ import net.lshift.diffa.kernel.actors.PairPolicyClient
 import net.lshift.diffa.kernel.matching.MatchingManager
 import net.lshift.diffa.kernel.diag.DiagnosticsManager
 import org.junit.{Test, BeforeClass, AfterClass}
-import net.lshift.diffa.participant.changes.ChangeEvent
+import net.lshift.diffa.adapter.changes.ChangeEvent
 import org.joda.time.DateTime
 import net.lshift.diffa.kernel.events.{DownstreamPairChangeEvent, VersionID, UpstreamPairChangeEvent, PairChangeEvent}
 import net.lshift.diffa.kernel.differencing.StringAttribute

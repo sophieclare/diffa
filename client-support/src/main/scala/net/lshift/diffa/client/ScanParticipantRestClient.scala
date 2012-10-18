@@ -16,7 +16,7 @@
 
 package net.lshift.diffa.client
 
-import net.lshift.diffa.participant.scanning.{ScanResultEntry, ScanConstraint}
+import net.lshift.diffa.adapter.scanning.{ScanResultEntry, ScanConstraint}
 import net.lshift.diffa.kernel.config._
 import net.lshift.diffa.kernel.participants.{CategoryFunction, ScanningParticipantRef}
 import org.slf4j.LoggerFactory

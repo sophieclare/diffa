@@ -26,10 +26,10 @@ import org.joda.time.format.ISODateTimeFormat
 import net.lshift.diffa.kernel.participants._
 import net.lshift.diffa.kernel.frontend.wire.InvocationResult
 import net.lshift.diffa.kernel.differencing.{AttributesUtil}
-import net.lshift.diffa.participant.scanning.{TimeRangeConstraint, ScanResultEntry, ScanAggregation, ScanConstraint}
+import net.lshift.diffa.adapter.scanning.{TimeRangeConstraint, ScanResultEntry, ScanAggregation, ScanConstraint}
 
 /**
- * Basic functionality requried for a file-based participant.
+ * Basic functionality requried for a file-based adapter.
  */
 abstract class FileParticipant(val dir:String, val agentRoot:String, val endpoint:String) extends Closeable {
 

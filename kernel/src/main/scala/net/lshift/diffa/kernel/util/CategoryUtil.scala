@@ -19,7 +19,7 @@ import scala.Option._
 import net.lshift.diffa.kernel.config._
 import scala.collection.JavaConversions._
 import collection.immutable.Map
-import net.lshift.diffa.participant.scanning._
+import net.lshift.diffa.adapter.scanning._
 import net.lshift.diffa.kernel.participants.{IntegerCategoryFunction, ByNameCategoryFunction, StringPrefixCategoryFunction, CategoryFunction}
 
 /**
@@ -85,7 +85,7 @@ object CategoryUtil {
 
   /**
    * Derives the result of the initialConstraintsFor call and returns the constraints grouped into batches that can
-   * be submitted to a participant. This allows for the optimum number of calls to a participant to be executed.
+   * be submitted to a adapter. This allows for the optimum number of calls to a adapter to be executed.
    */
   def groupConstraints(categories: Iterable[(String,CategoryDescriptor)]) : Seq[Seq[ScanConstraint]] = {
     val constraints = initialConstraintsFor(categories).map {
@@ -105,7 +105,7 @@ object CategoryUtil {
   }
 
   /**
-   * Returns the initial constraints that should be used when running a set of queries against a participant, based on
+   * Returns the initial constraints that should be used when running a set of queries against a adapter, based on
    * any bounds defined with the categories.
    */
   def initialConstraintsFor(categories:Iterable[(String,CategoryDescriptor)]) : Seq[ScanConstraint] =

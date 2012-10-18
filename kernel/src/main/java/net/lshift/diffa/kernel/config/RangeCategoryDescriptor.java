@@ -18,11 +18,11 @@ package net.lshift.diffa.kernel.config;
 
 
 import net.lshift.diffa.kernel.util.InvalidConstraintException;
-import net.lshift.diffa.participant.scanning.ScanConstraint;
-import net.lshift.diffa.participant.scanning.RangeConstraint;
-import net.lshift.diffa.participant.scanning.DateRangeConstraint;
-import net.lshift.diffa.participant.scanning.TimeRangeConstraint;
-import net.lshift.diffa.participant.scanning.IntegerRangeConstraint;
+import net.lshift.diffa.adapter.scanning.ScanConstraint;
+import net.lshift.diffa.adapter.scanning.RangeConstraint;
+import net.lshift.diffa.adapter.scanning.DateRangeConstraint;
+import net.lshift.diffa.adapter.scanning.TimeRangeConstraint;
+import net.lshift.diffa.adapter.scanning.IntegerRangeConstraint;
 import org.joda.time.DateTime;
 import org.joda.time.format.DateTimeFormatter;
 import org.joda.time.format.ISODateTimeFormat;

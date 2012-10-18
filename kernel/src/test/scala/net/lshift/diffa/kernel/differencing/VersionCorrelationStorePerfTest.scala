@@ -26,7 +26,7 @@ import net.lshift.diffa.kernel.events._
 import org.slf4j.LoggerFactory
 import net.lshift.diffa.kernel.indexing.LuceneVersionCorrelationStore
 import ch.qos.logback.classic.Level
-import net.lshift.diffa.participant.scanning.TimeRangeConstraint
+import net.lshift.diffa.adapter.scanning.TimeRangeConstraint
 import net.lshift.diffa.kernel.config.PairRef
 
 /**

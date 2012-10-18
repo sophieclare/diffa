@@ -16,7 +16,7 @@
 
 package net.lshift.diffa.kernel.participants
 
-import net.lshift.diffa.participant.scanning.{ScanConstraint, ScanAggregation}
+import net.lshift.diffa.adapter.scanning.{ScanConstraint, ScanAggregation}
 
 /**
  * This is a struct for desceding partition requests. 

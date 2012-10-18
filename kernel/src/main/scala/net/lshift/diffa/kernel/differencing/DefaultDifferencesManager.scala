@@ -139,7 +139,7 @@ class DefaultDifferencesManager(
   }
 
   // TODO The fact that 3 lambdas are passed in probably indicates bad factoring
-  // -> the participant factory call is probably low hanging fruit for refactoring
+  // -> the adapter factory call is probably low hanging fruit for refactoring
   private def withValidEvent(space:Long, evtSeqId:String,
                      check:Function1[DifferenceEvent,Boolean],
                      resolve:(DomainPairDef) => String,

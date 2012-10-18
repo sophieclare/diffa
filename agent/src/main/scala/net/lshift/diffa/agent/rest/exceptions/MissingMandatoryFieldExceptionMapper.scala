@@ -16,7 +16,7 @@
 package net.lshift.diffa.agent.rest.exceptions
 
 import javax.ws.rs.ext.{ExceptionMapper, Provider}
-import net.lshift.diffa.participant.common.MissingMandatoryFieldException
+import net.lshift.diffa.adapter.common.MissingMandatoryFieldException
 import javax.ws.rs.core.Response
 
 @Provider

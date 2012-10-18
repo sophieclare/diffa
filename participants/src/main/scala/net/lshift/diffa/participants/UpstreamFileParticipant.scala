@@ -19,11 +19,11 @@ package net.lshift.diffa.participants
 import java.lang.String
 import net.lshift.diffa.kernel.participants.{UpstreamParticipant}
 import java.io.File
-import net.lshift.diffa.participant.changes.ChangeEvent
+import net.lshift.diffa.adapter.changes.ChangeEvent
 import scala.collection.JavaConversions._
 
 /**
- * Upstream participant implementation backed off the filesystem.
+ * Upstream adapter implementation backed off the filesystem.
  */
 class UpstreamFileParticipant(epName:String, root:String, agentRoot:String) extends FileParticipant(root, agentRoot, epName)
     with UpstreamParticipant {

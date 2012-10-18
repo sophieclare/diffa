@@ -19,7 +19,7 @@ package net.lshift.diffa.client
 import org.junit.runner.RunWith
 import org.junit.experimental.theories.{DataPoint, Theory, Theories}
 import org.junit.Test
-import net.lshift.diffa.participant.scanning.{TimeRangeConstraint, StringPrefixConstraint}
+import net.lshift.diffa.adapter.scanning.{TimeRangeConstraint, StringPrefixConstraint}
 import org.junit.Assert._
 import org.hamcrest.CoreMatchers._
 import net.lshift.diffa.kernel.participants.StringPrefixCategoryFunction

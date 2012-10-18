@@ -19,7 +19,7 @@ package net.lshift.diffa.kernel.config
 import org.joda.time.format.{DateTimeFormatterBuilder, ISODateTimeFormat}
 import org.slf4j.LoggerFactory
 import net.lshift.diffa.kernel.differencing.{DateAttribute, StringAttribute, DateTimeAttribute, IntegerAttribute}
-import net.lshift.diffa.participant.scanning.{IntegerRangeConstraint, TimeRangeConstraint, DateRangeConstraint}
+import net.lshift.diffa.adapter.scanning.{IntegerRangeConstraint, TimeRangeConstraint, DateRangeConstraint}
 import org.joda.time.DateTimeZone
 
 /**

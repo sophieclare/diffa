@@ -33,7 +33,7 @@ import net.lshift.diffa.kernel.util.StoreSynchronizationUtils._
 import org.slf4j.{LoggerFactory, Logger}
 import net.lshift.diffa.kernel.config.{DomainConfigStore, Endpoint}
 import net.lshift.diffa.kernel.util.{EndpointSide, DownstreamEndpoint, UpstreamEndpoint}
-import net.lshift.diffa.participant.scanning.{ScanAggregation, ScanRequest, ScanResultEntry, ScanConstraint}
+import net.lshift.diffa.adapter.scanning.{ScanAggregation, ScanRequest, ScanResultEntry, ScanConstraint}
 import akka.util.Timeout
 import akka.util.duration._
 import net.lshift.diffa.kernel.frontend.DomainPairDef
@@ -136,41 +136,6 @@ case class PairActor(pair:DomainPairDef,
     def logMessage(l:Logger, s:ActorState, code:Int) {
       val formattedCode = formatAlertCode(pairRef, code)
       l.debug("%s Received %sstream %s in %s state; scan id = %s".format(formattedCode, upOrDown, result, s, scanId))
-    }
-  }
-
-  /**
-   * This proxy is presented to clients that need access to a LimitedVersionCorrelationWriter.
-   * It wraps the underlying writer instance and forwards all commands via asynchronous messages,
-   * thus allowing parallel access to the writer.
-   */
-  private def createWriterProxy(scanId:Long) = new LimitedVersionCorrelationWriter() {
-
-    // The receive timeout in seconds
-    val timeout = domainConfigStore.configOptionOrDefault(
-      pairRef.space, CorrelationWriterProxy.TIMEOUT_KEY,
-      CorrelationWriterProxy.TIMEOUT_DEFAULT_VALUE).toInt
-
-    def clearUpstreamVersion(id: VersionID, scanId:Option[Long]) = call( _.clearUpstreamVersion(id, scanId) )
-    def clearDownstreamVersion(id: VersionID, scanId:Option[Long]) = call( _.clearDownstreamVersion(id, scanId) )
-    def storeDownstreamVersion(id: VersionID, attributes: Map[String, TypedAttribute], lastUpdated: DateTime, uvsn: String, dvsn: String, scanId:Option[Long])
-      = call( _.storeDownstreamVersion(id, attributes, lastUpdated, uvsn, dvsn, scanId) )
-    def storeUpstreamVersion(id: VersionID, attributes: Map[String, TypedAttribute], lastUpdated: DateTime, vsn: String, scanId:Option[Long])
-      = call( _.storeUpstreamVersion(id, attributes, lastUpdated, vsn, scanId) )
-    def call(command:(LimitedVersionCorrelationWriter => Correlation)) = {
-      implicit val askTimeout : Timeout = timeout seconds
-      val message = VersionCorrelationWriterCommand(scanId, command)
-      val future = self.ask(message)
-      try {
-        Await.result(future, askTimeout duration) match {
-          case CancelMessage  => throw new ScanCancelledException(pairRef)
-          case result:Any     => result.asInstanceOf[Correlation]
-        }
-      } catch { case e: AskTimeoutException =>
-          logger.error("%s Writer proxy timed out after %s seconds processing command: %s "
-                       .format(formatAlertCode(pairRef, MESSAGE_RECEIVE_TIMEOUT), timeout, message), e)
-          throw new RuntimeException("Writer proxy timeout")
-      }
     }
   }
 
@@ -460,16 +425,13 @@ case class PairActor(pair:DomainPairDef,
 
     logger.info(formatAlertCode(pairRef, SCAN_STARTED_BENCHMARK))
 
-    // allocate a writer proxy
-    val writerProxy = createWriterProxy(createdScan.id)
-
     pairScanListener.pairScanStateChanged(pair.asRef, PairScanState.SCANNING)
 
     try {
       writer.flush()
 
       // Allocate a feedback handle, and capture it into a local variable. This prevents us having problems
-      // later if one participant fails _really_ fast (ie, before the other has even made the scan* call).
+      // later if one adapter fails _really_ fast (ie, before the other has even made the scan* call).
       feedbackHandle = new ScanningFeedbackHandle
       // race condition? If second thread allocates a new handle, our current handle might be theirs.
       val currentFeedbackHandle = feedbackHandle
@@ -484,7 +446,7 @@ case class PairActor(pair:DomainPairDef,
       if (us.supportsScanning) {
         Future {
           try {
-            policy.scanUpstream(createdScan.id, pairRef, us, scanView, writerProxy, usp, bufferingListener, currentFeedbackHandle)
+            policy.scanUpstream(createdScan.id, pairRef, us, scanView, writer, usp, bufferingListener, currentFeedbackHandle)
             self ! ChildActorCompletionMessage(createdScan.id, Up, Success)
             logger.info(formatAlertCode(pairRef, UPSTREAM_SCAN_COMPLETED_BENCHMARK))
           }
@@ -503,7 +465,7 @@ case class PairActor(pair:DomainPairDef,
       if (ds.supportsScanning) {
         Future {
           try {
-            policy.scanDownstream(createdScan.id, pairRef, ds, scanView, writerProxy, usp, dsp, bufferingListener, currentFeedbackHandle)
+            policy.scanDownstream(createdScan.id, pairRef, ds, scanView, writer, usp, dsp, bufferingListener, currentFeedbackHandle)
             self ! ChildActorCompletionMessage(createdScan.id, Down, Success)
             logger.info(formatAlertCode(pairRef, DOWNSTREAM_SCAN_COMPLETED_BENCHMARK))
           }

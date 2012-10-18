@@ -23,9 +23,9 @@ import net.lshift.diffa.kernel.config.DomainConfigStore
 import net.lshift.diffa.kernel.differencing.AttributesUtil
 import scala.collection.JavaConversions._
 import net.lshift.diffa.kernel.diag.DiagnosticsManager
-import net.lshift.diffa.participant.changes.ChangeEvent
+import net.lshift.diffa.adapter.changes.ChangeEvent
 import net.lshift.diffa.kernel.actors.PairPolicyClient
-import net.lshift.diffa.participant.scanning.{ScanAggregation, ScanRequest, ScanResultEntry, ScanConstraint}
+import net.lshift.diffa.adapter.scanning.{ScanAggregation, ScanRequest, ScanResultEntry, ScanConstraint}
 import net.lshift.diffa.kernel.util.{MissingObjectException, DownstreamEndpoint, UpstreamEndpoint, CategoryUtil}
 
 /**
@@ -38,7 +38,7 @@ class Changes(val domainConfig:DomainConfigStore,
   private val log:Logger = LoggerFactory.getLogger(getClass)
 
   /**
-   * Indicates that a change has occurred within a participant. Locates the appropriate policy for the pair the
+   * Indicates that a change has occurred within a adapter. Locates the appropriate policy for the pair the
    * event is targeted for, and provides the event to the policy.
    */
   def onChange(space:Long, endpoint:String, evt:ChangeEvent) {

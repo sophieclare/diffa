@@ -20,7 +20,7 @@ import reflect.BeanProperty
 import net.lshift.diffa.kernel.util.AlertCodes
 
 /**
- * This encapsulates the result of invoking an action against a participant
+ * This encapsulates the result of invoking an action against a adapter
  */
 case class InvocationResult (
   @BeanProperty var code:String,

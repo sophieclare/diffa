@@ -16,7 +16,7 @@
 package net.lshift.diffa.client
 
 import java.io.IOException
-import net.lshift.diffa.participant.scanning.ScanResultEntry
+import net.lshift.diffa.adapter.scanning.ScanResultEntry
 
 /**
  * DiffaHttpClient acts as an anti-corruption-layer so that:

@@ -18,10 +18,10 @@ package net.lshift.diffa.participants
 
 import javax.servlet.http.{HttpServletResponse, HttpServletRequest}
 import org.eclipse.jetty.server.{Request, Server}
-import net.lshift.diffa.participant.content.{ContentParticipantHandler, ContentParticipantDelegator}
-import net.lshift.diffa.participant.scanning.ScanningParticipantRequestHandler
-import net.lshift.diffa.participant.correlation.{VersioningParticipantHandler, VersioningParticipantDelegator}
-import net.lshift.diffa.participant.common.ServletHelper
+import net.lshift.diffa.adapter.content.{ContentParticipantHandler, ContentParticipantDelegator}
+import net.lshift.diffa.adapter.scanning.ScanningParticipantRequestHandler
+import net.lshift.diffa.adapter.correlation.{VersioningParticipantHandler, VersioningParticipantDelegator}
+import net.lshift.diffa.adapter.common.ServletHelper
 import org.eclipse.jetty.server.handler.AbstractHandler
 import org.eclipse.jetty.security.authentication.BasicAuthenticator
 import org.eclipse.jetty.security.{HashLoginService, ConstraintMapping, ConstraintSecurityHandler}

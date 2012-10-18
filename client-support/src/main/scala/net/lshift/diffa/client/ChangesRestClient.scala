@@ -17,9 +17,9 @@
 package net.lshift.diffa.client
 
 import net.lshift.diffa.kernel.client.ChangesClient
-import net.lshift.diffa.participant.changes.ChangeEvent
+import net.lshift.diffa.adapter.changes.ChangeEvent
 import java.io.ByteArrayOutputStream
-import net.lshift.diffa.participant.common.JSONHelper
+import net.lshift.diffa.adapter.common.JSONHelper
 import java.lang.Long
 
 /**

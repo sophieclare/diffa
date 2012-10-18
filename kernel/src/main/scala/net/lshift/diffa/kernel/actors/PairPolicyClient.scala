@@ -20,7 +20,7 @@ import net.jcip.annotations.ThreadSafe
 import net.lshift.diffa.kernel.events.PairChangeEvent
 import net.lshift.diffa.kernel.config.{PairRef, DiffaPairRef}
 import net.lshift.diffa.kernel.util.EndpointSide
-import net.lshift.diffa.participant.scanning.{ScanAggregation, ScanRequest, ScanResultEntry, ScanConstraint}
+import net.lshift.diffa.adapter.scanning.{ScanAggregation, ScanRequest, ScanResultEntry, ScanConstraint}
 
 /**
  * This is a thread safe entry point to an underlying version policy.

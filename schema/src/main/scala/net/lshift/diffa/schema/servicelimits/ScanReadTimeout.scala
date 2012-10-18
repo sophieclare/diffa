@@ -17,7 +17,7 @@ package net.lshift.diffa.schema.servicelimits
 
 object ScanReadTimeout extends ServiceLimit {
   def key = "scan.read.timeout"
-  def description = "When reading query response data from a scan participant, timeout after not receiving data for this many milliseconds"
+  def description = "When reading query response data from a scan adapter, timeout after not receiving data for this many milliseconds"
   def defaultLimit = secondsToMs(30)
   def hardLimit = minutesToMs(2)
 }

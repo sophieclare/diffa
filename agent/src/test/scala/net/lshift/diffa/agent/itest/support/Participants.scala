@@ -18,9 +18,9 @@ package net.lshift.diffa.agent.itest.support
 
 import concurrent.SyncVar
 import org.slf4j.LoggerFactory
-import net.lshift.diffa.participant.content.ContentParticipantHandler
-import net.lshift.diffa.participant.scanning.ScanningParticipantRequestHandler
-import net.lshift.diffa.participant.correlation.VersioningParticipantHandler
+import net.lshift.diffa.adapter.content.ContentParticipantHandler
+import net.lshift.diffa.adapter.scanning.ScanningParticipantRequestHandler
+import net.lshift.diffa.adapter.correlation.VersioningParticipantHandler
 import net.lshift.diffa.participants.{NoAuthentication, ParticipantRpcServer}
 
 /**

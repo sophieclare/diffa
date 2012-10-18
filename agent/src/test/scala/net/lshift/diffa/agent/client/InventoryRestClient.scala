@@ -21,7 +21,7 @@ import com.sun.jersey.core.util.MultivaluedMapImpl
 import net.lshift.diffa.client.{RequestBuildingHelper, RestClientParams}
 import net.lshift.diffa.kernel.frontend.InvalidInventoryException
 import java.lang.String
-import net.lshift.diffa.participant.scanning.{ScanAggregation, ScanConstraint}
+import net.lshift.diffa.adapter.scanning.{ScanAggregation, ScanConstraint}
 
 class InventoryRestClient(serverRootUrl:String, domain:String, params: RestClientParams = RestClientParams.default)
     extends DomainAwareRestClient(serverRootUrl, domain, "domains/{domain}/inventory/", params) {

@@ -19,7 +19,7 @@ import org.junit.Assert._
 import net.lshift.diffa.agent.itest.support.TestConstants._
 import scala.collection.JavaConversions._
 import net.lshift.diffa.client.ScanningParticipantRestClientFactory
-import net.lshift.diffa.participant.scanning.StringPrefixConstraint
+import net.lshift.diffa.adapter.scanning.StringPrefixConstraint
 import org.junit.Test
 import net.lshift.diffa.kernel.config._
 import net.lshift.diffa.schema.servicelimits.ServiceLimit

@@ -24,7 +24,7 @@ import scala.collection.JavaConversions._
 import com.sun.jersey.core.util.MultivaluedMapImpl
 import net.lshift.diffa.client.RequestBuildingHelper
 import java.net.URLEncoder
-import net.lshift.diffa.participant.scanning.{ScanRequest, AggregationBuilder, ConstraintsBuilder}
+import net.lshift.diffa.adapter.scanning.{ScanRequest, AggregationBuilder, ConstraintsBuilder}
 import net.lshift.diffa.agent.rest.PermissionUtils._
 import org.springframework.security.access.PermissionEvaluator
 import net.lshift.diffa.agent.auth.{EndpointTarget, Privileges}

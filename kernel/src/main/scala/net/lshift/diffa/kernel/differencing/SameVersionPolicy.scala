@@ -22,7 +22,7 @@ import scala.collection.JavaConversions._
 import net.lshift.diffa.kernel.diag.DiagnosticsManager
 import net.lshift.diffa.kernel.config.system.SystemConfigStore
 import net.lshift.diffa.kernel.config.PairRef
-import net.lshift.diffa.participant.scanning.{Collation, ScanAggregation, ScanConstraint, ScanResultEntry}
+import net.lshift.diffa.adapter.scanning.{Collation, ScanAggregation, ScanConstraint, ScanResultEntry}
 
 /**
  * Version policy where two events are considered the same only when the upstream and downstream provide the
@@ -57,11 +57,16 @@ class SameVersionPolicy(stores:VersionCorrelationStoreFactory, listener:Differen
     def handleMismatch(scanId:Option[Long], pair:PairRef, writer: LimitedVersionCorrelationWriter, vm:VersionMismatch, listener:DifferencingListener) = {
       vm match {
         case VersionMismatch(id, categories, lastUpdated, partVsn, _) =>
-          if (partVsn != null) {
-            handleUpdatedCorrelation(writer.storeDownstreamVersion(VersionID(pair, id), categories, lastUpdated, partVsn, partVsn, scanId))
-          } else {
-            handleUpdatedCorrelation(writer.clearDownstreamVersion(VersionID(pair, id), scanId))
+
+          val correlation = writer.synchronized{
+            if (partVsn != null) {
+              writer.storeDownstreamVersion(VersionID(pair, id), categories, lastUpdated, partVsn, partVsn, scanId)
+            } else {
+              writer.clearDownstreamVersion(VersionID(pair, id), scanId)
+            }
           }
+
+          handleUpdatedCorrelation(correlation)
       }
     }
   }

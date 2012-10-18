@@ -17,7 +17,7 @@
 package net.lshift.diffa.participants
 
 import java.io.File
-import net.lshift.diffa.participant.scanning.ScanningParticipantRequestHandler
+import net.lshift.diffa.adapter.scanning.ScanningParticipantRequestHandler
 
 /**
  * Application entry 

@@ -15,7 +15,7 @@
  */
 package net.lshift.diffa.client
 
-import net.lshift.diffa.participant.common.ScanEntityValidator
+import net.lshift.diffa.adapter.common.ScanEntityValidator
 import net.lshift.diffa.kernel.differencing.EntityValidator
 import net.lshift.diffa.kernel.config.CollationOrdering
 

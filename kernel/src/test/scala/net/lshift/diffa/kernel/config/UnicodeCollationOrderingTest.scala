@@ -5,7 +5,7 @@ import org.junit.runner.RunWith
 import org.junit.experimental.theories.{DataPoint, Theories, Theory}
 import org.hamcrest.Matchers._
 import org.hamcrest.MatcherAssert.assertThat
-import net.lshift.diffa.participant.scanning.{AsciiCollation, Collation}
+import net.lshift.diffa.adapter.scanning.{AsciiCollation, Collation}
 import org.junit.Assert._
 import scala.Tuple3
 

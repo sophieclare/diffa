@@ -5,7 +5,7 @@
   <parent>
     <groupId>net.lshift.diffa</groupId>
     <artifactId>diffa-parent</artifactId>
-    <version>1.6.0-SNAPSHOT</version>
+    <version>1.6.1-SNAPSHOT</version>
   </parent>
 
   <artifactId>diffa-kernel</artifactId>
@@ -31,7 +31,7 @@
     </dependency>
     <dependency>
       <groupId>net.lshift.diffa</groupId>
-      <artifactId>participant-support</artifactId>
+      <artifactId>adapter-support</artifactId>
       <version>${project.version}</version>
     </dependency>
     <dependency>

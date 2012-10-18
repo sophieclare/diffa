@@ -18,7 +18,7 @@ package net.lshift.diffa.client
 import org.eclipse.jetty.server.handler.AbstractHandler
 import org.eclipse.jetty.server.{Request, Server}
 import javax.servlet.http.{HttpServletResponse, HttpServletRequest}
-import net.lshift.diffa.participant.common.ServletHelper
+import net.lshift.diffa.adapter.common.ServletHelper
 import org.easymock.EasyMock._
 import org.easymock.{EasyMock, IAnswer}
 import org.junit.{Before, Test}
@@ -26,7 +26,7 @@ import java.util.ArrayList
 import scala.collection.JavaConversions._
 import org.joda.time.{DateTimeZone, DateTime, LocalDate}
 import net.lshift.diffa.kernel.participants._
-import net.lshift.diffa.participant.scanning._
+import net.lshift.diffa.adapter.scanning._
 import net.lshift.diffa.schema.servicelimits._
 import org.junit.runner.RunWith
 import org.junit.experimental.theories.{Theories, Theory, DataPoint}
@@ -82,7 +82,7 @@ class ScanCompatibilityTest {
       builder.maybeAddDateRangeConstraint("bizDate")
       builder
     })
-    expectQuery(Seq(new net.lshift.diffa.participant.scanning.DateRangeConstraint("bizDate", null, new LocalDate(2011, 7, 31))), Seq())
+    expectQuery(Seq(new net.lshift.diffa.adapter.scanning.DateRangeConstraint("bizDate", null, new LocalDate(2011, 7, 31))), Seq())
     replayAll()
 
     scanningRestClient.scan(Seq(new DateRangeConstraint("bizDate", null, new LocalDate(2011, 7, 31))), Seq())
@@ -108,7 +108,7 @@ class ScanCompatibilityTest {
       builder.maybeAddDateRangeConstraint("bizDate")
       builder
     })
-    expectQuery(Seq(new net.lshift.diffa.participant.scanning.DateRangeConstraint("bizDate", new LocalDate(2011, 7, 1), new LocalDate(2011, 7, 31))), Seq())
+    expectQuery(Seq(new net.lshift.diffa.adapter.scanning.DateRangeConstraint("bizDate", new LocalDate(2011, 7, 1), new LocalDate(2011, 7, 31))), Seq())
     replayAll()
 
     scanningRestClient.scan(Seq(new DateRangeConstraint("bizDate", new LocalDate(2011, 7, 1), new LocalDate(2011, 7, 31))), Seq())
@@ -123,7 +123,7 @@ class ScanCompatibilityTest {
       builder.maybeAddTimeRangeConstraint("bizTime")
       builder
     })
-    expectQuery(Seq(new net.lshift.diffa.participant.scanning.TimeRangeConstraint("bizTime", new DateTime(2011, 7, 1, 10, 36, 0, 0, DateTimeZone.UTC), new DateTime(2011, 7, 31, 11, 36, 0, 0, DateTimeZone.UTC))), Seq())
+    expectQuery(Seq(new net.lshift.diffa.adapter.scanning.TimeRangeConstraint("bizTime", new DateTime(2011, 7, 1, 10, 36, 0, 0, DateTimeZone.UTC), new DateTime(2011, 7, 31, 11, 36, 0, 0, DateTimeZone.UTC))), Seq())
     replayAll()
 
     scanningRestClient.scan(Seq(new TimeRangeConstraint("bizTime", new DateTime(2011, 7, 1, 10, 36, 0, 0, DateTimeZone.UTC), new DateTime(2011, 7, 31, 11, 36, 0, 0, DateTimeZone.UTC))), Seq())
@@ -138,7 +138,7 @@ class ScanCompatibilityTest {
       builder.maybeAddSetConstraint("someString")
       builder
     })
-    expectQuery(Seq(new net.lshift.diffa.participant.scanning.SetConstraint("someString", Set("aa", "bb"))), Seq())
+    expectQuery(Seq(new net.lshift.diffa.adapter.scanning.SetConstraint("someString", Set("aa", "bb"))), Seq())
     replayAll()
 
     scanningRestClient.scan(Seq(new SetConstraint("someString", Set("aa", "bb"))), Seq())
@@ -153,7 +153,7 @@ class ScanCompatibilityTest {
       builder.maybeAddIntegerRangeConstraint("someInt")
       builder
     })
-    expectQuery(Seq(new net.lshift.diffa.participant.scanning.IntegerRangeConstraint("someInt", 5, 20)), Seq())
+    expectQuery(Seq(new net.lshift.diffa.adapter.scanning.IntegerRangeConstraint("someInt", 5, 20)), Seq())
     replayAll()
 
     scanningRestClient.scan(Seq(new IntegerRangeConstraint("someInt", 5, 20)), Seq())
@@ -168,7 +168,7 @@ class ScanCompatibilityTest {
       builder.maybeAddStringPrefixConstraint("someString")
       builder
     })
-    expectQuery(Seq(new net.lshift.diffa.participant.scanning.StringPrefixConstraint("someString", "bl")), Seq())
+    expectQuery(Seq(new net.lshift.diffa.adapter.scanning.StringPrefixConstraint("someString", "bl")), Seq())
     replayAll()
 
     scanningRestClient.scan(Seq(new StringPrefixConstraint("someString", "bl")), Seq())

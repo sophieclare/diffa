@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2010-2011 LShift Ltd.
+ * Copyright (C) 2010-2012 LShift Ltd.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,7 +20,7 @@ import collection.mutable.{ListBuffer, HashMap}
 import net.lshift.diffa.kernel.participants._
 import net.lshift.diffa.kernel.config.AggregatingCategoryDescriptor
 import scala.collection.JavaConversions._
-import net.lshift.diffa.participant.scanning.{ScanConstraint, ScanResultEntry}
+import net.lshift.diffa.adapter.scanning.{ScanConstraint, ScanResultEntry}
 
 /**
  * Utility methods for differencing sequences of digests.

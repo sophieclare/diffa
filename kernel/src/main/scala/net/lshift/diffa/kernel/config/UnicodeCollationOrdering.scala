@@ -16,7 +16,7 @@
 
 package net.lshift.diffa.kernel.config
 
-import net.lshift.diffa.participant.scanning.{AsciiCollation, UnicodeCollation, Collation}
+import net.lshift.diffa.adapter.scanning.{AsciiCollation, UnicodeCollation, Collation}
 
 object UnicodeCollationOrdering extends UnicodeCollation with CollationOrdering {
   val name = "unicode"
@@ -42,6 +42,7 @@ object CollationOrdering {
       throw new InvalidCollationOrderingSpecified(name)
     }
   }
+
 
   lazy val namedCollations: Set[CollationOrdering] = Set(
     UnorderedCollationOrdering,

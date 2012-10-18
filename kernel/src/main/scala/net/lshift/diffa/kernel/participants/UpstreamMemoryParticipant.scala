@@ -18,7 +18,7 @@ package net.lshift.diffa.kernel.participants
 
 import java.lang.String
 /**
- * Upstream participant for uses in test cases.
+ * Upstream adapter for uses in test cases.
  */
 class UpstreamMemoryParticipant(val uvsnGen: String => String)
         extends MemoryParticipantBase(uvsnGen)

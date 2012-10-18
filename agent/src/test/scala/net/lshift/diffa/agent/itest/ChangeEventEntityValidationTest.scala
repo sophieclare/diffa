@@ -20,7 +20,7 @@ import support.TestConstants.{ agentURL, defaultDomain, yesterday }
 import com.eaio.uuid.UUID
 import org.junit.{Before, BeforeClass, Test}
 import org.junit.Assert.fail
-import net.lshift.diffa.participant.changes.ChangeEvent
+import net.lshift.diffa.adapter.changes.ChangeEvent
 import net.lshift.diffa.agent.client.ConfigurationRestClient
 import net.lshift.diffa.kernel.frontend.EndpointDef
 import org.slf4j.LoggerFactory

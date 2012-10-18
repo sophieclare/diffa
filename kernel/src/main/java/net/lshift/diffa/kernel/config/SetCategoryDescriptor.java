@@ -17,8 +17,8 @@
 package net.lshift.diffa.kernel.config;
 
 import net.lshift.diffa.kernel.util.InvalidConstraintException;
-import net.lshift.diffa.participant.scanning.ScanConstraint;
-import net.lshift.diffa.participant.scanning.SetConstraint;
+import net.lshift.diffa.adapter.scanning.ScanConstraint;
+import net.lshift.diffa.adapter.scanning.SetConstraint;
 
 import java.util.Set;
 import java.util.TreeSet;

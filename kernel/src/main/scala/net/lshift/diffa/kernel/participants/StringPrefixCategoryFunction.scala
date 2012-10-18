@@ -18,7 +18,7 @@ package net.lshift.diffa.kernel.participants
 
 import scala.util.matching.Regex
 import scala.collection.JavaConversions._
-import net.lshift.diffa.participant.scanning._
+import net.lshift.diffa.adapter.scanning._
 
 /**
  * Category function for partitioning on prefixes of strings.

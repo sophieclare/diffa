@@ -27,7 +27,7 @@ import net.lshift.diffa.kernel.differencing._
 import net.lshift.diffa.kernel.events.PairChangeEvent
 import net.lshift.diffa.kernel.config.{PairRef, DiffaPairRef, DomainConfigStore}
 import net.lshift.diffa.kernel.util.EndpointSide
-import net.lshift.diffa.participant.scanning.{ScanAggregation, ScanRequest, ScanResultEntry, ScanConstraint}
+import net.lshift.diffa.adapter.scanning.{ScanAggregation, ScanRequest, ScanResultEntry, ScanConstraint}
 import net.lshift.diffa.kernel.util.AlertCodes._
 import akka.dispatch.Await
 import akka.util.duration._

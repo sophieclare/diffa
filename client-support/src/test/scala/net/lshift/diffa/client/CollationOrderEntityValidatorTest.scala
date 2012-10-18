@@ -16,14 +16,14 @@
 
 package net.lshift.diffa.client
 
-import net.lshift.diffa.participant.scanning.{OutOfOrderException, AsciiCollation, ScanResultEntry}
+import net.lshift.diffa.adapter.scanning.{OutOfOrderException, AsciiCollation, ScanResultEntry}
 import org.joda.time.{DateTimeZone, DateTime}
 import java.io.{ByteArrayInputStream, InputStream}
 import org.junit.Test
 import org.hamcrest.Matchers._
 import org.junit.Assert._
 import scala.collection.JavaConversions._
-import net.lshift.diffa.participant.common.ScanEntityValidator
+import net.lshift.diffa.adapter.common.ScanEntityValidator
 import org.easymock.EasyMock._
 
 class CollationOrderEntityValidatorTest { self =>

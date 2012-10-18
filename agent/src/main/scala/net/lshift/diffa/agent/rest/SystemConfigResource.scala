@@ -27,7 +27,7 @@ import com.sun.jersey.api.representation.Form
 import scala.collection.JavaConversions._
 import javax.servlet.http.HttpServletRequest
 import net.lshift.diffa.kernel.frontend.{SystemConfiguration, DomainDef}
-import net.lshift.diffa.participant.scanning._
+import net.lshift.diffa.adapter.scanning._
 import net.lshift.diffa.kernel.config.{ValidationUtil, Domain, ConfigValidationException}
 
 @Path("/root")

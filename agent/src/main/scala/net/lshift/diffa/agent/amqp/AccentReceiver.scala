@@ -25,7 +25,7 @@ import net.lshift.accent.{AccentConsumer, ChannelListenerAdapter, AccentConnecti
 import java.util.concurrent.atomic.AtomicBoolean
 import java.lang.String
 import net.lshift.diffa.kernel.frontend.Changes
-import net.lshift.diffa.participant.common.JSONHelper
+import net.lshift.diffa.adapter.common.JSONHelper
 import net.lshift.diffa.kernel.differencing.EntityValidator
 
 

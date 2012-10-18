@@ -26,7 +26,7 @@ import net.lshift.diffa.kernel.participants._
 import collection.mutable.ListBuffer
 import net.lshift.diffa.kernel.differencing._
 import org.apache.lucene.document._
-import net.lshift.diffa.participant.scanning._
+import net.lshift.diffa.adapter.scanning._
 import net.lshift.diffa.kernel.config.system.{InvalidSystemConfigurationException, SystemConfigStore}
 import org.apache.lucene.index.{IndexReader, Term}
 import net.lshift.diffa.kernel.diag.DiagnosticsManager
@@ -211,7 +211,7 @@ class LuceneVersionCorrelationStore(val pair: PairRef,
     // We don't want to add our sub-query unless it has terms, since an empty MUST matches nothing.
     if (partQuery.clauses().length > 0) {
       if (allowMissing) {
-        // Since we allow the participant values to be missing (ie, only the other participant has a value for this id),
+        // Since we allow the adapter values to be missing (ie, only the other adapter has a value for this id),
         // then we need to insert an OR query where either the value is missing or it matches the constraints.
 
         val missingOrMatchingQuery = new BooleanQuery

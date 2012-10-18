@@ -16,7 +16,7 @@
 package net.lshift.diffa.agent.itest.config
 
 import org.junit.Test
-import net.lshift.diffa.participant.scanning.StringPrefixConstraint
+import net.lshift.diffa.adapter.scanning.StringPrefixConstraint
 import org.junit.Assert._
 import net.lshift.diffa.client.ScanningParticipantRestClientFactory
 import net.lshift.diffa.agent.itest.support.TestConstants._
