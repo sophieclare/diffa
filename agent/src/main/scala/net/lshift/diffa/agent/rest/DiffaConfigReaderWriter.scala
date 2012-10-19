@@ -30,7 +30,7 @@ import reflect.BeanProperty
 import net.lshift.diffa.kernel.config._
 import net.lshift.diffa.kernel.frontend._
 import java.util
-import net.lshift.diffa.kernel.util.RichCategoryDescriptors
+import net.lshift.diffa.kernel.util.CategoryUtil
 
 /**
  * Provider for encoding and decoding diffa configuration blocks.
@@ -162,7 +162,7 @@ class CastorSerializableEndpoint extends Categorized {
     this.contentRetrievalUrl = e.contentRetrievalUrl
     this.versionGenerationUrl = e.versionGenerationUrl
     this.inboundUrl = e.inboundUrl
-    this.fromDiffaCategories(RichCategoryDescriptors(e.categories).asNamedCategories)
+    this.fromDiffaCategories(CategoryUtil.aggregatingCategoriesToFilters(e.categories))
     this.views = e.views.map(v => new CastorSerializableEndpointView().fromDiffaEndpointView(v));
     this.validateEntityOrder = e.validateEntityOrder
     this.collation = e.collation
@@ -235,12 +235,7 @@ class CastorSerializableRollingWindowFilter(
   def this() = this(null, null, null)
   def this(name: String, rwf: RollingWindowFilter) = this(name, rwf.periodExpression, rwf.offsetDurationExpression)
 
-  def toRollingWindowFilter = {
-    if (offset != null)
-      new RollingWindowFilter(period, offset)
-    else
-      new RollingWindowFilter(period)
-  }
+  def toRollingWindowFilter = new RollingWindowFilter(period, offset)
 }
 
 class CastorSerializablePair(

@@ -196,6 +196,11 @@ object CategoryUtil {
 
     removed ++ added ++ changed
   }
+
+  def aggregatingCategoriesToFilters(aggregatingCategories: java.util.Map[String, AggregatingCategoryDescriptor]) =
+    aggregatingCategories.map { case (key, cat) =>
+      key -> cat.asInstanceOf[CategoryDescriptor]
+    }
 }
 
 case class CategoryChange(name:String, before:Option[AggregatingCategoryDescriptor], after:Option[AggregatingCategoryDescriptor]) {
@@ -203,11 +208,3 @@ case class CategoryChange(name:String, before:Option[AggregatingCategoryDescript
   def isAddition = before.isEmpty
   def isChange = before.isDefined && after.isDefined
 }
-
-case class RichCategoryDescriptors(categories: java.util.Map[String, AggregatingCategoryDescriptor]) {
-  def asNamedCategories: java.util.Map[String, CategoryDescriptor] =
-    categories.map { case (key, cat) =>
-      key -> cat.asInstanceOf[CategoryDescriptor]
-    }
-}
-
