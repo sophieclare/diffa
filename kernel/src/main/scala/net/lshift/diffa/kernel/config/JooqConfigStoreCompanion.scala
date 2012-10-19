@@ -238,11 +238,11 @@ object JooqConfigStoreCompanion {
 
         val categoryName = record.getValueAsString(UNIQUE_CATEGORY_ALIAS)
 
-        def applyCategoryToEndpoint(descriptor: AggregatingCategoryDescriptor) = resolvedEndpoint.categories.put(categoryName, descriptor)
+        def applyCategoryToEndpoint(descriptor: AggregatingCategoryDescriptor) =
+          resolvedEndpoint.categories.put(categoryName, descriptor)
 
-        def applyFilterToEndpointView(descriptor: CategoryDescriptor, view: EndpointViewDef) {
+        def applyFilterToEndpointView(descriptor: CategoryDescriptor, view: EndpointViewDef) =
           view.categories.put(categoryName, descriptor)
-        }
 
         def applyCategoryToEndpointOrView(descriptor: CategoryDescriptor) = {
           currentView match {
@@ -253,11 +253,11 @@ object JooqConfigStoreCompanion {
         }
 
         def applySetMemberToDescriptorMapForCurrentCategory[T <: CategoryDescriptor](value:String, descriptor: T,
-            newSetFn: (SetCategoryDescriptor) => Unit) {
+            insertNewSetFn: (SetCategoryDescriptor) => Unit) {
           if (descriptor == null) {
             val setDescriptor = new SetCategoryDescriptor()
             setDescriptor.addValue(value)
-            newSetFn(setDescriptor)
+            insertNewSetFn(setDescriptor)
           }
           else {
             descriptor.asInstanceOf[SetCategoryDescriptor].addValue(value)
