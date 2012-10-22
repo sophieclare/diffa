@@ -18,23 +18,33 @@ package net.lshift.diffa.kernel.config;
 
 import org.joda.time.DateTime;
 import org.joda.time.Interval;
-import org.joda.time.format.DateTimeFormatter;
-import org.joda.time.format.ISODateTimeFormat;
 import org.joda.time.format.ISOPeriodFormat;
 import org.joda.time.format.PeriodFormatter;
 
 /**
- * 1) Determine whether a period is a refinement of a date range; 2) Calculate
- * the intersection of a period and a date range.
+ * 1) Determine whether a period is a refinement of a date range;
+ * 2) Calculate the intersection of a period and a date range.
  */
-public class WindowRefiner {
+public class WindowRefiner implements IntervalRefinement {
   private static final PeriodFormatter periodFormatter = ISOPeriodFormat.standard();
-  private static final DateTimeFormatter dateTimeFormatter = ISODateTimeFormat.dateTimeNoMillis();
-  private static final DateTimeFormatter dateFormatter = ISODateTimeFormat.date();
 
   private String periodExpression;
   private String offsetExpression;
   private Interval windowInterval;
+
+  @Override
+  public boolean isRefinementOf(String start, String end) {
+    return new TimeInterval(start, end).overlaps(windowInterval);
+  }
+
+  @Override
+  public TimeInterval refineInterval(String start, String end) {
+    if (!isRefinementOf(start, end)) {
+      return null;
+    }
+
+    return new TimeInterval(start, end).overlap(windowInterval);
+  }
 
   public static WindowRefiner forPeriodExpression(String periodExpression) {
     return new WindowRefiner(periodExpression);
@@ -69,49 +79,5 @@ public class WindowRefiner {
     }
     DateTime start = end.minus(periodFormatter.parsePeriod(periodExpression));
     this.windowInterval = new Interval(start, end);
-  }
-
-  public boolean isRefinementOf(String start, String end) {
-    return intervalFromRange(start, end).overlaps(windowInterval);
-  }
-
-  private Interval intervalFromRange(String start, String end) {
-    String iStart = start != null ? start : "1900-01-01T00:00:00Z";
-    String iEnd = end != null ? end : "3000-01-01T00:00:00Z";
-
-    return new Interval(parseDateTime(iStart), parseDateTime(iEnd));
-  }
-
-  private DateTime parseDateTime(String expression) {
-    try {
-      return dateTimeFormatter.parseDateTime(expression);
-    } catch (IllegalArgumentException ex) {
-      return dateFormatter.parseDateTime(expression);
-    }
-  }
-
-  private TimeInterval intervalToTimeInterval(Interval interval) {
-    String start = interval.getStart().toString(dateTimeFormatter);
-    String end = interval.getEnd().toString(dateTimeFormatter);
-    return new TimeInterval(start, end);
-  }
-
-  public TimeInterval refineInterval(String start, String end) {
-    if (!isRefinementOf(start, end)) {
-      return null;
-    }
-
-    Interval overlap = intervalFromRange(start, end).overlap(windowInterval);
-    return intervalToTimeInterval(overlap);
-  }
-
-  public class TimeInterval {
-    public String start;
-    public String end;
-
-    public TimeInterval(String start, String end) {
-      this.start = start;
-      this.end = end;
-    }
   }
 }
