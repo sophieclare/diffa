@@ -702,12 +702,12 @@ object JooqConfigStoreCompanion {
                           categoryName: String,
                           filter: RollingWindowFilter) =
     t.insertInto(ENDPOINT_VIEW_ROLLING_WINDOWS).
-      set(ENDPOINT_VIEW_ROLLING_WINDOWS.SPACE, space: LONG).
-      set(ENDPOINT_VIEW_ROLLING_WINDOWS.ENDPOINT, endpoint).
-      set(ENDPOINT_VIEW_ROLLING_WINDOWS.VIEW_NAME, viewName).
-      set(ENDPOINT_VIEW_ROLLING_WINDOWS.NAME, categoryName).
-      set(ENDPOINT_VIEW_ROLLING_WINDOWS.PERIOD, filter.periodExpression).
-      set(ENDPOINT_VIEW_ROLLING_WINDOWS.OFFSET, filter.offsetDurationExpression).
+        set(ENDPOINT_VIEW_ROLLING_WINDOWS.SPACE, space: LONG).
+        set(ENDPOINT_VIEW_ROLLING_WINDOWS.ENDPOINT, endpoint).
+        set(ENDPOINT_VIEW_ROLLING_WINDOWS.VIEW_NAME, viewName).
+        set(ENDPOINT_VIEW_ROLLING_WINDOWS.NAME, categoryName).
+        set(ENDPOINT_VIEW_ROLLING_WINDOWS.PERIOD, filter.periodExpression).
+        set(ENDPOINT_VIEW_ROLLING_WINDOWS.OFFSET, filter.offsetDurationExpression).
       execute()
 
   def insertRangeCategoryView(t:Factory,
