@@ -56,8 +56,8 @@ object CategoryUtil {
           // un-aggregated attribute is to handle it by name, so we don't need to return any bucketing for it.
           case s:SetCategoryDescriptor    => None
           case r:RangeCategoryDescriptor  => RangeTypeRegistry.defaultCategoryFunction(name, r)
-          case rw: RollingWindowFilter => None // only to be used for filtering, not aggregation.
           case p:PrefixCategoryDescriptor => Some(StringPrefixCategoryFunction(name, p.prefixLength, p.maxLength, p.step))
+          case c: CategoryDescriptor      => None // only affects filtering, not aggregation.
         }
       }
     }.toSeq

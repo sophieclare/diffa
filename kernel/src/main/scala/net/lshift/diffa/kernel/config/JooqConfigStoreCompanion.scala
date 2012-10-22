@@ -553,7 +553,7 @@ object JooqConfigStoreCompanion {
           case r:RangeCategoryDescriptor  => insertRangeCategory(t, space, endpoint.name, categoryName, r)
           case s:SetCategoryDescriptor    => insertSetCategory(t, space, endpoint.name, categoryName, s)
           case p:PrefixCategoryDescriptor => insertPrefixCategory(t, space, endpoint.name, categoryName, p)
-          case rw: RollingWindowFilter => // Rolling Windows can only be defined on Endpoints.
+          case rw: RollingWindowFilter    => // Rolling Windows can only be defined on Endpoints.
         }
       }
       catch {
