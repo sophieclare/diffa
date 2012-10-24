@@ -17,6 +17,7 @@
 package net.lshift.diffa.kernel.config;
 
 
+import net.lshift.diffa.kernel.util.CategoryUtil;
 import net.lshift.diffa.kernel.util.InvalidConstraintException;
 import net.lshift.diffa.adapter.scanning.ScanConstraint;
 import net.lshift.diffa.adapter.scanning.RangeConstraint;
@@ -145,8 +146,7 @@ public class RangeCategoryDescriptor extends AggregatingCategoryDescriptor {
       RollingWindowFilter filter = (RollingWindowFilter) other;
 
       if (dataType.equals("datetime") || dataType.equals("date")) {
-        WindowRefiner refiner = WindowRefiner.forPeriodExpression(filter.periodExpression).withOffset(filter.offsetDurationExpression);
-        return refiner.isRefinementOf(this.lower, this.upper);
+        return filter.getRefiner().isRefinementOf(this.lower, this.upper);
       }
     }
 
@@ -168,26 +168,14 @@ public class RangeCategoryDescriptor extends AggregatingCategoryDescriptor {
           refinedRange.maxGranularity != null ? refinedRange.maxGranularity : this.maxGranularity);
     } else if (refinement instanceof RollingWindowFilter) {
       RollingWindowFilter filter = (RollingWindowFilter) refinement;
-      WindowRefiner refiner = WindowRefiner.forPeriodExpression(filter.periodExpression).
-          withOffset(filter.offsetDurationExpression);
 
-      WindowRefiner.TimeInterval interval = refiner.refineInterval(this.lower, this.upper);
-      DateTimeFormatter dateTimeParser = ISODateTimeFormat.dateOptionalTimeParser();
-      DateTime start = dateTimeParser.parseDateTime(interval.start);
-      DateTime end = dateTimeParser.parseDateTime(interval.end);
-      DateTimeFormatter formatter;
-
-      if (dataType.equals("date")) {
-        formatter = ISODateTimeFormat.date();
-      } else /* dataType.equals("datetime") */ {
-        formatter = ISODateTimeFormat.dateTime();
-      }
+      TimeInterval interval = filter.getRefiner().refineInterval(this.lower, this.upper);
 
       refinedCategory = new RangeCategoryDescriptor(
           this.dataType,
-          start.toString(formatter),
-          end.toString(formatter),
-          this.maxGranularity);
+          interval.getStartAs(DateTimeType.byName(dataType)),
+          interval.getEndAs(DateTimeType.byName(dataType)),
+          interval.maximumCoveredPeriodUnit().toString());
     } else {
       refinedCategory = null; // isRefinement guards against this condition.
     }

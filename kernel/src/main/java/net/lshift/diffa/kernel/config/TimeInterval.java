@@ -1,67 +1,52 @@
-/**
- * Copyright (C) 2010-2012 LShift Ltd.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *         http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-
 package net.lshift.diffa.kernel.config;
 
 import org.joda.time.DateTime;
 import org.joda.time.Interval;
-import org.joda.time.format.DateTimeFormatter;
-import org.joda.time.format.ISODateTimeFormat;
 
-/**
- */
-public class TimeInterval {
-  private static final DateTimeFormatter dateTimeFormatter = ISODateTimeFormat.dateTimeNoMillis();
-  private static final DateTimeFormatter dateFormatter = ISODateTimeFormat.date();
+public abstract class TimeInterval {
+	// min and max dates are take from org.joda.time.chrono.GregorianChronology
+	// (private)
+	public static final int MIN_YEAR = -292275054;
+	public static final int MAX_YEAR = 292278993;
+	protected static final String openEnd = "";
 
-  public String start;
-  public String end;
+	public static boolean isBeginningOfTime(DateTime moment) {
+		return moment.getYear() <= MIN_YEAR;
+	}
 
-  public static TimeInterval fromJodaInterval(Interval interval) {
-    String start = interval.getStart().toString(dateTimeFormatter);
-    String end = interval.getEnd().toString(dateTimeFormatter);
-    return new TimeInterval(start, end);
-  }
+	public static boolean isEndOfTime(DateTime moment) {
+		return moment.getYear() >= MAX_YEAR;
+	}
 
-  public TimeInterval(String start, String end) {
-    this.start = start;
-    this.end = end;
-  }
+	public abstract String getStartAs(DateTimeType dataType);
 
-  public TimeInterval overlap(Interval other) {
-    Interval overlap = intervalFromRange(start, end).overlap(other);
-    return TimeInterval.fromJodaInterval(overlap);
-  }
+	public abstract String getEndAs(DateTimeType dataType);
 
-  public boolean overlaps(Interval other) {
-    return intervalFromRange(start, end).overlaps(other);
-  }
+	/**
+	 * Does this interval overlap the other interval?
+	 */
+	public abstract boolean overlaps(TimeInterval other);
 
-  private Interval intervalFromRange(String start, String end) {
-    String iStart = start != null ? start : "1900-01-01T00:00:00Z";
-    String iEnd = end != null ? end : "3000-01-01T00:00:00Z";
+	/**
+	 * What is the overlap of this interval with the other interval?
+	 */
+	public abstract TimeInterval overlap(TimeInterval other);
 
-    return new Interval(parseDateTime(iStart), parseDateTime(iEnd));
-  }
+	/**
+	 * Does this interval overlap the other definite interval?
+	 */
+	public boolean overlaps(Interval other) {
+		return overlaps(TimeIntervalFactory.fromJodaInterval(other));
+	}
 
-  private DateTime parseDateTime(String expression) {
-    try {
-      return dateTimeFormatter.parseDateTime(expression);
-    } catch (IllegalArgumentException ex) {
-      return dateFormatter.parseDateTime(expression);
-    }
-  }
+	/**
+	 * What is the overlap of this interval with the other definite interval?
+	 */
+	public TimeInterval overlap(Interval other) {
+		return overlap(TimeIntervalFactory.fromJodaInterval(other));
+	}
+	
+	public abstract PeriodUnit maximumCoveredPeriodUnit();
+
+	public abstract boolean isClosed();
 }

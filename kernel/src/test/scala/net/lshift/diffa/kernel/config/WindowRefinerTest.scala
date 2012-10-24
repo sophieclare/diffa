@@ -20,14 +20,16 @@ import org.junit.{ Assert, Test }
 import org.joda.time.format.ISODateTimeFormat
 import org.joda.time.DateTime
 import org.joda.time.format.ISOPeriodFormat
+import org.joda.time.DateTimeZone
 
 class WindowRefinerTest {
-  val dateTimeFormatter = ISODateTimeFormat.dateTimeNoMillis()
+  val dateTimeFormatter = ISODateTimeFormat.dateTime()
   val periodFormatter = ISOPeriodFormat.standard()
-  val now = DateTime.now()
+  val now = DateTime.now().withZone(DateTimeZone.UTC)
   val startOfDay = now.toDateMidnight().toDateTime()
 
   implicit def dateToString(date: DateTime): String = date.toString(dateTimeFormatter)
+  implicit def pairToTimeInterval(pair: (String, String)) = TimeIntervalFactory.fromRange(pair._1, pair._2)
 
   @Test(expected = classOf[IllegalArgumentException])
   def emptyPeriodExpressionIsInvalid() {
@@ -98,26 +100,31 @@ class WindowRefinerTest {
   def refinementOfFiniteRangeToWindowShouldBeTheirIntersection() {
     val mockTime = startOfDay.plusHours(1)
     val (start, end) = (startOfDay.minusDays(2), startOfDay.minusDays(1))
-    val intersection: (String, String) = (start.plusHours(1), end)
+    val intersection: TimeInterval = TimeIntervalFactory.fromRange(start.plusHours(1), end)
 
     val refiner = WindowRefiner.forPeriodExpression("P2D").usingTime(mockTime)
     val refinement = refiner.refineInterval(start, end)
 
     Assert.assertEquals("Refinement of range to window was not equal to their intersection",
-      intersection, (refinement.start, refinement.end))
+      intersection, refinement)
   }
 
+  /*
+   * [(-2,0),(-1)]
+   * P2D + 2H,1S
+   * [(-2, +2H1S), -)
+   */
   @Test
   def refinementOfFiniteRangeToOffsetWindowShouldBeTheirIntersection() {
     val (start, end) = (startOfDay.minusDays(2), startOfDay.minusDays(1))
-    val intersection: (String, String) = (start.plusHours(2).plusSeconds(1), end)
+    val intersection: TimeInterval = TimeIntervalFactory.fromRange(start.plusHours(2).plusSeconds(1), end)
 
     val refiner = WindowRefiner.forPeriodExpression("P2D").
       withOffset("PT2H1S")
     val refinement = refiner.refineInterval(start, end)
 
     Assert.assertEquals("Refinement of range to offset window was not equal to their intersection",
-      intersection, (refinement.start, refinement.end))
+      intersection, refinement)
   }
 
   @Test
@@ -130,7 +137,7 @@ class WindowRefinerTest {
     val refinement = refiner.refineInterval(start, end)
 
     Assert.assertEquals("Refinement of lower unbounded range to window was not equal to their intersection",
-      intersection, (refinement.start, refinement.end))
+      intersection, (refinement.getStartAs(DateTimeType.DATETIME), refinement.getEndAs(DateTimeType.DATETIME)))
   }
 
   @Test
@@ -143,7 +150,7 @@ class WindowRefinerTest {
     val refinement = refiner.refineInterval(start, end)
 
     Assert.assertEquals("Refinement of upper unbounded range to window was not equal to their intersection",
-      intersection, (refinement.start, refinement.end))
+      intersection, (refinement.getStartAs(DateTimeType.DATETIME), refinement.getEndAs(DateTimeType.DATETIME)))
   }
 
   private def daysAgo(days: Int) =

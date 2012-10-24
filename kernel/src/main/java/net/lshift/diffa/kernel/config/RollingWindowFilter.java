@@ -30,6 +30,8 @@ import org.joda.time.DateTime;
 public class RollingWindowFilter extends CategoryDescriptor {
   public String offsetDurationExpression;
   public String periodExpression;
+  public String maxGranularity;
+  private WindowRefiner refiner;
 
   /**
    * At scan time, the interval (described by periodText) is used to effectively produce a Range Category as follows:
@@ -80,17 +82,30 @@ public class RollingWindowFilter extends CategoryDescriptor {
     return this.offsetDurationExpression;
   }
 
-  public TimeRangeConstraint toConstraint(String name) {
-    WindowRefiner refiner = WindowRefiner.forPeriodExpression(periodExpression).withOffset(offsetDurationExpression);
-    WindowRefiner.TimeInterval interval = refiner.refineInterval(null, null);
+  public String getMaxGranularity() {
+    return this.maxGranularity;
+  }
 
-    return new TimeRangeConstraint(name, interval.start, interval.end);
+  public WindowRefiner getRefiner() {
+    if (refiner == null) {
+      refiner = WindowRefiner.forPeriodExpression(periodExpression).withOffset(offsetDurationExpression);
+    }
+    return refiner;
+  }
+
+  public TimeRangeConstraint toConstraint(String name) {
+    refiner = getRefiner();
+    TimeInterval interval = refiner.refineInterval(null, null);
+
+    return new TimeRangeConstraint(name,
+        interval.getStartAs(DateTimeType.DATETIME),
+        interval.getEndAs(DateTimeType.DATETIME));
   }
 
   @Override
   public void validate(String path) {
     try {
-      WindowRefiner.forPeriodExpression(periodExpression).withOffset(offsetDurationExpression);
+      getRefiner();
     } catch (Exception ex) {
       throw new ConfigValidationException(path,
           String.format("Invalid period or offset specified for Rolling Window: %s", ex.getLocalizedMessage()));

@@ -17,6 +17,7 @@
 package net.lshift.diffa.kernel.config;
 
 import org.joda.time.DateTime;
+import org.joda.time.DateTimeZone;
 import org.joda.time.Interval;
 import org.joda.time.format.ISOPeriodFormat;
 import org.joda.time.format.PeriodFormatter;
@@ -34,7 +35,7 @@ public class WindowRefiner implements IntervalRefinement {
 
   @Override
   public boolean isRefinementOf(String start, String end) {
-    return new TimeInterval(start, end).overlaps(windowInterval);
+    return new BoundedTimeInterval(start, end).overlaps(windowInterval);
   }
 
   @Override
@@ -43,7 +44,7 @@ public class WindowRefiner implements IntervalRefinement {
       return null;
     }
 
-    return new TimeInterval(start, end).overlap(windowInterval);
+    return TimeIntervalFactory.fromRange(start, end).overlap(windowInterval);
   }
 
   public static WindowRefiner forPeriodExpression(String periodExpression) {
@@ -63,7 +64,7 @@ public class WindowRefiner implements IntervalRefinement {
   }
 
   private WindowRefiner(String periodExpression, String offsetExpression) {
-    this(periodExpression, offsetExpression, DateTime.now());
+    this(periodExpression, offsetExpression, DateTime.now().withZone(DateTimeZone.UTC));
   }
 
   private WindowRefiner(String periodExpression, String offsetExpression, DateTime now) {

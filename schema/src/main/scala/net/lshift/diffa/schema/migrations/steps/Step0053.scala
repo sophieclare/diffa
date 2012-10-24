@@ -50,6 +50,16 @@ object Step0053 extends VerifiedMigrationStep {
         Array("space", "endpoint", "name", "view_name"),
         "unique_category_view_names", Array("space", "endpoint", "name", "view_name"))
 
+    // These referential constraints were missing from the earlier steps.
+    migration.alterTable("unique_category_view_names").
+      addForeignKey("fk_ucvn_ucns", Array("space", "endpoint", "name"), "unique_category_names", Array("space", "endpoint", "name"))
+
+    migration.alterTable("range_category_views").
+      addForeignKey("fk_racv_racg", Array("space", "endpoint", "name"), "range_categories", Array("space", "endpoint", "name"))
+
+    migration.alterTable("prefix_category_views").
+      addForeignKey("fk_pfcv_pfcg", Array("space", "endpoint", "name"), "prefix_categories", Array("space", "endpoint", "name"))
+
     migration
   }
 
