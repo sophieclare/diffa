@@ -970,10 +970,6 @@ object JooqDomainConfigStoreTest {
   private def endpointWithView() = EndpointDef(name = randomName(), views = List(EndpointViewDef(name = randomName())))
   private def randomPair() = (randomEndpoint(), randomEndpoint())
 
-  private def addScanUrl(endpoint: EndpointDef) = EndpointDef(name = endpoint.name, scanUrl = randomName())
-  private def addView(endpoint: EndpointDef) =
-    EndpointDef(name = endpoint.name, scanUrl = endpoint.scanUrl, views = List(EndpointViewDef(name = randomName())))
-
   case class Scenario(upstream: EndpointDef, downstream: EndpointDef, newUp: Option[EndpointDef] = None)
 
   @DataPoint def blankEndpoints = Scenario(randomEndpoint(), randomEndpoint())
