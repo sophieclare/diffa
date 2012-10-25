@@ -143,7 +143,8 @@ class HibernateConfigStorePreparationStep
             defaultSchema
           }
 
-          log.info("Retrieving table metadata: dialect = %s; extension = %s; catalog = %s; schema = %s".format(dialect, dialectExtension.getDialectName, defaultCatalog, schemaName))
+          log.info("Retrieving table metadata: dialect = %s; extension = %s; user = %s; schema = %s".format(
+            dialect, dialectExtension.getDialectName, props.getProperty(Environment.USER), schemaName))
 
           val tableMetaData = dbMetadata.getTableMetadata(tableName, schemaName, defaultCatalog, false)
 
