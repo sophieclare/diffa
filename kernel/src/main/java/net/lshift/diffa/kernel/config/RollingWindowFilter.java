@@ -38,14 +38,14 @@ public class RollingWindowFilter extends CategoryDescriptor {
    * start-time = scan-time - interval
    * end-time = scan-time.
    *
-   * @param periodText A standard ISO period specification, as defined in ISO 8601.
+   * @param periodExpression A standard ISO period specification, as defined in ISO 8601.
    *                   Examples: 3 months = P3M, 1 week = P1W, 1 day = P1D, 12 hours = PT12H.
    *
    * @see org.joda.time.Period (http://joda-time.sourceforge.net/api-release/index.html?org/joda/time/Period.html)
    * TODO: link in user docs to http://en.wikipedia.org/wiki/ISO_8601#Durations
    */
-  public RollingWindowFilter(String periodText) {
-    this(periodText, "");
+  public RollingWindowFilter(String periodExpression) {
+    this(periodExpression, "");
   }
 
   /**
