@@ -512,6 +512,10 @@ class JooqDomainConfigStoreTest {
     }
   }
 
+  /*
+   * TODO: replace completely with theories - in progress.
+   * Property-based tests will need some initial effort to build the arbitrary instances.
+   */
   @Test
   def shouldBeAbleToRedeclareEndpoints = {
 
@@ -964,6 +968,7 @@ object JooqDomainConfigStoreTest {
   private def randomEndpoint() = EndpointDef(name = randomName())
   private def endpointWithScanUrl() = EndpointDef(name = randomName())
   private def endpointWithView() = EndpointDef(name = randomName(), views = List(EndpointViewDef(name = randomName())))
+  private def randomPair() = (randomEndpoint(), randomEndpoint())
 
   private def addScanUrl(endpoint: EndpointDef) = EndpointDef(name = endpoint.name, scanUrl = randomName())
   private def addView(endpoint: EndpointDef) =
@@ -976,17 +981,25 @@ object JooqDomainConfigStoreTest {
   @DataPoint def bothWithScanUrl = Scenario(endpointWithScanUrl(), endpointWithScanUrl())
   @DataPoint def upWithView = Scenario(endpointWithView(), endpointWithScanUrl())
   @DataPoint def redeclareWithScanUrl = {
-    val (up, down) = (randomEndpoint(), randomEndpoint())
-    val upWithScanUrl = addScanUrl(up)
-    Scenario(up, down, Some(upWithScanUrl))
+    val (up, down) = randomPair()
+    Scenario(up, down, Some(up.copy(scanUrl = randomName())))
   }
   @DataPoint def redeclareWithView = {
-    val (up, down) = (randomEndpoint(), randomEndpoint())
-    Scenario(up, down, Some(addView(up)))
+    val (up, down) = randomPair()
+    Scenario(up, down, Some(up.copy(views = List(EndpointViewDef(name = randomName())))))
   }
   @DataPoint def redeclareWithCategory = {
-    val (up, down) = (randomEndpoint(), randomEndpoint())
+    val (up, down) = randomPair()
     Scenario(up, down, Some(up.copy(categories = Map("cat1" -> new RangeCategoryDescriptor("date", null, null, null)))))
+  }
+  @DataPoint def redeclareWithViewCategory = {
+    val (up, down) = randomPair()
+    Scenario(up, down, Some(up.copy(
+      categories = Map("cat1" -> new RangeCategoryDescriptor("date", null, null, null)),
+      views = List(EndpointViewDef(
+        name = randomName(),
+        categories = Map("cat1" -> new RangeCategoryDescriptor("date", "2012-01-01", "2012-01-14", "daily"))))))
+    )
   }
 
   @AfterClass
