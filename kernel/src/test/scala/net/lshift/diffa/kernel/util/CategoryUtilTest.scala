@@ -22,6 +22,9 @@ import scala.collection.JavaConversions._
 import org.springframework.mock.web.MockHttpServletRequest
 import net.lshift.diffa.adapter.scanning._
 import net.lshift.diffa.kernel.config._
+import net.lshift.diffa.kernel.frontend.EndpointViewDef
+import org.joda.time.{DateTimeZone, DateTime}
+import org.joda.time.format.ISODateTimeFormat
 
 class CategoryUtilTest {
   val baseStringCategory = new SetCategoryDescriptor(Set("a", "b"))
@@ -29,6 +32,15 @@ class CategoryUtilTest {
   val baseDateCategory = new RangeCategoryDescriptor("date", "2011-01-01", "2011-12-31", "individual")
   val stringOverrideCategory = new SetCategoryDescriptor(Set("a"))
 
+
+  val dateFormatter = ISODateTimeFormat.date.withZoneUTC
+  val timeFormatter = ISODateTimeFormat.dateTime.withZoneUTC
+  val now = DateTime.now().withZone(DateTimeZone.UTC)
+  val tomorrow = now.plusDays(1).dayOfYear().roundFloorCopy().toString(dateFormatter)
+  val tomorrowMorning = now.plusDays(1).dayOfYear().roundFloorCopy().toString(timeFormatter)
+  val today = now.dayOfYear().roundFloorCopy().toString(dateFormatter)
+  val thisMorning = now.dayOfYear().roundFloorCopy().plusHours(1).toString(timeFormatter)
+  val threeDaysAgo = now.minusDays(3).dayOfYear().roundFloorCopy().toString(dateFormatter)
 
   val endpointCategories =
     Map("someString" -> baseStringCategory, "someInt" -> baseIntCategory, "someDate" -> baseDateCategory)
@@ -62,6 +74,29 @@ class CategoryUtilTest {
     assertEquals(
       Map("someString" -> baseStringCategory, "someInt" -> baseIntCategory, "someDate" -> fusedDateCategory),
       fused)
+  }
+
+  @Test
+  def shouldRefineDateRangeCategoryWithRollingWindow() {
+    val viewWithWindow = Seq(EndpointView(name = "threeDayRoller", categories = Map("someDateRange" -> new RollingWindowFilter("P3D", "PT1H"))))
+    val baseRangeCategory = Map("someDateRange" -> new RangeCategoryDescriptor("date", "2000-01-01", tomorrow, "individual"))
+
+    assertEquals("A date range should be constrained by a rolling window",
+      Map("someDateRange" -> new RangeCategoryDescriptor("date", threeDaysAgo, today, "individual")),
+      CategoryUtil.fuseViewCategories(baseRangeCategory, viewWithWindow, Some("threeDayRoller")))
+  }
+
+  @Test
+  def shouldRefineDateTimeRangeCategoryWithRollingWindow() {
+    val viewWithWindow = Seq(EndpointView(name = "threeDayRoller", categories = Map("someTimeRange" -> new RollingWindowFilter("P3D", "PT1H"))))
+    val baseRangeCategory = Map("someTimeRange" -> new RangeCategoryDescriptor("datetime", "2000-01-01T00:00:00Z", tomorrowMorning, "individual"))
+
+    assertEquals("A date range should be constrained by a rolling window",
+      Map("someTimeRange" -> new RangeCategoryDescriptor("datetime",
+        now.minusDays(3).dayOfYear().roundFloorCopy().plusHours(1).toString(timeFormatter),
+        thisMorning,
+        "individual")),
+      CategoryUtil.fuseViewCategories(baseRangeCategory, viewWithWindow, Some("threeDayRoller")))
   }
 
   @Test
