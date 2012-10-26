@@ -65,6 +65,13 @@ public abstract class PeriodUnit {
 		return interval != null && subtractOneUnit(floor(interval.getEnd())).compareTo(ceiling(interval.getStart())) >= 0;
 	}
 
+  /**
+   * Since the Joda time API doesn't provide a parameterised minus method that takes a unit of time to subtract,
+   * subclasses must implement this unit-specific subtraction function.
+   *
+   * @param from  The instant to subtract a single time unit from.
+   * @return The instant that is one unit of time earlier than the given instant.
+   */
 	protected abstract DateTime subtractOneUnit(DateTime from);
 
 	protected abstract DateTime floor(DateTime instant);
