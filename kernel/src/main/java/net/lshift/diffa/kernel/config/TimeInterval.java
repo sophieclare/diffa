@@ -3,6 +3,9 @@ package net.lshift.diffa.kernel.config;
 import org.joda.time.DateTime;
 import org.joda.time.Interval;
 
+/**
+ * A TimeInterval adds support for unbounded ranges to org.joda.time.Interval.
+ */
 public abstract class TimeInterval {
 	// min and max dates are take from org.joda.time.chrono.GregorianChronology
 	// (private)
