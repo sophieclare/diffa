@@ -146,7 +146,7 @@ public class RangeCategoryDescriptor extends AggregatingCategoryDescriptor {
       RollingWindowFilter filter = (RollingWindowFilter) other;
 
       if (dataType.equals("datetime") || dataType.equals("date")) {
-        return filter.getRefiner().isRefinementOf(this.lower, this.upper);
+        return filter.refiner().isRefinementOf(this.lower, this.upper);
       }
     }
 
@@ -169,7 +169,7 @@ public class RangeCategoryDescriptor extends AggregatingCategoryDescriptor {
     } else if (refinement instanceof RollingWindowFilter) {
       RollingWindowFilter filter = (RollingWindowFilter) refinement;
 
-      TimeInterval interval = filter.getRefiner().refineInterval(this.lower, this.upper);
+      TimeInterval interval = filter.refiner().refineInterval(this.lower, this.upper);
 
       refinedCategory = new RangeCategoryDescriptor(
           this.dataType,

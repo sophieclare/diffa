@@ -28,9 +28,8 @@ import org.joda.time.DateTime;
  * A category that is constrained by a moving window that behaves as a dynamically computed range category.
  */
 public class RollingWindowFilter extends CategoryDescriptor {
-  public String offsetDurationExpression;
   public String periodExpression;
-  public String maxGranularity;
+  public String offsetDurationExpression;
   private WindowRefiner refiner;
 
   /**
@@ -82,20 +81,16 @@ public class RollingWindowFilter extends CategoryDescriptor {
     return this.offsetDurationExpression;
   }
 
-  public String getMaxGranularity() {
-    return this.maxGranularity;
-  }
-
-  public WindowRefiner getRefiner() {
+  public WindowRefiner refiner() {
     if (refiner == null) {
       refiner = WindowRefiner.forPeriodExpression(periodExpression).withOffset(offsetDurationExpression);
     }
+
     return refiner;
   }
 
   public TimeRangeConstraint toConstraint(String name) {
-    refiner = getRefiner();
-    TimeInterval interval = refiner.refineInterval(null, null);
+    TimeInterval interval = refiner().refineInterval(null, null);
 
     return new TimeRangeConstraint(name,
         interval.getStartAs(DateTimeType.DATETIME),
@@ -105,7 +100,7 @@ public class RollingWindowFilter extends CategoryDescriptor {
   @Override
   public void validate(String path) {
     try {
-      getRefiner();
+      refiner();
     } catch (Exception ex) {
       throw new ConfigValidationException(path,
           String.format("Invalid period or offset specified for Rolling Window: %s", ex.getLocalizedMessage()));
