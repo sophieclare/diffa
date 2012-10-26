@@ -50,6 +50,4 @@ public abstract class TimeInterval {
 	}
 	
 	public abstract PeriodUnit maximumCoveredPeriodUnit();
-
-	public abstract boolean isClosed();
 }

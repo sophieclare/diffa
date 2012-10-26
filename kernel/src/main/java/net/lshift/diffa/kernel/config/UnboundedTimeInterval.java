@@ -55,11 +55,6 @@ public class UnboundedTimeInterval extends TimeInterval {
 	}
 
 	@Override
-	public boolean isClosed() {
-		return false;
-	}
-
-	@Override
 	public PeriodUnit maximumCoveredPeriodUnit() {
 		return PeriodUnit.YEARLY;
 	}

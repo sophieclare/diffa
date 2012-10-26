@@ -94,11 +94,6 @@ public class BoundedTimeInterval extends TimeInterval {
 	}
 
 	@Override
-	public boolean isClosed() {
-		return !start.equals(openEnd) && !end.equals(openEnd);
-	}
-
-	@Override
 	public boolean equals(Object other) {
 		if (other instanceof BoundedTimeInterval) {
 			BoundedTimeInterval otherInterval = (BoundedTimeInterval) other;
