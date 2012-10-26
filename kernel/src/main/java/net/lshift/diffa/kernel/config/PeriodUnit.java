@@ -21,6 +21,17 @@ import java.util.ArrayList;
 import org.joda.time.DateTime;
 import org.joda.time.Interval;
 
+/**
+ * A PeriodUnit is a single unit of a given granularity of the Gregorian calendar,
+ * such as one day, one month or one year.
+ *
+ * This class provides the means to determine:
+ * 1) whether a given period unit is completely covered by an interval;
+ * 2) what is the greatest period unit covered for a given interval.
+ *
+ * If there is no defined unit of time that is covered by an interval, then
+ * the covered unit is 'individual'.
+ */
 public abstract class PeriodUnit {
 	public static PeriodUnit INDIVIDUAL = new IndividualPeriodUnit();
 	public static PeriodUnit DAILY = new DailyPeriodUnit();
