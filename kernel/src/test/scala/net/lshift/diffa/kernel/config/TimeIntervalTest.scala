@@ -47,7 +47,7 @@ class TimeIntervalTest {
   def overlapShouldBeReflexive(scenario: Scenario) {
     Assert.assertEquals("TimeInterval.overlap should be reflexive",
       scenario.i2.overlap(scenario.i1),
-      scenario.i2.overlap(scenario.i1))
+      scenario.i1.overlap(scenario.i2))
   }
 
   @Theory
