@@ -28,6 +28,8 @@
             <Set name="jdbcUrl">jdbc:hsqldb:target/webapp-data/diffa-data</Set>
           </New>
         </Arg>
+        <Set name="username">sa</Set>
+        <Set name="password"></Set>
         <Set name="driverClass">org.hsqldb.jdbc.JDBCDriver</Set>
       </New>
     </Arg>
