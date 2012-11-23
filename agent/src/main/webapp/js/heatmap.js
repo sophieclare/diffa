@@ -461,7 +461,7 @@ Diffa.Views.Heatmap = Backbone.View.extend(Diffa.Helpers.Viz).extend({
   bottomGutter: 0,
   gutterSize: 24,
   gridSize: 30,
-  scaleHeight: 40,
+  scaleHeight: 40,	
 
   show_grid: false,
 
@@ -561,11 +561,13 @@ Diffa.Views.Heatmap = Backbone.View.extend(Diffa.Helpers.Viz).extend({
     this.scale.height = this.scaleHeight;
     this.visibleColumns = this.truncateInt(this.canvas.width / this.gridSize);
     this.model.set({bucketCount: this.visibleColumns});
-
     this.$('.heatmap-controls').
         show().
-        css('top', $(this.heatmap).offset().top + this.statusBarHeight).
-        css('left', $(this.heatmap).offset().left - this.$('.heatmap-controls')[0].offsetWidth);
+        //css('top', $(this.heatmap).offset().top + this.statusBarHeight).
+        //css('left', $(this.heatmap).offset().left - this.$('.heatmap-controls')[0].offsetWidth);
+	//I'm commenting out the previous two lines rather than over-writing them, because I don't 
+	//understand what they're supposed to be doing. The following works for me:
+        css('left', "-35px");
   },
   recalibrateHeatmap: function() {
     this.resizeLayer(this.underlay, this.underlay.offsetWidth);
@@ -1155,7 +1157,8 @@ Diffa.Views.DiffList = Backbone.View.extend({
     });
 
     if ($('.difflist-body').children().length == 0) {
-      $('.difflist-body').html("No differences.");
+      $('#diff-list-container').html("<h4>No differences</h4>");
+      $('#contentviewer').hide();
     }
   },
 
