@@ -28,7 +28,7 @@ var Diffa = {
 function appendActionButtonToContainer($container, action, pairKey, itemID, $repairStatus) {
   // Reset the status box
   if ($repairStatus != null) $repairStatus.text("No repairs in progress");
-  $('<button class="repair">' + action.name +  '</button>')
+  $('<button class="btn btn-info">' + action.name +  '</button>')
     .click(function(e) {
       e.preventDefault();
       var $button = $(this);
